@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetroSync Pro // Institutional Crude Oil Intelligence Terminal</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="dark-terminal">
+    <!-- Top Nav / Control Bar -->
+    <header class="top-nav">
+        <div class="nav-left">
+            <div class="brand-logo">
+                <span class="barrel-icon">🛢️</span>
+                <div>
+                    <h1 class="brand-title">PETRO<span class="highlight">SYNC</span> <span class="badge-pro">PRO QUANT</span></h1>
+                    <span class="brand-subtitle">INSTITUTIONAL CRUDE OIL DIRECTION & REGIME TERMINAL</span>
+                </div>
+            </div>
+            <div class="market-pill live-pulse" id="marketStatusPill">
+                <span class="pulse-dot"></span>
+                <span id="marketStatusText">LIVE CME / NYMEX FEED</span>
+            </div>
+            <div class="confluence-pill" id="mtfConfluencePill">
+                <span class="pill-label">MTF CONFLUENCE:</span>
+                <span class="pill-value" id="topConfluenceVal">ANALYZING...</span>
+            </div>
+        </div>
+
+        <div class="nav-center">
+            <div class="clock-box">
+                <span class="clock-label">LAST SYNC</span>
+                <span class="clock-val" id="lastSyncTime">--:--:-- UTC</span>
+            </div>
+            <div class="countdown-box">
+                <span class="countdown-label">NEXT HOURLY CYCLE</span>
+                <span class="countdown-val" id="nextHourlyCountdown">59m 59s</span>
+            </div>
+        </div>
+
+        <div class="nav-right">
+            <div class="control-group">
+                <label for="refreshInterval">Interval:</label>
+                <select id="refreshInterval">
+                    <option value="3600" selected>1 Hour</option>
+                    <option value="900">15 Mins</option>
+                    <option value="300">5 Mins</option>
+                    <option value="0">Manual Only</option>
+                </select>
+            </div>
+
+            <button class="icon-btn" id="audioToggleBtn" title="Toggle audio chime on hourly signal update">
+                <span id="audioIcon">🔔</span>
+            </button>
+
+            <button class="action-btn" id="manualRefreshBtn">
+                <span class="refresh-icon" id="refreshSpinner">🔄</span>
+                <span>Refresh Now</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="dashboard-grid">
+        
+        <!-- ROW 1: INTERMARKET MACRO & VOLATILITY RADAR -->
+        <section class="ticker-ribbon">
+            <!-- 1. WTI Crude -->
+            <div class="metric-card primary-ticker">
+                <div class="card-header">
+                    <span class="ticker-sym">WTI CRUDE (CL)</span>
+                    <span class="tag-cme">NYMEX BENCHMARK</span>
+                </div>
+                <div class="ticker-price-row">
+                    <span class="big-price" id="wtiPrice">$--.--</span>
+                    <div class="change-stack">
+                        <span class="change-badge" id="wti1hBadge">1h: --</span>
+                        <span class="change-badge-sub" id="wti24hBadge">24h: --</span>
+                    </div>
+                </div>
+                <div class="range-bar-wrapper">
+                    <div class="range-meta">
+                        <span id="wtiDayLow">L: --</span>
+                        <span>24h Range</span>
+                        <span id="wtiDayHigh">H: --</span>
+                    </div>
+                    <div class="range-track">
+                        <div class="range-fill" id="wtiRangeFill" style="width: 50%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. CBOE Crude Oil Volatility Index (OVX) -->
+            <div class="metric-card ovx-card">
+                <div class="card-header">
+                    <span class="ticker-sym">OIL VOLATILITY (OVX)</span>
+                    <span class="tag-alert">OIL "VIX"</span>
+                </div>
+                <div class="ticker-price-row">
+                    <span class="mid-price" id="ovxPrice">--.--</span>
+                    <span class="vol-regime-tag" id="ovxRegimeBadge">NORMAL</span>
+                </div>
+                <div class="impact-indicator">
+                    <span class="impact-label">REGIME:</span>
+                    <span class="impact-val" id="ovxStatusText">Calculating...</span>
+                </div>
+                <span class="status-subtext">High OVX (>45) = violent stop sweeps</span>
+            </div>
+
+            <!-- 3. Brent-WTI Spread -->
+            <div class="metric-card">
+                <div class="card-header">
+                    <span class="ticker-sym">BRENT-WTI SPREAD</span>
+                    <span class="tag-ice">GLOBAL PREMIUM</span>
+                </div>
+                <div class="ticker-price-row">
+                    <span class="mid-price" id="brentSpread">+$--/bbl</span>
+                    <span class="brent-raw-price" id="brentRawPrice">BZ: $--</span>
+                </div>
+                <div class="spread-indicator">
+                    <span class="spread-label">WATERBORNE ARB:</span>
+                    <span class="spread-value" id="brentStatus">Analyzing</span>
+                </div>
+                <span class="status-subtext">Higher spread indicates strong export demand</span>
+            </div>
+
+            <!-- 4. Refining Crack Spread -->
+            <div class="metric-card">
+                <div class="card-header">
+                    <span class="ticker-sym">3:2:1 CRACK SPREAD</span>
+                    <span class="tag-phys">REFINER MARGIN</span>
+                </div>
+                <div class="ticker-price-row">
+                    <span class="mid-price" id="crackPrice">$--.--</span>
+                    <span class="crack-unit">/ bbl</span>
+                </div>
+                <div class="impact-indicator">
+                    <span class="impact-label">PHYSICAL DEMAND:</span>
+                    <span class="impact-val" id="crackStatus">Checking...</span>
+                </div>
+                <span class="status-subtext">> $25/bbl incentivizes refiner buying</span>
+            </div>
+
+            <!-- 5. US Dollar & Gold/Oil Ratio -->
+            <div class="metric-card">
+                <div class="card-header">
+                    <span class="ticker-sym">MACRO HEADWIND</span>
+                    <span class="tag-macro">DXY & GOLD/OIL</span>
+                </div>
+                <div class="ticker-price-row">
+                    <span class="mid-price" id="dxyPrice">--.--</span>
+                    <span class="change-badge" id="dxyChangeBadge">--%</span>
+                </div>
+                <div class="impact-indicator">
+                    <span class="impact-label">GOLD / OIL RATIO:</span>
+                    <span class="impact-val" id="goldOilRatio">--:1</span>
+                </div>
+                <span class="status-subtext">Rising DXY weighs directly on crude</span>
+            </div>
+
+            <!-- 6. EIA Weekly Inventory Catalyst -->
+            <div class="metric-card catalyst-card">
+                <div class="card-header">
+                    <span class="ticker-sym">EIA INVENTORY REPORT</span>
+                    <span class="tag-alert">HIGH VOLATILITY</span>
+                </div>
+                <div class="catalyst-time">
+                    <span class="catalyst-countdown" id="eiaCountdown">--h --m</span>
+                    <span class="catalyst-sub">Every Wednesday 10:30 AM EST</span>
+                </div>
+                <div class="warning-banner">
+                    <span>⚠️ Flatten orders 2 mins before release</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ROW 2: INSTITUTIONAL TRADE SETUP & MULTI-TIMEFRAME CONFLUENCE -->
+        <section class="intel-split-row">
+            
+            <!-- ACTIVE HIGH-PROBABILITY TRADE SETUP CARD -->
+            <div class="intel-card trade-setup-card" id="tradeSetupCard">
+                <div class="card-top-bar">
+                    <div class="badge-title">
+                        <span class="section-icon">🎯</span>
+                        <h2>QUANTITATIVE TRADE SETUP & TT PLAYBOOK</h2>
+                    </div>
+                    <div class="win-prob-chip" id="winProbChip">
+                        <span>EST. WIN PROBABILITY:</span>
+                        <strong id="winProbVal">--%</strong>
+                    </div>
+                </div>
+
+                <div class="setup-hero-banner" id="setupHeroBanner">
+                    <div class="setup-hero-info">
+                        <span class="setup-type-label" id="setupTypeLabel">SYSTEM ACTION PLAN</span>
+                        <h3 class="setup-action-title" id="setupActionTitle">IDENTIFYING EDGE...</h3>
+                    </div>
+                    <div class="setup-bias-badge" id="setupBiasBadge">--</div>
+                </div>
+
+                <!-- Parameters Matrix: Entry, Stop, Targets, RR -->
+                <div class="trade-params-grid">
+                    <div class="param-box">
+                        <span class="param-title">TRIGGER ENTRY ZONE</span>
+                        <span class="param-value text-accent" id="paramEntry">$--.-- - $--.--</span>
+                        <span class="param-sub">Limit Order Placement</span>
+                    </div>
+                    <div class="param-box">
+                        <span class="param-title">STOP LOSS</span>
+                        <span class="param-value text-bear" id="paramStop">$--.--</span>
+                        <span class="param-sub" id="paramStopTicks">-- ticks risk</span>
+                    </div>
+                    <div class="param-box">
+                        <span class="param-title">TARGET 1 (SCALP)</span>
+                        <span class="param-value text-bull" id="paramTarget1">$--.--</span>
+                        <span class="param-sub" id="paramTp1Ticks">+-- ticks</span>
+                    </div>
+                    <div class="param-box">
+                        <span class="param-title">TARGET 2 (RUNNER)</span>
+                        <span class="param-value text-bull" id="paramTarget2">$--.--</span>
+                        <span class="param-sub">Trend Extension</span>
+                    </div>
+                    <div class="param-box">
+                        <span class="param-title">RISK : REWARD</span>
+                        <span class="param-value text-warning" id="paramRR">1 : --</span>
+                        <span class="param-sub">Minimum 1:1.8 threshold</span>
+                    </div>
+                </div>
+
+                <!-- Setup Rationale & TT Execution -->
+                <div class="setup-tactics-box">
+                    <div class="tactics-item">
+                        <span class="tactics-bullet">💡</span>
+                        <div>
+                            <strong>Algorithm Rationale:</strong>
+                            <p id="setupRationaleText">Synthesizing order flow, moving averages, and volume profile...</p>
+                        </div>
+                    </div>
+                    <div class="tactics-item">
+                        <span class="tactics-bullet">⚡</span>
+                        <div>
+                            <strong>TT MD Trader Execution Instruction:</strong>
+                            <p id="setupTtTip">Configure bracket order on MD Trader...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vol-alert-bar" id="volAlertBar">
+                    <span id="volAlertText">Checking volatility parameters...</span>
+                </div>
+            </div>
+
+            <!-- MULTI-TIMEFRAME CONFLUENCE MATRIX & LIQUIDITY SWEEPS -->
+            <div class="intel-card mtf-card">
+                <div class="card-top-bar">
+                    <div class="badge-title">
+                        <span class="section-icon">📶</span>
+                        <h2>MULTI-TIMEFRAME CONFLUENCE MATRIX</h2>
+                    </div>
+                    <span class="score-badge" id="mtfScoreBadge">SCORE: --/100</span>
+                </div>
+
+                <!-- MTF Heatmap Columns -->
+                <div class="mtf-grid" id="mtfGrid">
+                    <!-- 15-Minute -->
+                    <div class="mtf-column" id="mtfCol15m">
+                        <div class="mtf-header">
+                            <span class="mtf-title">15-MIN (SCALP)</span>
+                            <span class="mtf-badge" id="mtfBadge15m">--</span>
+                        </div>
+                        <div class="mtf-body">
+                            <div class="mtf-metric">
+                                <span>RSI (14):</span>
+                                <strong id="mtfRsi15m">--</strong>
+                            </div>
+                            <div class="mtf-metric">
+                                <span>Structure:</span>
+                                <span id="mtfTrend15m">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 1-Hour -->
+                    <div class="mtf-column" id="mtfCol1h">
+                        <div class="mtf-header">
+                            <span class="mtf-title">1-HOUR (SESSION)</span>
+                            <span class="mtf-badge" id="mtfBadge1h">--</span>
+                        </div>
+                        <div class="mtf-body">
+                            <div class="mtf-metric">
+                                <span>RSI (14):</span>
+                                <strong id="mtfRsi1h">--</strong>
+                            </div>
+                            <div class="mtf-metric">
+                                <span>Structure:</span>
+                                <span id="mtfTrend1h">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Daily -->
+                    <div class="mtf-column" id="mtfColDaily">
+                        <div class="mtf-header">
+                            <span class="mtf-title">DAILY (MACRO)</span>
+                            <span class="mtf-badge" id="mtfBadgeDaily">--</span>
+                        </div>
+                        <div class="mtf-body">
+                            <div class="mtf-metric">
+                                <span>RSI (14):</span>
+                                <strong id="mtfRsiDaily">--</strong>
+                            </div>
+                            <div class="mtf-metric">
+                                <span>Structure:</span>
+                                <span id="mtfTrendDaily">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Liquidity Sweep Detector -->
+                <div class="sweep-detector-box">
+                    <div class="sweep-header">
+                        <span class="sweep-icon">🪤</span>
+                        <h4>SESSION LIQUIDITY SWEEP & TRAP DETECTOR</h4>
+                    </div>
+                    <p class="sweep-details" id="sweepDetails">Scanning for stop runs above Overnight High or below Overnight Low...</p>
+                </div>
+
+                <!-- Core Key Benchmarks Grid -->
+                <div class="benchmarks-grid">
+                    <div class="bench-item">
+                        <span class="bench-name">Session VWAP</span>
+                        <span class="bench-val" id="benchVwap">$--.--</span>
+                    </div>
+                    <div class="bench-item">
+                        <span class="bench-name">POC (Volume Magnet)</span>
+                        <span class="bench-val" id="benchPoc">$--.--</span>
+                    </div>
+                    <div class="bench-item">
+                        <span class="bench-name">VWAP Upper +1σ Band</span>
+                        <span class="bench-val text-bull" id="benchVwapU1">$--.--</span>
+                    </div>
+                    <div class="bench-item">
+                        <span class="bench-name">VWAP Lower -1σ Band</span>
+                        <span class="bench-val text-bear" id="benchVwapL1">$--.--</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ROW 3: COMPOSITE QUANT SENTIMENT & AUCTION LEVELS -->
+        <section class="intel-split-row">
+            
+            <!-- MULTI-FACTOR SENTIMENT GAUGE & ATTRIBUTION -->
+            <div class="intel-card sentiment-container">
+                <div class="card-top-bar">
+                    <div class="badge-title">
+                        <span class="section-icon">🧭</span>
+                        <h2>COMPOSITE DIRECTIONAL SENTIMENT MODEL</h2>
+                    </div>
+                    <span class="score-badge" id="sentimentScoreBadge">SCORE: 0.0</span>
+                </div>
+
+                <div class="gauge-area">
+                    <div class="gauge-svg-container">
+                        <svg viewBox="0 0 200 120" class="gauge-svg">
+                            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1f2937" stroke-width="14" stroke-linecap="round"/>
+                            <path d="M 20 100 A 80 80 0 0 1 65 38" fill="none" stroke="#ef4444" stroke-width="14" stroke-linecap="round" opacity="0.8"/>
+                            <path d="M 65 38 A 80 80 0 0 1 135 38" fill="none" stroke="#f59e0b" stroke-width="14" opacity="0.8"/>
+                            <path d="M 135 38 A 80 80 0 0 1 180 100" fill="none" stroke="#10b981" stroke-width="14" stroke-linecap="round" opacity="0.8"/>
+                            <polygon id="gaugeNeedle" points="100,100 97,95 99,25 101,25 103,95" fill="#f8fafc" style="transform-origin: 100px 100px; transform: rotate(0deg); transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);"/>
+                            <circle cx="100" cy="100" r="7" fill="#38bdf8"/>
+                            <circle cx="100" cy="100" r="3" fill="#0b0f19"/>
+                        </svg>
+                        <div class="gauge-labels">
+                            <span class="bear-label">BEARISH</span>
+                            <span class="neut-label">NEUTRAL</span>
+                            <span class="bull-label">BULLISH</span>
+                        </div>
+                    </div>
+                    
+                    <div class="sentiment-verdict">
+                        <span class="sentiment-heading" id="sentimentLabel">EVALUATING...</span>
+                        <p class="sentiment-desc" id="sentimentDesc">Computing weighted factors across 7 institutional pillars...</p>
+                        <div class="prob-split-bar">
+                            <span class="prob-text-bull" id="probBullText">BULL: --%</span>
+                            <div class="split-track">
+                                <div class="split-fill-bull" id="splitFillBull" style="width: 50%;"></div>
+                            </div>
+                            <span class="prob-text-bear" id="probBearText">BEAR: --%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sentiment-factor-bars">
+                    <div class="factor-row">
+                        <span class="factor-name">Multi-Timeframe EMA Alignment (25%)</span>
+                        <div class="factor-track"><div class="factor-bar" id="barMtf" style="width: 50%;"></div></div>
+                        <span class="factor-val" id="valMtf">0.0</span>
+                    </div>
+                    <div class="factor-row">
+                        <span class="factor-name">Order Flow / VWAP Distance (20%)</span>
+                        <div class="factor-track"><div class="factor-bar" id="barFlow" style="width: 50%;"></div></div>
+                        <span class="factor-val" id="valFlow">0.0</span>
+                    </div>
+                    <div class="factor-row">
+                        <span class="factor-name">Refining Crack Margin (15%)</span>
+                        <div class="factor-track"><div class="factor-bar" id="barCrack" style="width: 50%;"></div></div>
+                        <span class="factor-val" id="valCrack">0.0</span>
+                    </div>
+                    <div class="factor-row">
+                        <span class="factor-name">Brent-WTI Seaborne Spread (15%)</span>
+                        <div class="factor-track"><div class="factor-bar" id="barSpread" style="width: 50%;"></div></div>
+                        <span class="factor-val" id="valSpread">0.0</span>
+                    </div>
+                    <div class="factor-row">
+                        <span class="factor-name">US Dollar (DXY) Inverse Pressure (10%)</span>
+                        <div class="factor-track"><div class="factor-bar" id="barDxy" style="width: 50%;"></div></div>
+                        <span class="factor-val" id="valDxy">0.0</span>
+                    </div>
+                    <div class="factor-row">
+                        <span class="factor-name">Global Risk Appetite / S&P 500 (10%)</span>
+                        <div class="factor-track"><div class="factor-bar" id="barRisk" style="width: 50%;"></div></div>
+                        <span class="factor-val" id="valRisk">0.0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUCTION MARKET & REFERENCE LEVELS -->
+            <div class="intel-card levels-container">
+                <div class="card-top-bar">
+                    <div class="badge-title">
+                        <span class="section-icon">📐</span>
+                        <h2>AUCTION MARKET & KEY REFERENCE LEVELS</h2>
+                    </div>
+                    <span class="help-hint">Real-time distance in Ticks for TT Limit/Stop Orders</span>
+                </div>
+                <div class="table-scroll-container">
+                    <table class="levels-table">
+                        <thead>
+                            <tr>
+                                <th>Level</th>
+                                <th>Code</th>
+                                <th>Price</th>
+                                <th>Distance</th>
+                                <th>Execution Rule</th>
+                            </tr>
+                        </thead>
+                        <tbody id="levelsTableBody">
+                            <tr><td colspan="5" class="loading-cell">Loading institutional levels...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ROW 4: INTERACTIVE 1-HOUR PRICE ACTION & VWAP BANDS CHART -->
+        <section class="chart-section">
+            <div class="chart-header">
+                <div class="chart-title-group">
+                    <span class="section-icon">📈</span>
+                    <h3>WTI CRUDE OIL — 1-HOUR PRICE ACTION & ORDER FLOW VOLATILITY ENVELOPE</h3>
+                    <span class="chart-sub">Includes Session VWAP, +1σ/-1σ Standard Deviation Bands, 20/50 EMAs, and Volume</span>
+                </div>
+                <div class="chart-controls">
+                    <button class="chart-toggle active" data-series="vwap" id="toggleVwap">VWAP</button>
+                    <button class="chart-toggle active" data-series="bands" id="toggleBands">±1σ Bands</button>
+                    <button class="chart-toggle active" data-series="ema20" id="toggleEma20">20 EMA</button>
+                    <button class="chart-toggle active" data-series="ema50" id="toggleEma50">50 EMA</button>
+                </div>
+            </div>
+            <div class="canvas-wrapper">
+                <canvas id="crudeChart"></canvas>
+            </div>
+        </section>
+
+        <!-- ROW 5: HOURLY REGIME TIMELINE LOG -->
+        <section class="history-section">
+            <div class="table-card">
+                <div class="card-top-bar">
+                    <div class="badge-title">
+                        <span class="section-icon">⏱️</span>
+                        <h3>HOURLY MOVEMENT & REGIME TIMELINE (LAST 24 HOURS)</h3>
+                    </div>
+                    <span class="help-hint">Logged at the close of every 1-hour bar</span>
+                </div>
+                <div class="table-scroll-container">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Hour (UTC)</th>
+                                <th>Close Price</th>
+                                <th>1h Change</th>
+                                <th>RSI</th>
+                                <th>Session VWAP</th>
+                                <th>Market Regime</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr><td colspan="6" class="loading-cell">Compiling 24-hour log...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="terminal-footer">
+        <div class="footer-left">
+            <span>PETROSYNC PRO // ADVANCED QUANTITATIVE COMMODITIES ENGINE</span>
+            <span class="sep">|</span>
+            <span>MODEL: MULTI-TIMEFRAME CONFLUENCE + VOLATILITY REGIMES (OVX) + 3:2:1 CRACK SPREAD</span>
+        </div>
+        <div class="footer-right">
+            <span>DESIGNED FOR PROFESSIONAL EXECUTION ON TRADING TECHNOLOGIES (TT) MD TRADER</span>
+        </div>
+    </footer>
+
+    <script src="/static/dashboard.js"></script>
+</body>
+</html>
