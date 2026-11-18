@@ -55,6 +55,7 @@ models (logistic regression and gradient-boosted trees)."*
  app.py (Flask)  /  /api/data  /api/refresh  /api/health  /api/metrics   + hourly background thread
                 ▼
  templates/index.html + static/dashboard.js (Chart.js)  ── polls /api/data, renders the terminal UI
+                                                       ── loads /api/metrics once → Backtest Reality Check card
 
  evaluation/ (offline)
    data_loader.py   → 730 days of 1h, 60 days of 15m, 5 y daily, cached to evaluation/data_cache/
@@ -155,7 +156,7 @@ Entry/stop/targets are expressed as multiples of ATR around VWAP / value-area ed
 
 | # | Finding | Impact | Status |
 |---|---|---|---|
-| 1 | Win probabilities are constants, not estimates | Misleading UI | Measured in backtest; see `reports/EVALUATION_RESULTS.md` |
+| 1 | Win probabilities are constants, not estimates | Misleading UI | Measured in backtest; the dashboard now shows the backtested rate next to the claim and a **Backtest Reality Check** card |
 | 2 | Timestamps were labelled "UTC" but were exchange time (US/Eastern) | Wrong clock by 4–5 h | **Fixed** (converted to UTC) |
 | 3 | RSI/ATR use SMA, not Wilder smoothing | Values differ from standard platforms | Documented |
 | 4 | "Session VWAP" is a rolling 24-bar VWAP | No session reset | Documented |

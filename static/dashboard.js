@@ -183,6 +183,7 @@ function updateUI(d) {
     // 7. QUANTITATIVE TRADE SETUP CARD
     const ts = d.trade_setup;
     document.getElementById('winProbVal').textContent = `${ts.win_probability}%`;
+    renderRealityCheck(ts.setup_type);
     document.getElementById('setupTypeLabel').textContent = ts.setup_type;
     document.getElementById('setupActionTitle').textContent = ts.action.toUpperCase();
 
@@ -546,10 +547,136 @@ function renderChart(candles) {
     });
 }
 
+
+// ===================== BACKTEST REALITY CHECK =====================
+// Loads the offline walk-forward evaluation (/api/metrics) once and compares the
+// live setup's hard-coded win probability with how that setup actually performed.
+let backtestMetrics = null;
+let backtestLoaded = false;
+
+async function loadBacktestMetrics() {
+    try {
+        const res = await fetch('/api/metrics');
+        const json = await res.json();
+        backtestMetrics = json.success ? json.data : null;
+    } catch (e) {
+        console.warn('Backtest metrics unavailable', e);
+        backtestMetrics = null;
+    }
+    backtestLoaded = true;
+    renderRealityCheck(currentData ? currentData.trade_setup.setup_type : null);
+}
+
+const rcPct = (x, d = 1) => (x === null || x === undefined) ? '--' : `${(x * 100).toFixed(d)}%`;
+const rcTone = (gapPts, exp) => (gapPts <= -15 || exp < 0) ? 'bad' : (gapPts <= -5 ? 'warn' : 'good');
+const rcTitle = s => s.replace(/\s*\(.*\)/, '').toLowerCase().replace(/(^|\s)\S/g, m => m.toUpperCase());
+
+function setTone(el, tone) {
+    el.classList.remove('text-bull', 'text-bear', 'text-warning');
+    el.classList.add(tone === 'good' ? 'text-bull' : tone === 'bad' ? 'text-bear' : 'text-warning');
+}
+
+function renderRealityCheck(setupType) {
+    const empty = document.getElementById('realityEmpty');
+    const body = document.getElementById('realityBody');
+    const meta = document.getElementById('realityMeta');
+    const chipBt = document.getElementById('winProbBacktest');
+    if (!backtestLoaded) return;
+    if (!backtestMetrics || !backtestMetrics.trades || !backtestMetrics.trades.by_setup) {
+        empty.hidden = false; body.hidden = true;
+        meta.textContent = 'No evaluation found';
+        chipBt.textContent = 'n/a';
+        return;
+    }
+    empty.hidden = true; body.hidden = false;
+    const m = backtestMetrics, T = m.trades, bySetup = T.by_setup;
+    meta.textContent = `Walk-forward replay · ${m.meta.sample_start.slice(0, 10)} → ${m.meta.sample_end.slice(0, 10)} · ${m.meta.n_signals.toLocaleString()} hourly decisions · generated ${m.meta.generated_utc}`;
+
+    // --- current setup ---
+    const g = setupType ? bySetup[setupType] : null;
+    chipBt.classList.remove('rc-bad', 'rc-warn', 'rc-good', 'text-muted-strong');
+    if (g) {
+        const gap = (g.target1_hit_rate - g.claimed_win_prob) * 100;
+        const tone = rcTone(gap, g.expectancy_usd);
+        chipBt.textContent = rcPct(g.target1_hit_rate);
+        chipBt.classList.add('rc-' + tone);
+        document.getElementById('realitySetupName').textContent = rcTitle(setupType);
+        document.getElementById('realityClaimBar').style.width = `${g.claimed_win_prob * 100}%`;
+        document.getElementById('realityClaimVal').textContent = rcPct(g.claimed_win_prob, 0);
+        const realBar = document.getElementById('realityRealBar');
+        realBar.style.width = `${g.target1_hit_rate * 100}%`;
+        realBar.style.background = tone === 'good' ? 'var(--bull-green)' : tone === 'warn' ? 'var(--warn-amber)' : 'var(--bear-red)';
+        document.getElementById('realityRealVal').textContent = rcPct(g.target1_hit_rate);
+        const verdict = document.getElementById('realityVerdict');
+        verdict.className = 'reality-verdict ' + tone;
+        verdict.textContent = tone === 'good' ? 'CLAIM HOLDS' : (g.expectancy_usd < 0 ? 'NEGATIVE EDGE' : 'OVERSTATED');
+        const sign = g.expectancy_usd >= 0 ? '+' : '−';
+        document.getElementById('realityCurrentNote').textContent =
+            `In ${g.n} simulated trades this setup reached Target 1 ${rcPct(g.target1_hit_rate)} of the time, ` +
+            `${Math.abs(gap).toFixed(1)} points ${gap < 0 ? 'below' : 'above'} the ${rcPct(g.claimed_win_prob, 0)} the playbook claims. ` +
+            `Average result ${sign}$${Math.abs(g.expectancy_usd).toFixed(0)} per contract after costs. ` +
+            (g.binomial_p_claim !== null && g.binomial_p_claim < 0.05 ? 'The gap is statistically significant (p < 0.05).' : 'The gap is not statistically significant.');
+    } else {
+        chipBt.textContent = 'n/a';
+        chipBt.classList.add('text-muted-strong');
+        document.getElementById('realitySetupName').textContent = setupType ? rcTitle(setupType) : 'Waiting for live setup…';
+        document.getElementById('realityVerdict').className = 'reality-verdict';
+        document.getElementById('realityVerdict').textContent = 'NO HISTORY';
+        document.getElementById('realityCurrentNote').textContent = 'This setup did not trigger a filled trade in the backtest sample.';
+    }
+
+    // --- global stats ---
+    const s4 = m.signals && m.signals.h4 ? m.signals.h4.sentiment_7pillar : null;
+    if (s4) {
+        const hit = document.getElementById('rcHit');
+        hit.textContent = rcPct(s4.hit_rate);
+        setTone(hit, s4.binomial_p_vs_50pct < 0.05 && s4.hit_rate > 0.5 ? 'good' : 'bad');
+        document.getElementById('rcHitSub').textContent = `coin flip = 50% · p = ${s4.binomial_p_vs_50pct.toFixed(2)}`;
+        const bs = s4.probability.brier_skill_score, b = document.getElementById('rcBrier');
+        b.textContent = (bs >= 0 ? '+' : '') + bs.toFixed(3);
+        setTone(b, bs > 0 ? 'good' : 'bad');
+    }
+    const pf = document.getElementById('rcPf');
+    pf.textContent = T.profit_factor.toFixed(2);
+    setTone(pf, T.profit_factor > 1.1 ? 'good' : T.profit_factor >= 1 ? 'warn' : 'bad');
+    document.getElementById('rcPfSub').textContent = `needs > 1.0 · ${T.filled_trades.toLocaleString()} trades`;
+    const ex = document.getElementById('rcExp');
+    ex.textContent = `${T.expectancy_usd_per_trade >= 0 ? '+' : '−'}$${Math.abs(T.expectancy_usd_per_trade).toFixed(0)}`;
+    setTone(ex, T.expectancy_usd_per_trade > 0 ? 'good' : 'bad');
+    document.getElementById('rcExpSub').textContent = `1 CL contract, after costs · win ${rcPct(T.target1_hit_rate)} vs ${rcPct(T.claimed_win_prob_avg, 0)} claimed`;
+    if (m.ml && m.ml.h4) {
+        const auc = Math.max(m.ml.h4.logistic_regression.probability.roc_auc, m.ml.h4.gradient_boosting.probability.roc_auc);
+        const a = document.getElementById('rcAuc');
+        a.textContent = auc.toFixed(3);
+        setTone(a, auc >= 0.55 ? 'good' : auc >= 0.52 ? 'warn' : 'bad');
+        const theil = Math.min(...Object.values(m.ml.h4.price_forecast).map(v => v.theils_u2));
+        const t = document.getElementById('rcTheil');
+        t.textContent = theil.toFixed(3);
+        setTone(t, theil < 0.98 ? 'good' : theil <= 1.0 ? 'warn' : 'bad');
+    }
+
+    // --- per-setup table ---
+    const rows = Object.entries(bySetup).sort((a, b) => b[1].n - a[1].n).map(([name, r]) => {
+        const gap = (r.target1_hit_rate - r.claimed_win_prob) * 100;
+        const tone = rcTone(gap, r.expectancy_usd);
+        const cls = tone === 'good' ? 'text-bull' : tone === 'warn' ? 'text-warning' : 'text-bear';
+        return `<tr class="${name === setupType ? 'is-current' : ''}">
+            <td>${rcTitle(name)}${name === setupType ? ' <span class="text-accent">● live</span>' : ''}</td>
+            <td>${r.n}</td>
+            <td>${rcPct(r.claimed_win_prob, 0)}</td>
+            <td class="${cls}">${rcPct(r.target1_hit_rate)}</td>
+            <td class="reality-gap ${cls}">${gap >= 0 ? '+' : ''}${gap.toFixed(1)} pts</td>
+            <td class="${r.expectancy_usd >= 0 ? 'text-bull' : 'text-bear'}">${r.expectancy_usd >= 0 ? '+' : '−'}$${Math.abs(r.expectancy_usd).toFixed(0)}</td>
+        </tr>`;
+    });
+    document.getElementById('realityTableBody').innerHTML = rows.join('');
+}
+
 // Event Listeners on DOM Load
 document.addEventListener('DOMContentLoaded', () => {
     // Initial fetch
     fetchMarketData(false);
+    loadBacktestMetrics();
 
     // Manual refresh button
     document.getElementById('manualRefreshBtn').addEventListener('click', () => {

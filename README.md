@@ -40,6 +40,11 @@ An advanced institutional quantitative analytics terminal for Crude Oil (`CL` WT
 - VWAP Standard Deviation Bands (±1σ and ±2σ statistical volatility envelopes).
 - Session Liquidity Sweep & Trap Detector (Overnight High / Low stop run detection).
 
+### 6. Backtest Reality Check (new)
+- Shows the live setup's **claimed** win probability next to its **realised** Target-1 rate from the walk-forward backtest, with a verdict (Claim holds / Overstated / Negative edge).
+- Shows overall evidence: sentiment hit rate, Brier skill of "bullish %", playbook profit factor and $/trade, best ML AUC, and ML price-forecast Theil U.
+- Reads `reports/evaluation_results.json` through `/api/metrics`. If no evaluation has been run, the card says how to generate one.
+
 ## Documentation & Accuracy Evaluation
 
 | Document | Contents |

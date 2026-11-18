@@ -190,9 +190,12 @@
                         <span class="section-icon">🎯</span>
                         <h2>QUANTITATIVE TRADE SETUP & TT PLAYBOOK</h2>
                     </div>
-                    <div class="win-prob-chip" id="winProbChip">
-                        <span>EST. WIN PROBABILITY:</span>
+                    <div class="win-prob-chip" id="winProbChip" title="Claimed = hard-coded in engine.py. Backtest = Target-1 hit rate of this setup in the walk-forward simulation.">
+                        <span>CLAIMED WIN:</span>
                         <strong id="winProbVal">--%</strong>
+                        <span class="chip-sep">|</span>
+                        <span>BACKTEST:</span>
+                        <strong id="winProbBacktest" class="text-muted-strong">--%</strong>
                     </div>
                 </div>
 
@@ -354,6 +357,88 @@
 
             </div>
 
+        </section>
+
+        <!-- ROW 2b: BACKTEST REALITY CHECK (walk-forward evaluation, see docs/EVALUATION_METHODOLOGY.md) -->
+        <section class="reality-section">
+            <div class="intel-card reality-card" id="realityCard">
+                <div class="card-top-bar reality-top">
+                    <div class="badge-title">
+                        <span class="section-icon">🧪</span>
+                        <h2>BACKTEST REALITY CHECK</h2>
+                    </div>
+                    <span class="help-hint" id="realityMeta">Loading walk-forward results…</span>
+                </div>
+
+                <div class="reality-empty" id="realityEmpty" hidden>
+                    No backtest results yet. Run <code>python -m evaluation.run_evaluation</code> on the server, then reload.
+                </div>
+
+                <div class="reality-body" id="realityBody" hidden>
+                    <div class="reality-current">
+                        <div class="reality-current-head">
+                            <span class="param-title">CURRENT SETUP IN HISTORY</span>
+                            <span class="reality-verdict" id="realityVerdict">--</span>
+                        </div>
+                        <span class="reality-setup-name" id="realitySetupName">--</span>
+                        <div class="reality-bars">
+                            <div class="reality-bar-row">
+                                <span class="reality-bar-label">Claimed</span>
+                                <div class="reality-track"><div class="reality-fill claimed" id="realityClaimBar"></div></div>
+                                <span class="reality-bar-val" id="realityClaimVal">--</span>
+                            </div>
+                            <div class="reality-bar-row">
+                                <span class="reality-bar-label">Realised</span>
+                                <div class="reality-track"><div class="reality-fill" id="realityRealBar"></div></div>
+                                <span class="reality-bar-val" id="realityRealVal">--</span>
+                            </div>
+                        </div>
+                        <p class="reality-note" id="realityCurrentNote">--</p>
+                    </div>
+
+                    <div class="reality-stats">
+                        <div class="param-box">
+                            <span class="param-title">SENTIMENT HIT RATE (4H)</span>
+                            <span class="param-value" id="rcHit">--</span>
+                            <span class="param-sub" id="rcHitSub">coin flip = 50%</span>
+                        </div>
+                        <div class="param-box">
+                            <span class="param-title">"BULLISH %" BRIER SKILL</span>
+                            <span class="param-value" id="rcBrier">--</span>
+                            <span class="param-sub">&gt; 0 means better than guessing</span>
+                        </div>
+                        <div class="param-box">
+                            <span class="param-title">PLAYBOOK PROFIT FACTOR</span>
+                            <span class="param-value" id="rcPf">--</span>
+                            <span class="param-sub" id="rcPfSub">needs &gt; 1.0</span>
+                        </div>
+                        <div class="param-box">
+                            <span class="param-title">PLAYBOOK $ / TRADE</span>
+                            <span class="param-value" id="rcExp">--</span>
+                            <span class="param-sub" id="rcExpSub">1 CL contract, after costs</span>
+                        </div>
+                        <div class="param-box">
+                            <span class="param-title">BEST ML MODEL AUC (4H)</span>
+                            <span class="param-value" id="rcAuc">--</span>
+                            <span class="param-sub">0.50 = no skill</span>
+                        </div>
+                        <div class="param-box">
+                            <span class="param-title">ML PRICE FORECAST THEIL U</span>
+                            <span class="param-value" id="rcTheil">--</span>
+                            <span class="param-sub">&lt; 1.0 beats "no change"</span>
+                        </div>
+                    </div>
+
+                    <div class="table-scroll-container reality-table-wrap">
+                        <table class="levels-table reality-table">
+                            <thead>
+                                <tr><th>Setup</th><th>Trades</th><th>Claimed</th><th>Realised TP1</th><th>Gap</th><th>$ / trade</th></tr>
+                            </thead>
+                            <tbody id="realityTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- ROW 3: COMPOSITE QUANT SENTIMENT & AUCTION LEVELS -->
