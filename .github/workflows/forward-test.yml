@@ -1,0 +1,59 @@
+# Hourly forward-test logger.
+# Records every completed WTI hourly bar BEFORE its outcome exists and commits the log to the
+# `forward-test-log` branch, so the commit timestamps prove no prediction was edited afterwards.
+# Note: GitHub only runs scheduled workflows from the repository's DEFAULT branch.
+name: Forward test logger
+
+on:
+  schedule:
+    - cron: '17 * * * 0-5'   # minute 17 of every hour, Sunday–Friday (CME crude is shut on Saturday)
+  workflow_dispatch: {}       # "Run workflow" button for a manual run
+
+permissions:
+  contents: write
+
+concurrency:
+  group: forward-test
+  cancel-in-progress: false
+
+jobs:
+  log:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-eval.txt
+
+      - name: Check out the log branch into ./ftlog
+        run: |
+          if git ls-remote --exit-code --heads origin forward-test-log; then
+            git fetch origin forward-test-log:forward-test-log
+            git worktree add ftlog forward-test-log
+          else
+            git worktree add --detach ftlog
+            git -C ftlog switch --orphan forward-test-log
+          fi
+
+      - name: Record new bars and score
+        run: python -m evaluation.forward_test run --log-dir ftlog
+
+      - name: Commit log
+        if: always()
+        run: |
+          cd ftlog
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+          else
+            git commit -m "forward test: $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push origin forward-test-log
+          fi

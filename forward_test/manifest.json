@@ -1,0 +1,133 @@
+{
+  "frozen_at_utc": "2026-11-18 08:05:26",
+  "start_utc": "2026-11-18 09:00",
+  "planned_end_utc": "2027-02-17 09:00",
+  "horizon_bars": 4,
+  "training_data": [
+    "2024-07-09 06:00:00+00:00",
+    "2026-11-18 07:00:00+00:00"
+  ],
+  "training_rows": 13432,
+  "frozen_climatology_p_up_4h": 0.5129,
+  "direction_model": {
+    "file": "models/direction_gb_h4.joblib",
+    "sha256": "e7276438e19914f14ef8379072373c362c3ba7a105c70d535fc93b4e237ba058",
+    "features": [
+      "sent_score",
+      "mtf_score",
+      "tf15_score",
+      "tf1h_score",
+      "tfD_score",
+      "rsi_15m",
+      "rsi_1h",
+      "ovx",
+      "crack",
+      "dxy_chg",
+      "es_chg",
+      "gold_oil",
+      "brent_spread",
+      "pillar_mtf_alignment",
+      "pillar_order_flow_vwap",
+      "pillar_crack_margin",
+      "pillar_brent_spread",
+      "pillar_usd_impact",
+      "pillar_equity_risk_on",
+      "dist_vwap_atr",
+      "dist_ema20_atr",
+      "ema20_50_atr",
+      "dist_poc_atr",
+      "atr_pct",
+      "swept_high",
+      "swept_low",
+      "past_ret_1",
+      "past_ret_4",
+      "past_ret_24",
+      "hour_sin",
+      "hour_cos"
+    ],
+    "confidence_rule": {
+      "type": "rolling_quantile",
+      "window_bars": 500,
+      "quantile": 0.7
+    },
+    "confidence_threshold_fixed_secondary": 0.1402,
+    "in_sample_coverage_at_fixed_threshold": 0.05
+  },
+  "meta_model": {
+    "file": "models/meta_label_gb.joblib",
+    "sha256": "8681d8a2b7e1caa66be15dba50eaeb03c0563840aab4d4b81e1f1657612110f7",
+    "features": [
+      "sent_score",
+      "mtf_score",
+      "tf15_score",
+      "tf1h_score",
+      "tfD_score",
+      "rsi_15m",
+      "rsi_1h",
+      "ovx",
+      "crack",
+      "dxy_chg",
+      "es_chg",
+      "gold_oil",
+      "brent_spread",
+      "pillar_mtf_alignment",
+      "pillar_order_flow_vwap",
+      "pillar_crack_margin",
+      "pillar_brent_spread",
+      "pillar_usd_impact",
+      "pillar_equity_risk_on",
+      "dist_vwap_atr",
+      "dist_ema20_atr",
+      "ema20_50_atr",
+      "dist_poc_atr",
+      "atr_pct",
+      "swept_high",
+      "swept_low",
+      "past_ret_1",
+      "past_ret_4",
+      "past_ret_24",
+      "hour_sin",
+      "hour_cos",
+      "past_ret_120",
+      "past_ret_480",
+      "z_crack",
+      "z_brent_spread",
+      "z_ovx",
+      "z_dxy_chg",
+      "z_es_chg",
+      "z_gold_oil",
+      "z_dist_vwap",
+      "setup_BEARISH TREN",
+      "setup_BULLISH TREN",
+      "setup_COUNTER-TREN",
+      "setup_EXHAUSTION B",
+      "setup_VALUE AREA R"
+    ],
+    "take_threshold": 0.5,
+    "stop_atr": 1.5,
+    "target_r": 1.5
+  },
+  "calibration": {
+    "file": "reports/engine_calibration.json",
+    "sha256": "6e7293d1680b34cfe61efda52e043d0da677ed9f2a2d09f4db06e4b257699f8e"
+  },
+  "success_criteria": {
+    "B_calibration": "PASS if Brier skill vs frozen climatology >= -0.005 (the probability is at least as good as knowing the base rate)",
+    "C_confident_ml": "Primary = rolling rule. CONFIRMED if hit rate > 50% AND Pesaran-Timmermann p < 0.05 on non-overlapping calls; REJECTED if hit rate <= 50%; otherwise INCONCLUSIVE. C_fixed is reported with the same criteria as a secondary result.",
+    "D_improved_playbook": "BETTER if profit factor > engine-playbook profit factor AND mean $/trade > engine mean $/trade; PROFITABLE only if additionally mean $/trade > 0 with one-sided t-test p < 0.05",
+    "A_engine": "Reference only (expected ~50% hit rate based on the backtest)"
+  },
+  "amendment_before_start": "The lockbox experiment used a fixed confidence threshold (0.1402). The final model trained on all data is less confident (its 70th-percentile confidence is ~0.065 live vs 0.140 in DEV), so the fixed threshold would call ~5% of hours. The primary rule was therefore changed, before any forward data was logged, to the top 30% relative to the model's own previous 500 hourly confidences. Walk-forward backtest of this rule: DEV 55.2% hit (PT p 0.008, coverage 23.6%), LOCKBOX 54.2% (PT p 0.34, coverage 29.4%). Because its lockbox result was seen while designing the fix, the forward test is its first clean evaluation.",
+  "power_note": {
+    "bars_expected": 1495,
+    "confident_calls_expected": [
+      358,
+      448
+    ],
+    "nonoverlap_calls_expected": [
+      89,
+      112
+    ],
+    "calls_needed_to_detect_54.5pct_at_80pct_power": 764
+  }
+}

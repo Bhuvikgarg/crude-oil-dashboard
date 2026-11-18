@@ -54,6 +54,7 @@ An advanced institutional quantitative analytics terminal for Crude Oil (`CL` WT
 | [`reports/EVALUATION_RESULTS.md`](reports/EVALUATION_RESULTS.md) | Auto-generated backtest tables (13,436 hourly decisions, Jul 2024 → Nov 2026) |
 | [`reports/predictions_vs_actual.csv`](reports/predictions_vs_actual.csv) | Every hourly call mapped to the realised price |
 | [`reports/IMPROVEMENT_EXPERIMENTS.md`](reports/IMPROVEMENT_EXPERIMENTS.md) | 38 improvement variants, tuned on Jul 2024–Mar 2026, tested once on Apr–Nov 2026 |
+| [`docs/FORWARD_TEST.md`](docs/FORWARD_TEST.md) | Live, pre-registered 91-day forward test logged hourly by GitHub Actions to the `forward-test-log` branch |
 | [`docs/REFERENCES.md`](docs/REFERENCES.md) | 41 research papers / books behind the indicators, ML models and metrics |
 | [`docs/learning_report.html`](docs/learning_report.html) | Interactive learning report (open in a browser) |
 

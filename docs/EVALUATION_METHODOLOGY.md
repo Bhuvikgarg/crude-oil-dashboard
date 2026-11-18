@@ -122,8 +122,8 @@ variants are listed in the report so the multiple-testing risk is visible.
 3. *Calibration is the only change that is both reliable and honest*, so it is the only one deployed.
    The dashboard now shows `CALIBRATED P(UP, NEXT 4H)`, which stays between about 50 % and 52.5 %.
    That narrow range is the honest answer.
-4. The confidence-filtered model and the combined playbook are **candidates for a forward test**:
-   log their live calls for 3 months, then score them with the same harness.
+4. The confidence-filtered model and the combined playbook are now in a **pre-registered forward test**
+   (`docs/FORWARD_TEST.md`), logged hourly to the `forward-test-log` branch.
 
 ## 8. Limitations
 

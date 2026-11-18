@@ -34,7 +34,7 @@ def _trade_date(ts_utc):
     return (ts_utc.tz_convert('America/New_York') + pd.Timedelta(hours=6)).date()
 
 
-def replay(hist, lookback_1h=300, warmup=120, step=1, max_bars=None):
+def replay(hist, lookback_1h=300, warmup=120, step=1, max_bars=None, force_15m_proxy=False):
     eng = AdvancedOilEngine()
     macro, cl_15m, cl_daily = hist['macro_1h'], hist['cl_15m'], hist['cl_daily']
     cl = _cl_frame(macro)
@@ -51,7 +51,7 @@ def replay(hist, lookback_1h=300, warmup=120, step=1, max_bars=None):
         t_close = t_start + ONE_HOUR
         macro_slice = macro.loc[:t_start].iloc[-lookback_1h:]
 
-        if t_close >= real_15m_from:
+        if t_close >= real_15m_from and not force_15m_proxy:
             s15 = cl_15m[cl_15m.index < t_close].iloc[-300:]
             tf15_real = True
         else:
@@ -74,6 +74,7 @@ def replay(hist, lookback_1h=300, warmup=120, step=1, max_bars=None):
         rec = {
             'bar_index': i, 'time': t_close, 'price': w['price'], 'tf15_real': tf15_real,
             'sent_score': s['score'], 'sent_bull_pct': s['bullish_pct'], 'sent_badge': s['badge'],
+            'sent_cal_p': s.get('calibrated_p_up_4h'),
             'mtf_score': snap['mtf_confluence']['overall_score'],
             'tf15_score': tfs[0]['score'], 'tf1h_score': tfs[1]['score'], 'tfD_score': tfs[2]['score'],
             'rsi_15m': tfs[0]['rsi'], 'rsi_1h': w['rsi'], 'atr': w['atr'],
