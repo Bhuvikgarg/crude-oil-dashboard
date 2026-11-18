@@ -36,6 +36,19 @@ def main():
             'strategy': r['strategy'], 'sweeps': r['sweeps'], 'ml': ml,
             'coef': r['ml']['logit_standardised_coefficients_h4'],
             'series': [{'t': s['time'][:16], 'p': s['price'], 's': s['sent_score']} for s in series]}
+    imp_path = os.path.join(ROOT, 'reports', 'improvement_results.json')
+    if os.path.exists(imp_path):
+        im = json.load(open(imp_path))
+        g = im['trades']['T4_geometry_grid']
+        data['improve'] = {
+            'protocol': im['protocol'], 'n_variants': im['n_variants'], 'chosen_geom': g['chosen_on_dev'],
+            'grid': {k: {'dev': v['dev'], 'lock': v['lockbox']} for k, v in g['grid'].items()},
+            'trades': {k: {'dev': im['trades'][k]['dev'], 'lock': im['trades'][k]['lockbox']}
+                       for k in ('T0_engine_as_is', 'T1_drop_range_rotation', 'T5_meta_labeling', 'T6_geometry_plus_meta')},
+            'conf4': im['direction']['h4']['E_best_dev_model_top30pct_confident'],
+            'base4': im['direction']['h4']['A_engine_sentiment'],
+            'calib4': im['calibration']['h4'],
+        }
     tpl = open(os.path.join(ROOT, 'evaluation', 'learning_report_template.html')).read()
     out = tpl.replace('/*__DATA__*/null', json.dumps(data, separators=(',', ':')))
     open(os.path.join(ROOT, 'docs', 'learning_report.html'), 'w').write(out)

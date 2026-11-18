@@ -93,7 +93,39 @@ time ─────────────────────────
 | Add **Diebold–Mariano** and White's Reality Check | Formal model comparison and data-snooping control | p-values |
 | Forward test: log live signals daily for 3 months | Truly out-of-sample | Same metrics |
 
-## 7. Limitations
+## 7. Improvement experiment (lockbox protocol)
+
+Run with `python -m evaluation.improve` → `reports/IMPROVEMENT_EXPERIMENTS.md`.
+
+**Protocol.** All choices (feature sets, model, confidence threshold, stop/target geometry,
+meta-label threshold) were made on the DEV period (Jul 2024 → Mar 2026). Each finalist was then
+scored once on the LOCKBOX (Apr → Nov 2026). Predictions are walk-forward in both periods. All 38
+variants are listed in the report so the multiple-testing risk is visible.
+
+| Idea | DEV | LOCKBOX | Verdict |
+|---|---|---|---|
+| Learned weights (logistic / gradient boosting on engine features) | AUC 0.50–0.52 | AUC 0.51–0.52 | No robust gain |
+| Rolling z-scored pillars + time-series momentum | AUC 0.49–0.50 | AUC 0.52–0.53 | Fails DEV, so treated as noise |
+| Best DEV model, only its 30 % most confident calls (4h) | 54.4 % hit, PT p 0.02 | 54.7 % hit, PT p 0.004, coverage 10 % | **Promising, unproven.** Needs a forward test |
+| Same idea at 24h | 52.6 %, PT p 0.66 | 49.6 % | Fails |
+| Platt calibration of "bullish %" | Brier skill −0.074 → −0.001, ECE 0.115 → 0.007 | −0.097 → −0.001, ECE 0.120 → 0.010 | **Reliable fix. Deployed.** |
+| Drop the value-area rotation setup | PF 0.735 → 0.761 | PF 1.017 → 1.132 | Consistent improvement |
+| Wider stop (1.5 ATR, 1.5 R target), chosen on DEV | PF 0.735 → 0.852 | PF 1.017 → 1.083 | Consistent improvement |
+| Meta-labeling (ML filter on engine setups), label AUC 0.59 / 0.60 | PF 0.735 → 0.809 | PF 1.017 → 1.078 | Consistent improvement |
+| Geometry + meta-labeling combined | −$65 → −$6 per trade, PF 0.98 | +$7 → +$98 per trade, PF 1.13 (p = 0.21) | Best candidate, **not statistically profitable** |
+
+**What this means.**
+1. *Win rate is not the goal.* The geometry grid shows win rates from 23 % to 66 % with profit
+   factor moving the other way. A close target raises the win rate and loses money.
+2. *The lockbox months suited the strategy.* The unchanged engine went from PF 0.74 (DEV) to 1.02
+   (LOCKBOX). Every variant is therefore judged against the baseline in the same period.
+3. *Calibration is the only change that is both reliable and honest*, so it is the only one deployed.
+   The dashboard now shows `CALIBRATED P(UP, NEXT 4H)`, which stays between about 50 % and 52.5 %.
+   That narrow range is the honest answer.
+4. The confidence-filtered model and the combined playbook are **candidates for a forward test**:
+   log their live calls for 3 months, then score them with the same harness.
+
+## 8. Limitations
 
 * Yahoo continuous futures include **roll gaps**; no back-adjustment is applied.
 * 1h bars hide the intra-bar order of high and low, hence the conservative same-bar rule.

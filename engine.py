@@ -13,6 +13,18 @@ class AdvancedOilEngine:
         self.cached_data = None
         self.last_fetch_time = 0
         self.min_cache_seconds = 45 # cache for 45 seconds to keep it fresh yet rate-limit safe
+        self.calibration = self._load_calibration()
+
+    @staticmethod
+    def _load_calibration():
+        """Platt calibration of the sentiment score, produced by `python -m evaluation.improve`."""
+        import json, os
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reports', 'engine_calibration.json')
+        try:
+            with open(path) as f:
+                return json.load(f)
+        except (OSError, ValueError):
+            return None
 
     def fetch_market_basket(self):
         """Fetch 1h and 15m data for WTI, Brent, DXY, Gasoline, Heating Oil, Gold, OVX, S&P, XLE"""
@@ -413,9 +425,17 @@ class AdvancedOilEngine:
             badge = "neutral"
             summary = "No clear directional edge. Market is oscillating in a fair-value auction range."
 
+        # Calibrated probability: maps the composite onto how often price actually rose 4h later
+        # in the walk-forward backtest (Platt scaling). None if no calibration file exists.
+        calibrated = None
+        if self.calibration:
+            z = self.calibration['coef'] * composite + self.calibration['intercept']
+            calibrated = round(100.0 / (1.0 + math.exp(-z)), 1)
+
         return {
             "score": composite,
             "bullish_pct": bullish_pct,
+            "calibrated_p_up_4h": calibrated,
             "bearish_pct": round(100 - bullish_pct, 1),
             "label": label,
             "color": color,

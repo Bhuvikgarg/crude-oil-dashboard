@@ -114,7 +114,7 @@ def attach_outcomes(sig, cl, horizons=(1, 4, 24)):
     return out
 
 
-def simulate_trades(sig, cl, fill_window=6, max_hold=24, cost_per_rt=0.02, contract_mult=1000):
+def simulate_trades(sig, cl, fill_window=6, max_hold=24, cost_per_rt=0.02, contract_mult=1000, overlapping=False):
     """
     Path-dependent simulation of the TT Playbook setups on 1h bars.
 
@@ -124,12 +124,13 @@ def simulate_trades(sig, cl, fill_window=6, max_hold=24, cost_per_rt=0.02, contr
     * After fill: stop / target1 checked on each bar's Low/High. If both are touched in
       the same bar we assume the STOP hit first (conservative). Exit at close after max_hold bars.
     * One position at a time (non-overlapping) so trades are not double counted.
+      overlapping=True simulates every signal independently (used to build ML labels).
     * cost_per_rt: round-turn friction in price units (0.02 = 2 ticks = $20 per CL contract).
     """
     o, h, l, c = (cl[k].to_numpy() for k in ['Open', 'High', 'Low', 'Close'])
     trades, next_free = [], -1
     for i, r in sig.iterrows():
-        if i <= next_free:
+        if i <= next_free and not overlapping:
             continue
         side = 'SHORT' if r.setup_bias == 'SHORT' else 'LONG'
         entry = r.entry_min if side == 'SHORT' else r.entry_max

@@ -184,6 +184,11 @@ function updateUI(d) {
     const ts = d.trade_setup;
     document.getElementById('winProbVal').textContent = `${ts.win_probability}%`;
     renderRealityCheck(ts.setup_type);
+
+    // Calibrated probability (honest version of "bullish %")
+    const cal = d.sentiment.calibrated_p_up_4h;
+    document.getElementById('calibratedLine').hidden = (cal === null || cal === undefined);
+    if (cal !== null && cal !== undefined) document.getElementById('calibratedVal').textContent = `${cal.toFixed(1)}%`;
     document.getElementById('setupTypeLabel').textContent = ts.setup_type;
     document.getElementById('setupActionTitle').textContent = ts.action.toUpperCase();
 

@@ -1185,3 +1185,10 @@ select:focus {
 .reality-table td.text-bear { color: var(--bear-red); }
 .reality-table td.text-warning { color: var(--warn-amber); }
 .reality-body[hidden], .reality-empty[hidden] { display: none !important; }
+.calibrated-line {
+    margin-top: 8px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px;
+    font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted);
+}
+.calibrated-line strong { color: var(--warn-amber); font-size: 0.85rem; }
+.calibrated-line[hidden] { display: none !important; }
+.calibrated-hint { font-family: var(--font-sans); font-style: italic; }

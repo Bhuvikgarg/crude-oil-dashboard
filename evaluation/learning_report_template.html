@@ -201,21 +201,38 @@ ol.refs{padding-left:20px;display:grid;gap:6px;font-size:.92rem}
   <p class="note">VWAP bands are a bit too narrow because oil returns have fat tails. The Value Area describes where volume traded over the last 24 hours. It is not a forecast of where price will be, and the numbers show that.</p></div>
 </section>
 
+<section class="stack" id="improveSec">
+  <span class="eyebrow">9 · Can it be improved?</span>
+  <h2>Tuned on one period, tested once on another</h2>
+  <p class="prose" id="improveIntro">Every idea was tuned on the development period and scored once on a later "lockbox" period the tuning never saw. A result counts only if it holds in both.</p>
+  <div class="bench">
+    <h3>Win rate is not profit</h3>
+    <p class="note">Each dot is one stop/target combination: 3 stop widths × 4 target distances. Moving the target closer pushes the win rate up, but the profit factor (vertical axis) does not follow. Hollow dots are the development period, filled dots the lockbox. The ringed dot is the combination chosen on development data. Hover a dot for its numbers.</p>
+    <div class="row"><div class="tabs" role="group" aria-label="Period" id="geoTabs"></div></div>
+    <div class="scroll"><svg id="geoChart" viewBox="0 0 960 320" width="100%" role="img" aria-label="Win rate versus profit factor for stop and target combinations"></svg></div>
+  </div>
+  <div class="bench">
+    <h3>What held up</h3>
+    <div class="scroll"><table id="improveTable"></table></div>
+    <p class="note">Profit factor above 1.0 means winners outweighed losers. The lockbox months suited the strategy, so even the unchanged engine looks better there. Compare each row with the baseline in the same column.</p>
+  </div>
+</section>
+
 <section class="stack quiz">
-  <span class="eyebrow">9 · Check yourself</span>
+  <span class="eyebrow">10 · Check yourself</span>
   <h2>Six questions a sharp examiner might ask</h2>
   <div id="quiz" class="stack"></div>
   <p class="note" id="quizScore"></p>
 </section>
 
 <section class="stack">
-  <span class="eyebrow">10 · Viva preparation</span>
+  <span class="eyebrow">11 · Viva preparation</span>
   <h2>Questions and short answers</h2>
   <div id="viva"></div>
 </section>
 
 <section class="stack">
-  <span class="eyebrow">11 · Read these first</span>
+  <span class="eyebrow">12 · Read these first</span>
   <h2>Core references</h2>
   <ol class="refs">
     <li>Wilder, J. W. (1978). <em>New Concepts in Technical Trading Systems.</em> Origin of RSI and ATR.</li>
@@ -379,6 +396,7 @@ const Q=[
  ['Why not use ordinary K-fold cross-validation for the ML models?',['It leaks future information into training','It is too slow','scikit-learn does not support it'],0,'Random folds put future bars in the training set. Walk-forward with a purge gap only trains on the past.'],
  ['A price model has MAPE 0.38% at 1 hour. Is that impressive?',['Yes, under 1% is excellent','Only if Theil U2 < 1','MAPE is the best metric for this'],1,'"Price stays the same" also gets about 0.38%. U2 = 1.004 means the model did no better than that.'],
  ['The sentiment long/short strategy returned +17% vs +2% buy-and-hold. What should you report?',['That the strategy works','That it is not statistically distinguishable from luck (t ≈ 0.6)','Nothing'],1,'A Sharpe of 0.37 over ~2.4 years gives t ≈ 0.57. Report it with that caveat.'],
+ ['Moving the target from 1.5R to 0.5R raises the win rate from 35% to 55%. Is the strategy better?',['Yes, it wins more often','Not necessarily: profit factor fell from 0.85 to 0.73','Win rate and profit always move together'],1,'Small wins and full-size losses can lose money at a high win rate. Judge by expectancy or profit factor.'],
  ['Low-OVX hours show a 57.5% hit rate with p = 0.04. Is that a finding?',['Yes, p < 0.05','A hypothesis: 3 regimes were tested, so the Bonferroni-adjusted p ≈ 0.12','No, ignore it'],1,'After testing several slices, a single p = 0.04 is expected by chance. Test it forward on new data before trusting it.']];
 let score=0,answered=0;
 $('quiz').innerHTML=Q.map(([q,o],i)=>`<div class="q"><strong>${i+1}. ${q}</strong><div class="opts">${o.map((t,j)=>`<button data-q="${i}" data-o="${j}">${t}</button>`).join('')}</div><div class="fb" id="fb${i}" aria-live="polite"></div></div>`).join('');
@@ -394,10 +412,50 @@ const V=[
  ['Your accuracy is about 50%. Is the project a failure?','No. It matches the literature: the no-change forecast is very hard to beat for oil (Alquist, Kilian & Vigfusson 2013), and technical-rule profits in commodity futures vanish after data-snooping control (Marshall et al. 2008). The contribution is a rigorous evaluation framework that found specific, fixable problems.'],
  ['Why compare to baselines instead of 50%?','Oil rose in about 51–52% of windows. A model that always says up beats 50% with no skill, so a model has to beat the baselines and pass a test that accounts for base rates.'],
  ['What would you improve next?','Replace the hard-coded win probabilities with empirical or calibrated ones. Turn fixed thresholds ($26 crack, $5 spread) into rolling z-scores. Drop the value-area rotation setup, which hit its target only 20% of the time. Fit pillar weights with regularised logistic regression inside the walk-forward loop. Run a 3-month forward test.'],
+ ['Did you try to improve the accuracy?','Yes, with a lockbox protocol: 38 variants tuned on Jul 2024–Mar 2026, then each finalist tested once on Apr–Nov 2026. Calibrating the probabilities was a reliable fix and is deployed. A confidence-filtered ML model reached about 54.5% in both periods on 10–30% of hours, which is promising but needs a forward test. Wider stops plus an ML trade filter improved the playbook in both periods but is not yet statistically profitable.'],
  ['What are the limitations?','Yahoo continuous futures have roll gaps. 1h bars hide the order of high and low within a bar (handled conservatively). Real 15-minute data covers only the last 60 days. The sample is one 2.4-year macro regime.']];
 $('viva').innerHTML=V.map(([q,a])=>`<details><summary>${q}</summary><p>${a}</p></details>`).join('');
 
-function drawAll(){drawPrice();drawLeak();drawHits();drawTrades();drawML();drawTheil();drawCoef()}
+
+/* ---------- improvement experiment ---------- */
+let GP='dev';
+function drawImprove(){
+  const I=D.improve; if(!I){$('improveSec').hidden=true;return}
+  $('improveIntro').textContent=`Every idea was tuned on ${I.protocol.dev_range[0].slice(0,10)} → ${I.protocol.dev_range[1].slice(0,10)} and scored once on the lockbox, ${I.protocol.lockbox_range[0].slice(0,10)} → ${I.protocol.lockbox_range[1].slice(0,10)}, which the tuning never saw. ${I.n_variants} variants were tried in total. A result counts only if it holds in both periods.`;
+  $('geoTabs').innerHTML=[['dev','Development'],['lock','Lockbox'],['both','Both']].map(([k,n])=>`<button aria-pressed="${k==GP}" data-k="${k}">${n}</button>`).join('');
+  $('geoTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{GP=b.dataset.k;drawImprove()});
+  const svg=$('geoChart');svg.innerHTML='';const W=960,L=60,R=30,TOP=14,PH=250,x=v=>L+(v-.2)/(.5)*(W-L-R),y=v=>TOP+(1.25-v)/(0.85)*PH;
+  for(let v=.2;v<=.7001;v+=.1){svg.append(el('line',{x1:x(v),x2:x(v),y1:TOP,y2:TOP+PH,stroke:css('--line')}));svg.append(el('text',{x:x(v),y:TOP+PH+16,'text-anchor':'middle'},(v*100).toFixed(0)+'%'))}
+  for(let v=.4;v<=1.2501;v+=.2){svg.append(el('line',{x1:L,x2:W-R,y1:y(v),y2:y(v),stroke:css('--line')}));svg.append(el('text',{x:L-6,y:y(v)+4,'text-anchor':'end'},v.toFixed(1)))}
+  svg.append(el('line',{x1:L,x2:W-R,y1:y(1),y2:y(1),stroke:css('--ink'),'stroke-dasharray':'4 3'}));
+  svg.append(el('text',{x:W-R,y:y(1)-5,'text-anchor':'end'},'break-even (profit factor 1.0)'));
+  svg.append(el('text',{x:L+(W-L-R)/2,y:TOP+PH+34,'text-anchor':'middle'},'win rate →'));
+  svg.append(el('text',{x:14,y:TOP+PH/2,'text-anchor':'middle',transform:`rotate(-90 14 ${TOP+PH/2})`},'profit factor'));
+  const per=GP=='both'?['dev','lock']:[GP];
+  Object.entries(I.grid).forEach(([k,v])=>per.forEach(pp=>{const d=v[pp];if(!d.win_rate)return;
+    const cx=x(Math.max(.2,Math.min(.7,d.win_rate))),cy=y(Math.max(.4,Math.min(1.25,d.profit_factor)));
+    const tr=+k.match(/target([\d.]+)R/)[1];const col=tr<=0.5?css('--bad'):tr<=1?css('--warn'):css('--accent');
+    svg.append(el('circle',{cx,cy,r:7,fill:pp=='lock'?col:css('--surface'),stroke:col,'stroke-width':2}));
+    if(k==I.chosen_geom)svg.append(el('circle',{cx,cy,r:12,fill:'none',stroke:css('--ink'),'stroke-width':1.5}));
+    const nm=k.replace('stop','stop ').replace('ATR_target','×ATR, target ');
+    const dots=svg.querySelectorAll('circle[stroke-width="2"]');
+    dots[dots.length-1].append(el('title',{},`${nm} (${pp=='lock'?'lockbox':'development'}): win ${pct(d.win_rate)}, profit factor ${d.profit_factor.toFixed(2)}, ${d.n} trades`));
+    if(pp==per[per.length-1]&&(k==I.chosen_geom||(tr<=0.5&&k.startsWith('stop1.5')))){const right=cx>W-260;
+      svg.append(el('text',{x:right?cx-14:cx+14,y:k==I.chosen_geom?cy-12:cy+26,'text-anchor':right?'end':'start',style:'fill:'+css('--ink')},(k==I.chosen_geom?'chosen on dev: ':'high win rate: ')+nm))}}));
+  [['--bad','● target 0.5R',L+8],['--warn','● target 1R',L+120],['--accent','● target 1.5–2R',L+222]].forEach(([c,t,xx])=>svg.append(el('text',{x:xx,y:TOP+14,style:'fill:'+css(c)},t)));
+  const t=I.trades,c4=I.conf4,b4=I.base4,cal=I.calib4;
+  const usd=v=>(v<0?'−':'+')+'$'+Math.abs(v).toFixed(0)+'/trade';
+  const tr=(n,k,verdict,c)=>`<tr><td>${n}</td><td>${pct(t[k].dev.win_rate)} win · PF ${num(t[k].dev.profit_factor,2)} · ${usd(t[k].dev.usd_per_trade)}</td><td>${pct(t[k].lock.win_rate)} win · PF ${num(t[k].lock.profit_factor,2)} · ${usd(t[k].lock.usd_per_trade)}</td><td><span class="pill ${c}">${verdict}</span></td></tr>`;
+  $('improveTable').innerHTML='<tr><th>Idea</th><th>Development</th><th>Lockbox</th><th>Verdict</th></tr>'+
+   `<tr><td>Calibrate "bullish %" (Platt scaling)</td><td>Brier skill ${num(cal.engine_bullish_pct.dev.brier_skill_score,3)} → ${num(cal.platt_calibrated_sentiment.dev.brier_skill_score,3)}</td><td>${num(cal.engine_bullish_pct.lockbox.brier_skill_score,3)} → ${num(cal.platt_calibrated_sentiment.lockbox.brier_skill_score,3)}</td><td><span class="pill good">deployed</span></td></tr>`+
+   `<tr><td>Direction (4h): engine sentiment</td><td>${pct(b4.dev.hit_rate)} hit</td><td>${pct(b4.lockbox.hit_rate)} hit</td><td><span class="pill neutral">baseline</span></td></tr>`+
+   `<tr><td>Direction (4h): ML, 30% most confident calls only</td><td>${pct(c4.dev.hit_rate)} · PT p ${num(c4.dev.pesaran_timmermann_p,3)}</td><td>${pct(c4.lockbox.hit_rate)} · PT p ${num(c4.lockbox.pesaran_timmermann_p,3)} · ${pct(c4.lockbox.coverage,0)} of hours</td><td><span class="pill warn">promising</span></td></tr>`+
+   tr('Playbook: engine as-is','T0_engine_as_is','baseline','neutral')+
+   tr('Playbook: drop value-area rotation','T1_drop_range_rotation','better in both','warn')+
+   tr('Playbook: ML filter on setups (meta-labeling)','T5_meta_labeling','better in both','warn')+
+   tr('Playbook: wider stop + ML filter','T6_geometry_plus_meta','best, p = 0.21','warn');
+}
+function drawAll(){drawImprove();drawPrice();drawLeak();drawHits();drawTrades();drawML();drawTheil();drawCoef()}
 drawAll();
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawAll);
 new MutationObserver(drawAll).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
