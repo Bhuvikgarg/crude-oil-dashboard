@@ -1,4 +1,5 @@
 import os
+import json
 import time
 import threading
 import logging
@@ -46,6 +47,15 @@ def trigger_refresh():
     except Exception as e:
         logging.error(f"API Error in trigger_refresh: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/metrics')
+def get_metrics():
+    """Serve the latest offline backtest summary (run `python -m evaluation.run_evaluation`)."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reports', 'evaluation_results.json')
+    if not os.path.exists(path):
+        return jsonify({"success": False, "error": "No evaluation yet. Run: python -m evaluation.run_evaluation"}), 404
+    with open(path) as f:
+        return jsonify({"success": True, "data": json.load(f)})
 
 @app.route('/api/health')
 def health():

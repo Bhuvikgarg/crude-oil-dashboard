@@ -1,0 +1,404 @@
+<title>PetroSync Field Notes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (~68ch) with full-width "lab bench" panels for interactive figures */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --ink:#15201f; --muted:#5b6b69; --line:#d6dedc;
+  --accent:#0f6b6e; --accent-soft:#d7ecec; --crude:#3b2f2a;
+  --good:#1f7a3f; --warn:#b26a00; --bad:#b4232c; --neutral:#7a8a88;
+  --display:'Archivo','Helvetica Neue',Arial,sans-serif;
+  --body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1514; --surface:#172120; --ink:#e4ecea; --muted:#93a5a2; --line:#2a3836;
+  --accent:#4fb8b9; --accent-soft:#183a3a; --crude:#d9c3b4;
+  --good:#5cc47f; --warn:#e2a23b; --bad:#ef6a70; --neutral:#7f918e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1514; --surface:#172120; --ink:#e4ecea; --muted:#93a5a2; --line:#2a3836;
+  --accent:#4fb8b9; --accent-soft:#183a3a; --crude:#d9c3b4;
+  --good:#5cc47f; --warn:#e2a23b; --bad:#ef6a70; --neutral:#7f918e; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:56px}
+.prose{max-width:68ch}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.6rem;font-weight:700}
+h3{font-size:1.05rem;font-weight:700}
+p{margin:0}
+.stack{display:grid;gap:14px}
+.eyebrow{font:500 .75rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.lede{font-size:1.15rem;color:var(--muted);max-width:60ch}
+.mono,code{font-family:var(--mono);font-size:.9em}
+code{background:var(--accent-soft);padding:1px 5px;border-radius:4px}
+.bench{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;display:grid;gap:16px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.kpi{border-left:3px solid var(--line);padding:4px 0 4px 12px}
+.kpi b{display:block;font:700 1.7rem/1.1 var(--display);font-variant-numeric:tabular-nums}
+.kpi span{font-size:.85rem;color:var(--muted)}
+.kpi.bad{border-color:var(--bad)} .kpi.warn{border-color:var(--warn)} .kpi.good{border-color:var(--good)}
+.tabs{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.tabs button{font:500 .85rem var(--mono);background:transparent;color:var(--ink);border:0;padding:8px 14px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{font:600 .9rem var(--body);border:1px solid var(--accent);background:transparent;color:var(--accent);padding:8px 14px;border-radius:8px;cursor:pointer}
+.btn.on{background:var(--accent);color:var(--surface)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font:500 .72rem var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.pill{display:inline-block;font:500 .72rem var(--mono);padding:2px 8px;border-radius:99px;border:1px solid currentColor}
+.pill.good{color:var(--good)} .pill.bad{color:var(--bad)} .pill.warn{color:var(--warn)} .pill.neutral{color:var(--neutral)}
+svg text{fill:var(--muted);font-family:var(--mono);font-size:11px}
+.sliders{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px 24px}
+.sl label{display:flex;justify-content:space-between;font-size:.85rem}
+.sl label span{font-family:var(--mono);color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.gauge{height:14px;border-radius:99px;background:linear-gradient(90deg,var(--bad),var(--neutral) 50%,var(--good));position:relative}
+.gauge i{position:absolute;top:-5px;width:4px;height:24px;background:var(--ink);border-radius:2px;transform:translateX(-2px);transition:left .2s}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.flow div{flex:1 1 150px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface);font-size:.88rem;min-width:0}
+.flow div b{display:block;font-family:var(--display);font-size:.95rem}
+.flow .eval{border-style:dashed;border-color:var(--accent)}
+.note{font-size:.88rem;color:var(--muted)}
+.callout{border-left:3px solid var(--accent);padding:6px 0 6px 14px}
+.quiz .q{border-top:1px solid var(--line);padding-top:14px;display:grid;gap:8px}
+.quiz .opts{display:flex;flex-wrap:wrap;gap:8px}
+.quiz .opts button{font:500 .88rem var(--body);background:transparent;border:1px solid var(--line);color:var(--ink);padding:7px 12px;border-radius:8px;cursor:pointer;text-align:left}
+.quiz .opts button.right{border-color:var(--good);color:var(--good)}
+.quiz .opts button.wrong{border-color:var(--bad);color:var(--bad)}
+.quiz .fb{font-size:.88rem;color:var(--muted)}
+details{border-top:1px solid var(--line);padding:12px 0}
+summary{cursor:pointer;font-weight:600}
+details p{margin-top:8px;color:var(--muted);max-width:70ch}
+ol.refs{padding-left:20px;display:grid;gap:6px;font-size:.92rem}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="stack">
+  <span class="eyebrow">Learning report · PetroSync Pro crude-oil terminal</span>
+  <h1>13,436 hourly calls, replayed without peeking</h1>
+  <p class="lede" id="lede">What the project is built from, how its accuracy was measured, what the numbers say, and how to defend all of it in a viva.</p>
+  <div class="kpis" id="topKpis"></div>
+</header>
+
+<section class="stack">
+  <span class="eyebrow">1 · The machine</span>
+  <h2>How a signal is made</h2>
+  <p class="prose">Every hour the Flask server downloads nine markets from Yahoo Finance, computes indicators on three timeframes, and squeezes them into a score. The dashed box is new: an offline harness that replays the same function on history and grades it.</p>
+  <div class="flow">
+    <div><b>Data</b>CL, BZ, DXY, RB, HO, GC, OVX, ES, XLE · 15m / 1h / 1d</div>
+    <div><b>Indicators</b>EMA 9/20/50, RSI 14, ATR 14, VWAP ±σ, volume profile, pivots</div>
+    <div><b>Scores</b>MTF confluence 0–100 · 7-pillar sentiment −100…+100</div>
+    <div><b>Playbook</b>5 hand-written setups with entry, stop, targets, "win %"</div>
+    <div class="eval"><b>Evaluation (new)</b>Walk-forward replay → compare with real prices → metrics + ML baselines</div>
+  </div>
+</section>
+
+<section class="stack">
+  <span class="eyebrow">2 · Is it machine learning?</span>
+  <h2>A linear model whose weights were chosen by hand</h2>
+  <p class="prose">The sentiment score is <code>score = Σ wᵢ · xᵢ</code>, the same shape as logistic regression. The difference is that nobody fitted the weights to data. Move the sliders to see how the engine combines its seven pillars. The weights are the ones in <code>engine.py</code>.</p>
+  <div class="bench">
+    <div class="sliders" id="sliders"></div>
+    <div class="stack">
+      <div class="row" style="justify-content:space-between"><strong id="compLabel">Balanced</strong><span class="mono" id="compVal">0.0</span></div>
+      <div class="gauge"><i id="gaugeMark" style="left:50%"></i></div>
+      <p class="note">Labels: ≥ +50 strong bull · ≥ +15 moderate bull · −15…+15 balanced · ≤ −15 moderate bear · ≤ −50 strong bear. "Bullish %" shown on the dashboard is just (score + 100) / 2.</p>
+    </div>
+  </div>
+  <p class="prose callout">So the honest description is a <em>rule-based quantitative model</em>. The evaluation adds real ML (logistic regression and gradient-boosted trees) trained on the same inputs, to test whether learning the weights helps.</p>
+</section>
+
+<section class="stack">
+  <span class="eyebrow">3 · Indicator lab</span>
+  <h2>What an EMA actually does to price</h2>
+  <p class="prose">Last ~60 days of WTI (one point every 4 hours) with an exponential moving average. A short span hugs price and flips direction often. A long span is smoother but late. The engine's "trend" logic is just whether price sits above or below these lines. The strip underneath is the sentiment score at each point: green is bullish, red is bearish.</p>
+  <div class="bench">
+    <div class="row"><label for="emaSpan" style="min-width:110px">EMA span: <b class="mono" id="emaSpanVal">20</b></label><input id="emaSpan" type="range" min="3" max="60" value="20" style="flex:1;min-width:160px"></div>
+    <div class="scroll"><svg id="priceChart" viewBox="0 0 960 300" width="100%" role="img" aria-label="WTI price with EMA overlay and sentiment strip"></svg></div>
+  </div>
+</section>
+
+<section class="stack">
+  <span class="eyebrow">4 · The trap</span>
+  <h2>Look-ahead bias: how fake 100 % accuracy happens</h2>
+  <p class="prose">The replay rebuilds exactly what the dashboard could see at each bar's close and nothing after. If the code accidentally lets the model see the next bar (a single <code>shift(-1)</code> is enough), accuracy jumps. The pipeline includes this "oracle" on purpose, as a test that the scoring code works.</p>
+  <div class="bench">
+    <div class="row"><button class="btn" id="leakBtn" aria-pressed="false">Let the model peek into the future</button><span class="note" id="leakNote">Currently: honest replay, 4-hour horizon.</span></div>
+    <div class="kpis"><div class="kpi" id="leakKpi"><b>–</b><span>directional hit rate</span></div><div class="kpi"><b>50.0%</b><span>coin-flip reference</span></div></div>
+  </div>
+</section>
+
+<section class="stack">
+  <span class="eyebrow">5 · Accuracy explorer</span>
+  <h2>Every model against the same answer key</h2>
+  <p class="prose">For each hour, the call (bull / bear) is compared with the actual return over the horizon. Baselines matter. Oil rose in about 51–52 % of windows, so a model that always says "up" already beats 50 % with zero skill.</p>
+  <div class="bench">
+    <div class="row"><div class="tabs" role="group" aria-label="Horizon" id="hTabs"></div><span class="note">Horizon in trading hours</span></div>
+    <div class="scroll"><svg id="hitChart" viewBox="0 0 960 300" width="100%" role="img" aria-label="Hit rate by model"></svg></div>
+    <div class="scroll"><table id="hitTable"></table></div>
+    <p class="note">p-values come from non-overlapping samples only (every h-th bar). Pesaran–Timmermann tests timing skill after accounting for how often the model says "up" and how often price actually went up. MCC is 0 for random guessing and 1 for perfect.</p>
+  </div>
+  <div class="grid2">
+    <div class="bench">
+      <h3>Confusion matrix · 7-pillar sentiment</h3>
+      <p class="note">Rows = what happened, columns = what was predicted. FLAT = move smaller than 0.25 × ATR × √h. A useful model is dark on the diagonal.</p>
+      <div class="scroll"><svg id="cmChart" viewBox="0 0 360 300" width="100%" role="img" aria-label="Confusion matrix"></svg></div>
+    </div>
+    <div class="bench">
+      <h3>Is "bullish %" a real probability?</h3>
+      <p class="note">If the dashboard says 70 % bullish, price should rise about 70 % of the time. Points on the diagonal mean well calibrated. Bubble size shows the number of hours.</p>
+      <div class="scroll"><svg id="relChart" viewBox="0 0 360 300" width="100%" role="img" aria-label="Reliability diagram"></svg></div>
+    </div>
+  </div>
+</section>
+
+<section class="stack">
+  <span class="eyebrow">6 · Playbook audit</span>
+  <h2>Claimed win rates against simulated trades</h2>
+  <p class="prose">Each setup was traded on real hourly highs and lows. Rules: limit entry within 6 hours, stop and target checked bar by bar, stop assumed first if both are hit in the same bar, $20 round-turn cost, one position at a time. The grey bar is what the dashboard claims. The coloured bar is what happened.</p>
+  <div class="bench">
+    <div class="scroll"><svg id="tradeChart" viewBox="0 0 960 330" width="100%" role="img" aria-label="Claimed vs realised win rate per setup"></svg></div>
+    <div class="kpis" id="tradeKpis"></div>
+  </div>
+</section>
+
+<section class="stack">
+  <span class="eyebrow">7 · Rules vs learning</span>
+  <h2>Does machine learning beat the hand-tuned weights?</h2>
+  <p class="prose">Models were retrained every 250 hours on past data only, with a purge gap so no training label overlaps the test period. All three models are scored on the identical out-of-sample window. The column to watch is "% calls up". A model that mostly says "up" can look significant against 50 % while having no timing skill.</p>
+  <div class="bench">
+    <div class="row"><div class="tabs" role="group" aria-label="ML horizon" id="mlTabs"></div></div>
+    <div class="scroll"><table id="mlTable"></table></div>
+  </div>
+  <div class="grid2">
+    <div class="bench">
+      <h3>Price forecasts mapped to actual prices</h3>
+      <p class="note">Theil U2 = model error ÷ error of "price stays the same". Below 1.0 beats the random walk. MAPE looks tiny (≈0.4 % at 1h) but means little on its own.</p>
+      <div class="scroll"><svg id="theilChart" viewBox="0 0 420 260" width="100%" role="img" aria-label="Theil U2 by model and horizon"></svg></div>
+    </div>
+    <div class="bench">
+      <h3>What the logistic model leaned on (4h)</h3>
+      <p class="note">Standardised coefficients. The crack pillar and raw crack point opposite ways because one is a clipped copy of the other (collinearity), so read signs with care.</p>
+      <div class="scroll"><svg id="coefChart" viewBox="0 0 420 300" width="100%" role="img" aria-label="Logistic coefficients"></svg></div>
+    </div>
+  </div>
+</section>
+
+<section class="stack">
+  <span class="eyebrow">8 · Envelopes &amp; detectors</span>
+  <h2>Do the statistical bands hold?</h2>
+  <div class="bench"><div class="scroll"><table id="bandTable"></table></div>
+  <p class="note">VWAP bands are a bit too narrow because oil returns have fat tails. The Value Area describes where volume traded over the last 24 hours. It is not a forecast of where price will be, and the numbers show that.</p></div>
+</section>
+
+<section class="stack quiz">
+  <span class="eyebrow">9 · Check yourself</span>
+  <h2>Six questions a sharp examiner might ask</h2>
+  <div id="quiz" class="stack"></div>
+  <p class="note" id="quizScore"></p>
+</section>
+
+<section class="stack">
+  <span class="eyebrow">10 · Viva preparation</span>
+  <h2>Questions and short answers</h2>
+  <div id="viva"></div>
+</section>
+
+<section class="stack">
+  <span class="eyebrow">11 · Read these first</span>
+  <h2>Core references</h2>
+  <ol class="refs">
+    <li>Wilder, J. W. (1978). <em>New Concepts in Technical Trading Systems.</em> Origin of RSI and ATR.</li>
+    <li>Brock, Lakonishok &amp; LeBaron (1992). Simple technical trading rules… <em>Journal of Finance</em> 47(5).</li>
+    <li>Marshall, Cahan &amp; Cahan (2008). Can commodity futures be profitably traded with quantitative market timing strategies? <em>J. Banking &amp; Finance</em> 32(9).</li>
+    <li>Alquist, Kilian &amp; Vigfusson (2013). Forecasting the price of oil. <em>Handbook of Economic Forecasting</em> 2A.</li>
+    <li>Pesaran &amp; Timmermann (1992). A simple nonparametric test of predictive performance. <em>JBES</em> 10(4).</li>
+    <li>Brier (1950). Verification of forecasts expressed in terms of probability. <em>Monthly Weather Review</em> 78(1).</li>
+    <li>López de Prado (2018). <em>Advances in Financial Machine Learning.</em> Purged walk-forward validation.</li>
+    <li>Bailey, Borwein, López de Prado &amp; Zhu (2014). Pseudo-mathematics and financial charlatanism. <em>Notices of the AMS</em> 61(5).</li>
+  </ol>
+  <p class="note">The full list of 41 sources with one-line relevance notes is in <code>docs/REFERENCES.md</code>.</p>
+</section>
+
+</div>
+
+<script>
+const D = {"meta":{"generated_utc":"2026-11-18 07:07 UTC","sample_start":"2024-07-09 06:00:00+00:00","sample_end":"2026-11-18 07:00:00+00:00","n_signals":13436,"n_real_15m":1092,"horizons_bars":[1,4,24],"primary_horizon":4},"signals":{"h1":{"sentiment_7pillar":{"coverage":0.6402,"hit_rate":0.5003,"nonoverlap_hit_rate":0.5003,"binomial_p_vs_50pct":0.482799,"pesaran_timmermann_p":0.482949,"pct_bull_calls":0.5034,"base_rate_up":0.5123,"mcc":-0.0006,"bal_acc":0.3332,"brier_skill":-0.0761,"auc":0.4979},"mtf_confluence":{"coverage":0.7702,"hit_rate":0.4999,"nonoverlap_hit_rate":0.4999,"binomial_p_vs_50pct":0.511764,"pesaran_timmermann_p":0.531952,"pct_bull_calls":0.5131,"base_rate_up":0.5123,"mcc":0.0018,"bal_acc":0.3345,"brier_skill":-0.4017,"auc":0.5},"tf_1h_bias":{"coverage":0.8065,"hit_rate":0.5021,"nonoverlap_hit_rate":0.5021,"binomial_p_vs_50pct":0.336256,"pesaran_timmermann_p":0.362034,"pct_bull_calls":0.5206,"base_rate_up":0.5123,"mcc":0.0047,"bal_acc":0.3363},"baseline_persistence":{"coverage":0.9792,"hit_rate":0.4915,"nonoverlap_hit_rate":0.4915,"binomial_p_vs_50pct":0.975109,"pesaran_timmermann_p":0.978578,"pct_bull_calls":0.5121,"base_rate_up":0.5124,"mcc":-0.004,"bal_acc":0.3307},"baseline_always_long":{"coverage":1.0,"hit_rate":0.5123,"nonoverlap_hit_rate":0.5123,"binomial_p_vs_50pct":0.002205,"pesaran_timmermann_p":null,"pct_bull_calls":1.0,"base_rate_up":0.5123,"mcc":0.0,"bal_acc":0.3333},"sanity_oracle_future_sign":{"coverage":0.9994,"hit_rate":1.0,"nonoverlap_hit_rate":1.0,"binomial_p_vs_50pct":0.0,"pesaran_timmermann_p":0.0,"pct_bull_calls":0.5126,"base_rate_up":0.5123,"mcc":0.5227,"bal_acc":0.6672},"sanity_random_coin":{"coverage":1.0,"hit_rate":0.5017,"nonoverlap_hit_rate":0.5017,"binomial_p_vs_50pct":0.352119,"pesaran_timmermann_p":0.337994,"pct_bull_calls":0.4948,"base_rate_up":0.5123,"mcc":-0.0042,"bal_acc":0.3307},"confusion":[[1344,1488,1287],[1724,1916,1735],[1262,1430,1249]],"reliability":[{"bin":"0.1-0.2","n":1,"mean_predicted":0.191,"observed_freq":1.0},{"bin":"0.2-0.3","n":705,"mean_predicted":0.272,"observed_freq":0.5319},{"bin":"0.3-0.4","n":2811,"mean_predicted":0.3493,"observed_freq":0.5073},{"bin":"0.4-0.5","n":3141,"mean_predicted":0.4501,"observed_freq":0.5091},{"bin":"0.5-0.6","n":3475,"mean_predicted":0.5535,"observed_freq":0.5272},{"bin":"0.6-0.7","n":2201,"mean_predicted":0.6418,"observed_freq":0.497},{"bin":"0.7-0.8","n":962,"mean_predicted":0.7475,"observed_freq":0.5187},{"bin":"0.8-0.9","n":140,"mean_predicted":0.8163,"observed_freq":0.4071}]},"h4":{"sentiment_7pillar":{"coverage":0.6401,"hit_rate":0.4957,"nonoverlap_hit_rate":0.4972,"binomial_p_vs_50pct":0.610648,"pesaran_timmermann_p":0.602284,"pct_bull_calls":0.5036,"base_rate_up":0.5129,"mcc":-0.0053,"bal_acc":0.3297,"brier_skill":-0.0791,"auc":0.4949},"mtf_confluence":{"coverage":0.7702,"hit_rate":0.4954,"nonoverlap_hit_rate":0.4916,"binomial_p_vs_50pct":0.807607,"pesaran_timmermann_p":0.804246,"pct_bull_calls":0.5133,"base_rate_up":0.5129,"mcc":-0.0108,"bal_acc":0.3261,"brier_skill":-0.4157,"auc":0.4935},"tf_1h_bias":{"coverage":0.8064,"hit_rate":0.494,"nonoverlap_hit_rate":0.4937,"binomial_p_vs_50pct":0.750583,"pesaran_timmermann_p":0.745958,"pct_bull_calls":0.5208,"base_rate_up":0.5129,"mcc":-0.0113,"bal_acc":0.3259},"baseline_persistence":{"coverage":0.9911,"hit_rate":0.5044,"nonoverlap_hit_rate":0.5065,"binomial_p_vs_50pct":0.233396,"pesaran_timmermann_p":0.229577,"pct_bull_calls":0.5135,"base_rate_up":0.5129,"mcc":0.0069,"bal_acc":0.3373},"baseline_always_long":{"coverage":1.0,"hit_rate":0.5129,"nonoverlap_hit_rate":0.5042,"binomial_p_vs_50pct":0.320635,"pesaran_timmermann_p":null,"pct_bull_calls":1.0,"base_rate_up":0.5129,"mcc":0.0,"bal_acc":0.3333},"sanity_oracle_future_sign":{"coverage":0.9996,"hit_rate":1.0,"nonoverlap_hit_rate":1.0,"binomial_p_vs_50pct":0.0,"pesaran_timmermann_p":0.0,"pct_bull_calls":0.5131,"base_rate_up":0.5129,"mcc":0.5492,"bal_acc":0.6671},"sanity_random_coin":{"coverage":1.0,"hit_rate":0.5098,"nonoverlap_hit_rate":0.514,"binomial_p_vs_50pct":0.054253,"pesaran_timmermann_p":0.052902,"pct_bull_calls":0.4948,"base_rate_up":0.5129,"mcc":0.0083,"bal_acc":0.3384},"confusion":[[1442,1595,1370],[1532,1753,1644],[1356,1486,1254]],"reliability":[{"bin":"0.1-0.2","n":1,"mean_predicted":0.191,"observed_freq":0.0},{"bin":"0.2-0.3","n":705,"mean_predicted":0.272,"observed_freq":0.5461},{"bin":"0.3-0.4","n":2811,"mean_predicted":0.3493,"observed_freq":0.5144},{"bin":"0.4-0.5","n":3141,"mean_predicted":0.4501,"observed_freq":0.5018},{"bin":"0.5-0.6","n":3475,"mean_predicted":0.5535,"observed_freq":0.5278},{"bin":"0.6-0.7","n":2201,"mean_predicted":0.6418,"observed_freq":0.5002},{"bin":"0.7-0.8","n":962,"mean_predicted":0.7475,"observed_freq":0.5146},{"bin":"0.8-0.9","n":140,"mean_predicted":0.8163,"observed_freq":0.3714}]},"h24":{"sentiment_7pillar":{"coverage":0.6402,"hit_rate":0.516,"nonoverlap_hit_rate":0.5112,"binomial_p_vs_50pct":0.355347,"pesaran_timmermann_p":0.343259,"pct_bull_calls":0.5033,"base_rate_up":0.5166,"mcc":-0.0191,"bal_acc":0.3186,"brier_skill":-0.0571,"auc":0.5185},"mtf_confluence":{"coverage":0.7706,"hit_rate":0.5091,"nonoverlap_hit_rate":0.4976,"binomial_p_vs_50pct":0.557907,"pesaran_timmermann_p":0.536606,"pct_bull_calls":0.5137,"base_rate_up":0.5166,"mcc":-0.012,"bal_acc":0.3245,"brier_skill":-0.3899,"auc":0.5049},"tf_1h_bias":{"coverage":0.8063,"hit_rate":0.5134,"nonoverlap_hit_rate":0.5112,"binomial_p_vs_50pct":0.335019,"pesaran_timmermann_p":0.345988,"pct_bull_calls":0.5208,"base_rate_up":0.5166,"mcc":-0.0035,"bal_acc":0.3304},"baseline_persistence":{"coverage":0.9969,"hit_rate":0.505,"nonoverlap_hit_rate":0.4875,"binomial_p_vs_50pct":0.737267,"pesaran_timmermann_p":0.730109,"pct_bull_calls":0.5175,"base_rate_up":0.5163,"mcc":-0.0019,"bal_acc":0.3321},"baseline_always_long":{"coverage":1.0,"hit_rate":0.5166,"nonoverlap_hit_rate":0.5134,"binomial_p_vs_50pct":0.276899,"pesaran_timmermann_p":null,"pct_bull_calls":1.0,"base_rate_up":0.5166,"mcc":0.0,"bal_acc":0.3333},"sanity_oracle_future_sign":{"coverage":0.9999,"hit_rate":1.0,"nonoverlap_hit_rate":1.0,"binomial_p_vs_50pct":0.0,"pesaran_timmermann_p":0.0,"pct_bull_calls":0.5166,"base_rate_up":0.5166,"mcc":0.6237,"bal_acc":0.6668},"sanity_random_coin":{"coverage":1.0,"hit_rate":0.5056,"nonoverlap_hit_rate":0.4687,"binomial_p_vs_50pct":0.936113,"pesaran_timmermann_p":0.934111,"pct_bull_calls":0.4949,"base_rate_up":0.5166,"mcc":0.0062,"bal_acc":0.3367},"confusion":[[1629,1856,1556],[1303,1206,1270],[1389,1764,1439]],"reliability":[{"bin":"0.1-0.2","n":1,"mean_predicted":0.191,"observed_freq":0.0},{"bin":"0.2-0.3","n":705,"mean_predicted":0.272,"observed_freq":0.5532},{"bin":"0.3-0.4","n":2811,"mean_predicted":0.3493,"observed_freq":0.4906},{"bin":"0.4-0.5","n":3141,"mean_predicted":0.4501,"observed_freq":0.4919},{"bin":"0.5-0.6","n":3475,"mean_predicted":0.5535,"observed_freq":0.5353},{"bin":"0.6-0.7","n":2201,"mean_predicted":0.6418,"observed_freq":0.5157},{"bin":"0.7-0.8","n":962,"mean_predicted":0.7475,"observed_freq":0.5915},{"bin":"0.8-0.9","n":140,"mean_predicted":0.8163,"observed_freq":0.3571}]}},"trades":{"signals_considered":2550,"outcome_counts":{"STOP":1137,"TARGET1":968,"NOT_FILLED":347,"INVALID_GEOMETRY":89,"TIMEOUT":9},"filled_trades":2114,"target1_hit_rate":0.4579,"win_rate_net":0.4588,"claimed_win_prob_avg":0.7115,"avg_r_multiple":-0.1246,"median_r_multiple":-0.2313,"expectancy_usd_per_trade":-46.1,"total_pnl_usd":-97459.95,"profit_factor":0.839,"avg_bars_held":3.9,"max_drawdown_usd":-107010.02,"by_setup":{"BEARISH TREND CONTINUATION (SHORT PULLBACK)":{"n":733,"claimed_win_prob":0.74,"target1_hit_rate":0.4939,"win_rate_net":0.4952,"avg_r":-0.1535,"expectancy_usd":-90.63,"binomial_p_claim":0.0},"BULLISH TREND CONTINUATION (LONG PULLBACK)":{"n":704,"claimed_win_prob":0.73,"target1_hit_rate":0.5597,"win_rate_net":0.5568,"avg_r":-0.0472,"expectancy_usd":-27.1,"binomial_p_claim":0.0},"COUNTER-TREND EXHAUSTION BOUNCE (LONG)":{"n":204,"claimed_win_prob":0.68,"target1_hit_rate":0.3775,"win_rate_net":0.3922,"avg_r":-0.1117,"expectancy_usd":-30.44,"binomial_p_claim":0.0},"EXHAUSTION BLOW-OFF FADE (SHORT)":{"n":209,"claimed_win_prob":0.67,"target1_hit_rate":0.3971,"win_rate_net":0.3971,"avg_r":-0.033,"expectancy_usd":90.29,"binomial_p_claim":0.0},"VALUE AREA RANGE ROTATION (FADE EDGES)":{"n":264,"claimed_win_prob":0.64,"target1_hit_rate":0.197,"win_rate_net":0.197,"avg_r":-0.3334,"expectancy_usd":-93.22,"binomial_p_claim":0.0}}},"bands":{"vwap_1sigma_next_close":{"n":13435,"observed_coverage":0.6007,"nominal_coverage":0.6827,"mean_width":1.973},"vwap_2sigma_next_close":{"n":13435,"observed_coverage":0.8943,"nominal_coverage":0.9545,"mean_width":3.9459},"value_area_next_close":{"n":13435,"observed_coverage":0.5041,"nominal_coverage":0.7,"mean_width":1.548},"value_area_close_24h_later":{"n":13412,"observed_coverage":0.2442,"nominal_coverage":0.7,"mean_width":1.5478}},"regimes":{"OVX<30 (low)":{"n_bars":965,"coverage":0.6073,"hit_rate":0.5392,"nonoverlap_hit_rate":0.5753,"binomial_p_vs_50pct":0.040931},"OVX 30-45 (normal)":{"n_bars":7118,"coverage":0.6035,"hit_rate":0.4853,"nonoverlap_hit_rate":0.4727,"binomial_p_vs_50pct":0.966016},"OVX>45 (stress)":{"n_bars":5349,"coverage":0.6947,"hit_rate":0.5008,"nonoverlap_hit_rate":0.5027,"binomial_p_vs_50pct":0.447687}},"strategy":{"sentiment_long_short":{"total_return_pct":17.42,"ann_sharpe":0.373,"max_drawdown_pct":-43.52,"time_in_market_pct":73.1},"buy_and_hold":{"total_return_pct":2.23,"ann_sharpe":0.259,"max_drawdown_pct":-42.3,"time_in_market_pct":99.9}},"sweeps":{"swept_high":{"n_events":1485,"reversal_rate":0.4956,"base_rate":0.4865,"binomial_p_vs_base":0.249742},"swept_low":{"n_events":1239,"reversal_rate":0.5246,"base_rate":0.5135,"binomial_p_vs_base":0.224718}},"ml":{"h1":{"rule_based_sentiment_same_window":{"hit_rate":0.4976,"auc":0.4947,"pct_bull":0.5496,"pt_p":0.710657,"p50":0.663217,"base":0.5132},"logistic_regression":{"hit_rate":0.5116,"auc":0.5108,"pct_bull":0.7152,"pt_p":0.081501,"p50":0.006777,"base":0.5132},"gradient_boosting":{"hit_rate":0.5094,"auc":0.5091,"pct_bull":0.7415,"pt_p":0.231627,"p50":0.022682,"base":0.5132},"price":{"ridge_regression":{"n":11435,"mae":0.2983,"rmse":0.5652,"mape_pct":0.3791,"r2_vs_mean":0.9984,"naive_mae":0.2959,"naive_rmse":0.5631,"theils_u2":1.0037,"mase":1.0081,"directional_accuracy":0.4964},"gradient_boosting_reg":{"n":11435,"mae":0.3077,"rmse":0.5766,"mape_pct":0.3924,"r2_vs_mean":0.9983,"naive_mae":0.2959,"naive_rmse":0.5631,"theils_u2":1.0239,"mase":1.0397,"directional_accuracy":0.5007}}},"h4":{"rule_based_sentiment_same_window":{"hit_rate":0.4915,"auc":0.4915,"pct_bull":0.5499,"pt_p":0.684383,"p50":0.680713,"base":0.5133},"logistic_regression":{"hit_rate":0.5066,"auc":0.5079,"pct_bull":0.6121,"pt_p":0.229537,"p50":0.210604,"base":0.5133},"gradient_boosting":{"hit_rate":0.5133,"auc":0.5186,"pct_bull":0.6218,"pt_p":0.11726,"p50":0.10505,"base":0.5133},"price":{"ridge_regression":{"n":11432,"mae":0.6372,"rmse":1.1415,"mape_pct":0.8091,"r2_vs_mean":0.9934,"naive_mae":0.6252,"naive_rmse":1.1263,"theils_u2":1.0135,"mase":1.0192,"directional_accuracy":0.4988},"gradient_boosting_reg":{"n":11432,"mae":0.6732,"rmse":1.1782,"mape_pct":0.8618,"r2_vs_mean":0.993,"naive_mae":0.6252,"naive_rmse":1.1263,"theils_u2":1.0461,"mase":1.0767,"directional_accuracy":0.4937}}},"h24":{"rule_based_sentiment_same_window":{"hit_rate":0.5115,"auc":0.5118,"pct_bull":0.5495,"pt_p":0.148123,"p50":0.120489,"base":0.5248},"logistic_regression":{"hit_rate":0.5085,"auc":0.4877,"pct_bull":0.688,"pt_p":0.342576,"p50":0.217949,"base":0.5248},"gradient_boosting":{"hit_rate":0.515,"auc":0.5179,"pct_bull":0.5664,"pt_p":0.07967,"p50":0.077639,"base":0.5248},"price":{"ridge_regression":{"n":11412,"mae":1.7612,"rmse":2.927,"mape_pct":2.2394,"r2_vs_mean":0.9567,"naive_mae":1.6327,"naive_rmse":2.7133,"theils_u2":1.0787,"mase":1.0787,"directional_accuracy":0.4838},"gradient_boosting_reg":{"n":11412,"mae":2.083,"rmse":3.5824,"mape_pct":2.6144,"r2_vs_mean":0.9352,"naive_mae":1.6327,"naive_rmse":2.7133,"theils_u2":1.3203,"mase":1.2758,"directional_accuracy":0.5295}}}},"coef":{"pillar_crack_margin":-0.3398,"tf15_score":0.2509,"ovx":0.223,"crack":0.2204,"brent_spread":0.1403,"tf1h_score":-0.1359,"rsi_1h":-0.1159,"atr_pct":-0.1102,"es_chg":0.0859,"pillar_usd_impact":-0.0819,"pillar_brent_spread":-0.0769,"pillar_equity_risk_on":-0.073,"gold_oil":0.0725,"dist_ema20_atr":0.072,"dist_vwap_atr":-0.0609},"series":[{"t":"2026-08-20 13:00","p":86.68,"s":54.7},{"t":"2026-08-20 17:00","p":86.1,"s":33.6},{"t":"2026-08-20 21:00","p":86.21,"s":30.6},{"t":"2026-08-21 02:00","p":86.73,"s":41.6},{"t":"2026-08-21 06:00","p":86.17,"s":25.0},{"t":"2026-08-21 10:00","p":86.55,"s":37.2},{"t":"2026-08-21 14:00","p":86.46,"s":25.3},{"t":"2026-08-21 18:00","p":87.32,"s":49.2},{"t":"2026-08-23 23:00","p":86.26,"s":22.8},{"t":"2026-08-24 03:00","p":85.69,"s":1.6},{"t":"2026-08-24 07:00","p":85.18,"s":-3.2},{"t":"2026-08-24 11:00","p":85.39,"s":-0.1},{"t":"2026-08-24 15:00","p":85.0,"s":0.1},{"t":"2026-08-24 19:00","p":85.18,"s":24.4},{"t":"2026-08-25 00:00","p":85.19,"s":26.4},{"t":"2026-08-25 04:00","p":85.43,"s":29.7},{"t":"2026-08-25 08:00","p":84.55,"s":3.3},{"t":"2026-08-25 12:00","p":81.95,"s":-17.9},{"t":"2026-08-25 16:00","p":82.09,"s":-11.9},{"t":"2026-08-25 20:00","p":81.13,"s":-14.7},{"t":"2026-08-26 01:00","p":80.7,"s":-20.9},{"t":"2026-08-26 05:00","p":80.61,"s":-19.3},{"t":"2026-08-26 09:00","p":79.84,"s":-22.4},{"t":"2026-08-26 13:00","p":80.66,"s":5.5},{"t":"2026-08-26 17:00","p":82.77,"s":47.4},{"t":"2026-08-26 21:00","p":81.91,"s":40.5},{"t":"2026-08-27 02:00","p":81.62,"s":22.9},{"t":"2026-08-27 06:00","p":81.43,"s":12.4},{"t":"2026-08-27 10:00","p":82.19,"s":32.0},{"t":"2026-08-27 14:00","p":82.84,"s":43.3},{"t":"2026-08-27 18:00","p":83.98,"s":54.5},{"t":"2026-08-27 23:00","p":83.59,"s":40.9},{"t":"2026-08-28 03:00","p":83.11,"s":18.5},{"t":"2026-08-28 07:00","p":82.88,"s":16.9},{"t":"2026-08-28 11:00","p":83.25,"s":21.5},{"t":"2026-08-28 15:00","p":82.87,"s":3.6},{"t":"2026-08-28 19:00","p":83.18,"s":23.9},{"t":"2026-08-31 00:00","p":84.73,"s":50.3},{"t":"2026-08-31 04:00","p":85.09,"s":53.4},{"t":"2026-08-31 08:00","p":85.43,"s":49.3},{"t":"2026-08-31 12:00","p":86.38,"s":50.5},{"t":"2026-08-31 16:00","p":85.56,"s":18.8},{"t":"2026-08-31 20:00","p":85.98,"s":28.1},{"t":"2026-09-01 01:00","p":86.55,"s":31.3},{"t":"2026-09-01 05:00","p":87.0,"s":40.8},{"t":"2026-09-01 09:00","p":88.04,"s":54.2},{"t":"2026-09-01 13:00","p":87.98,"s":52.1},{"t":"2026-09-01 17:00","p":89.55,"s":54.6},{"t":"2026-09-01 21:00","p":90.68,"s":58.1},{"t":"2026-09-02 02:00","p":91.31,"s":58.7},{"t":"2026-09-02 06:00","p":90.78,"s":55.9},{"t":"2026-09-02 10:00","p":90.53,"s":42.2},{"t":"2026-09-02 14:00","p":89.08,"s":13.3},{"t":"2026-09-02 18:00","p":90.9,"s":36.8},{"t":"2026-09-02 23:00","p":90.76,"s":34.9},{"t":"2026-09-03 03:00","p":91.08,"s":45.8},{"t":"2026-09-03 07:00","p":90.03,"s":18.5},{"t":"2026-09-03 11:00","p":92.86,"s":58.2},{"t":"2026-09-03 15:00","p":92.04,"s":37.7},{"t":"2026-09-03 19:00","p":91.63,"s":31.6},{"t":"2026-09-04 00:00","p":91.83,"s":32.6},{"t":"2026-09-04 04:00","p":92.02,"s":33.1},{"t":"2026-09-04 08:00","p":90.74,"s":-5.4},{"t":"2026-09-04 12:00","p":90.76,"s":-4.2},{"t":"2026-09-04 16:00","p":90.98,"s":23.8},{"t":"2026-09-04 20:00","p":91.36,"s":28.5},{"t":"2026-09-08 07:00","p":94.08,"s":58.2},{"t":"2026-09-08 11:00","p":93.92,"s":58.4},{"t":"2026-09-08 15:00","p":92.74,"s":38.6},{"t":"2026-09-08 19:00","p":93.59,"s":46.1},{"t":"2026-09-09 00:00","p":94.61,"s":47.6},{"t":"2026-09-09 04:00","p":94.18,"s":47.7},{"t":"2026-09-09 08:00","p":94.47,"s":51.0},{"t":"2026-09-09 12:00","p":95.51,"s":58.9},{"t":"2026-09-09 16:00","p":96.52,"s":54.1},{"t":"2026-09-09 20:00","p":96.65,"s":47.7},{"t":"2026-09-10 01:00","p":96.6,"s":46.4},{"t":"2026-09-10 05:00","p":96.08,"s":24.9},{"t":"2026-09-10 09:00","p":97.45,"s":51.5},{"t":"2026-09-10 13:00","p":100.07,"s":57.3},{"t":"2026-09-10 17:00","p":101.37,"s":59.5},{"t":"2026-09-10 21:00","p":103.93,"s":59.0},{"t":"2026-09-11 02:00","p":102.62,"s":57.7},{"t":"2026-09-11 06:00","p":101.38,"s":29.2},{"t":"2026-09-11 10:00","p":99.82,"s":4.9},{"t":"2026-09-11 14:00","p":99.11,"s":-8.8},{"t":"2026-09-11 18:00","p":99.82,"s":-4.3},{"t":"2026-09-13 23:00","p":102.41,"s":48.3},{"t":"2026-09-14 03:00","p":102.8,"s":55.1},{"t":"2026-09-14 07:00","p":102.87,"s":53.8},{"t":"2026-09-14 11:00","p":102.52,"s":38.6},{"t":"2026-09-14 15:00","p":103.51,"s":40.9},{"t":"2026-09-14 19:00","p":101.07,"s":2.7},{"t":"2026-09-15 00:00","p":102.16,"s":21.4},{"t":"2026-09-15 04:00","p":102.93,"s":26.4},{"t":"2026-09-15 08:00","p":103.46,"s":28.6},{"t":"2026-09-15 12:00","p":102.35,"s":-1.8},{"t":"2026-09-15 16:00","p":104.96,"s":52.0},{"t":"2026-09-15 20:00","p":105.87,"s":45.6},{"t":"2026-09-16 01:00","p":105.23,"s":29.4},{"t":"2026-09-16 05:00","p":104.63,"s":18.8},{"t":"2026-09-16 09:00","p":104.5,"s":14.7},{"t":"2026-09-16 13:00","p":104.09,"s":10.8},{"t":"2026-09-16 17:00","p":102.59,"s":-8.5},{"t":"2026-09-16 21:00","p":102.02,"s":-8.2},{"t":"2026-09-17 02:00","p":102.24,"s":12.4},{"t":"2026-09-17 06:00","p":101.42,"s":-6.8},{"t":"2026-09-17 10:00","p":101.34,"s":-17.4},{"t":"2026-09-17 14:00","p":100.58,"s":-6.2},{"t":"2026-09-17 18:00","p":101.98,"s":28.5},{"t":"2026-09-17 23:00","p":101.14,"s":4.0},{"t":"2026-09-18 03:00","p":101.38,"s":27.1},{"t":"2026-09-18 07:00","p":100.02,"s":-8.5},{"t":"2026-09-18 11:00","p":95.62,"s":-25.9},{"t":"2026-09-18 15:00","p":97.06,"s":-9.4},{"t":"2026-09-18 19:00","p":95.5,"s":-17.0},{"t":"2026-09-21 00:00","p":95.66,"s":-5.2},{"t":"2026-09-21 04:00","p":93.97,"s":-24.0},{"t":"2026-09-21 08:00","p":94.17,"s":-14.5},{"t":"2026-09-21 12:00","p":93.48,"s":-19.9},{"t":"2026-09-21 16:00","p":92.31,"s":-18.5},{"t":"2026-09-21 20:00","p":92.14,"s":-11.6},{"t":"2026-09-22 01:00","p":92.72,"s":17.2},{"t":"2026-09-22 05:00","p":93.38,"s":24.0},{"t":"2026-09-22 09:00","p":90.42,"s":-12.5},{"t":"2026-09-22 13:00","p":90.39,"s":-1.6},{"t":"2026-09-22 17:00","p":91.4,"s":22.5},{"t":"2026-09-22 21:00","p":89.85,"s":-3.2},{"t":"2026-09-23 02:00","p":89.91,"s":9.0},{"t":"2026-09-23 06:00","p":89.31,"s":0.7},{"t":"2026-09-23 10:00","p":90.03,"s":18.3},{"t":"2026-09-23 14:00","p":91.98,"s":42.1},{"t":"2026-09-23 18:00","p":91.66,"s":36.2},{"t":"2026-09-23 23:00","p":92.22,"s":35.2},{"t":"2026-09-24 03:00","p":91.33,"s":10.4},{"t":"2026-09-24 07:00","p":92.74,"s":40.3},{"t":"2026-09-24 11:00","p":93.12,"s":48.1},{"t":"2026-09-24 15:00","p":95.56,"s":51.9},{"t":"2026-09-24 19:00","p":94.39,"s":33.3},{"t":"2026-09-25 00:00","p":93.97,"s":17.9},{"t":"2026-09-25 04:00","p":93.12,"s":11.2},{"t":"2026-09-25 08:00","p":93.58,"s":14.3},{"t":"2026-09-25 12:00","p":92.53,"s":-17.1},{"t":"2026-09-25 16:00","p":92.85,"s":-3.0},{"t":"2026-09-25 20:00","p":92.23,"s":0.7},{"t":"2026-09-28 01:00","p":93.3,"s":24.5},{"t":"2026-09-28 05:00","p":94.07,"s":35.6},{"t":"2026-09-28 09:00","p":95.6,"s":55.8},{"t":"2026-09-28 13:00","p":94.25,"s":14.5},{"t":"2026-09-28 17:00","p":93.1,"s":6.0},{"t":"2026-09-28 21:00","p":93.29,"s":1.6},{"t":"2026-09-29 02:00","p":93.59,"s":6.1},{"t":"2026-09-29 06:00","p":94.1,"s":15.8},{"t":"2026-09-29 10:00","p":92.5,"s":-16.9},{"t":"2026-09-29 14:00","p":90.9,"s":-22.8},{"t":"2026-09-29 18:00","p":90.1,"s":-18.6},{"t":"2026-09-29 23:00","p":89.3,"s":-16.2},{"t":"2026-09-30 03:00","p":89.62,"s":-8.5},{"t":"2026-09-30 07:00","p":89.74,"s":4.7},{"t":"2026-09-30 11:00","p":90.59,"s":23.2},{"t":"2026-09-30 15:00","p":91.59,"s":40.4},{"t":"2026-09-30 19:00","p":90.6,"s":11.1},{"t":"2026-10-01 00:00","p":90.01,"s":-5.4},{"t":"2026-10-01 04:00","p":89.14,"s":-17.5},{"t":"2026-10-01 08:00","p":92.4,"s":41.3},{"t":"2026-10-01 12:00","p":91.64,"s":23.2},{"t":"2026-10-01 16:00","p":92.66,"s":42.2},{"t":"2026-10-01 20:00","p":93.3,"s":49.8},{"t":"2026-10-02 01:00","p":93.15,"s":43.2},{"t":"2026-10-02 05:00","p":92.55,"s":19.4},{"t":"2026-10-02 09:00","p":89.34,"s":-19.9},{"t":"2026-10-02 13:00","p":89.3,"s":-11.8},{"t":"2026-10-02 17:00","p":91.57,"s":32.6},{"t":"2026-10-02 21:00","p":91.11,"s":24.0},{"t":"2026-10-05 01:00","p":90.34,"s":7.9},{"t":"2026-10-05 05:00","p":90.33,"s":15.7},{"t":"2026-10-05 09:00","p":90.62,"s":29.4},{"t":"2026-10-05 13:00","p":90.08,"s":3.5},{"t":"2026-10-05 17:00","p":90.26,"s":21.9},{"t":"2026-10-05 21:00","p":89.3,"s":5.8},{"t":"2026-10-06 02:00","p":89.55,"s":23.4},{"t":"2026-10-06 06:00","p":89.45,"s":3.2},{"t":"2026-10-06 10:00","p":87.61,"s":-14.5},{"t":"2026-10-06 14:00","p":87.95,"s":-0.8},{"t":"2026-10-06 18:00","p":89.46,"s":35.4},{"t":"2026-10-06 23:00","p":89.79,"s":50.6},{"t":"2026-10-07 03:00","p":90.17,"s":46.9},{"t":"2026-10-07 07:00","p":90.18,"s":50.8},{"t":"2026-10-07 11:00","p":89.96,"s":42.1},{"t":"2026-10-07 15:00","p":89.57,"s":16.7},{"t":"2026-10-07 19:00","p":88.47,"s":-3.1},{"t":"2026-10-08 00:00","p":89.0,"s":12.7},{"t":"2026-10-08 04:00","p":89.87,"s":40.3},{"t":"2026-10-08 08:00","p":91.68,"s":64.4},{"t":"2026-10-08 12:00","p":92.32,"s":60.8},{"t":"2026-10-08 16:00","p":92.68,"s":57.9},{"t":"2026-10-08 20:00","p":91.1,"s":20.1},{"t":"2026-10-09 01:00","p":91.07,"s":18.0},{"t":"2026-10-09 05:00","p":90.29,"s":-8.0},{"t":"2026-10-09 09:00","p":90.27,"s":-5.8},{"t":"2026-10-09 13:00","p":91.24,"s":31.7},{"t":"2026-10-09 17:00","p":91.22,"s":29.8},{"t":"2026-10-09 21:00","p":91.85,"s":45.7},{"t":"2026-10-12 02:00","p":90.09,"s":2.8},{"t":"2026-10-12 06:00","p":90.77,"s":23.8},{"t":"2026-10-12 10:00","p":92.69,"s":58.6},{"t":"2026-10-12 14:00","p":93.82,"s":64.7},{"t":"2026-10-12 18:00","p":93.87,"s":57.6},{"t":"2026-10-12 23:00","p":93.4,"s":42.6},{"t":"2026-10-13 03:00","p":92.39,"s":12.8},{"t":"2026-10-13 07:00","p":92.36,"s":13.9},{"t":"2026-10-13 11:00","p":91.78,"s":-1.5},{"t":"2026-10-13 15:00","p":93.93,"s":48.6},{"t":"2026-10-13 19:00","p":94.22,"s":51.8},{"t":"2026-10-14 00:00","p":94.77,"s":57.8},{"t":"2026-10-14 04:00","p":94.79,"s":51.5},{"t":"2026-10-14 08:00","p":94.25,"s":27.4},{"t":"2026-10-14 12:00","p":95.78,"s":59.3},{"t":"2026-10-14 16:00","p":95.22,"s":37.5},{"t":"2026-10-14 20:00","p":95.15,"s":25.4},{"t":"2026-10-15 01:00","p":94.34,"s":14.1},{"t":"2026-10-15 05:00","p":94.08,"s":6.7},{"t":"2026-10-15 09:00","p":95.38,"s":32.7},{"t":"2026-10-15 13:00","p":93.97,"s":6.7},{"t":"2026-10-15 17:00","p":96.6,"s":64.0},{"t":"2026-10-15 21:00","p":96.12,"s":46.8},{"t":"2026-10-16 02:00","p":95.99,"s":44.2},{"t":"2026-10-16 06:00","p":95.6,"s":28.1},{"t":"2026-10-16 10:00","p":95.72,"s":35.6},{"t":"2026-10-16 14:00","p":95.69,"s":29.4},{"t":"2026-10-16 18:00","p":98.62,"s":67.8},{"t":"2026-10-18 23:00","p":98.16,"s":54.1},{"t":"2026-10-19 03:00","p":97.55,"s":37.5},{"t":"2026-10-19 07:00","p":96.94,"s":26.6},{"t":"2026-10-19 11:00","p":98.0,"s":45.8},{"t":"2026-10-19 15:00","p":97.63,"s":31.7},{"t":"2026-10-19 19:00","p":98.23,"s":35.5},{"t":"2026-10-20 00:00","p":98.22,"s":33.0},{"t":"2026-10-20 04:00","p":98.59,"s":46.3},{"t":"2026-10-20 08:00","p":99.43,"s":55.6},{"t":"2026-10-20 12:00","p":100.51,"s":62.6},{"t":"2026-10-20 16:00","p":97.5,"s":16.9},{"t":"2026-10-20 20:00","p":98.24,"s":29.0},{"t":"2026-10-21 01:00","p":98.5,"s":40.0},{"t":"2026-10-21 05:00","p":98.92,"s":48.2},{"t":"2026-10-21 09:00","p":99.45,"s":55.6},{"t":"2026-10-21 13:00","p":97.36,"s":9.9},{"t":"2026-10-21 17:00","p":96.65,"s":1.6},{"t":"2026-10-21 21:00","p":97.71,"s":26.7},{"t":"2026-10-22 02:00","p":98.35,"s":45.8},{"t":"2026-10-22 06:00","p":99.23,"s":64.7},{"t":"2026-10-22 10:00","p":99.45,"s":58.7},{"t":"2026-10-22 14:00","p":99.04,"s":48.3},{"t":"2026-10-22 18:00","p":99.83,"s":62.0},{"t":"2026-10-22 23:00","p":99.0,"s":29.1},{"t":"2026-10-23 03:00","p":99.94,"s":49.1},{"t":"2026-10-23 07:00","p":100.77,"s":65.3},{"t":"2026-10-23 11:00","p":101.13,"s":57.8},{"t":"2026-10-23 15:00","p":102.28,"s":66.1},{"t":"2026-10-23 19:00","p":103.39,"s":60.4},{"t":"2026-10-26 00:00","p":102.13,"s":27.6},{"t":"2026-10-26 04:00","p":100.96,"s":14.3},{"t":"2026-10-26 08:00","p":101.55,"s":26.4},{"t":"2026-10-26 12:00","p":101.08,"s":7.4},{"t":"2026-10-26 16:00","p":102.95,"s":52.8},{"t":"2026-10-26 20:00","p":101.59,"s":26.1},{"t":"2026-10-27 01:00","p":101.03,"s":12.1},{"t":"2026-10-27 05:00","p":100.68,"s":9.1},{"t":"2026-10-27 09:00","p":102.3,"s":48.6},{"t":"2026-10-27 13:00","p":100.93,"s":12.3},{"t":"2026-10-27 17:00","p":100.05,"s":7.3},{"t":"2026-10-27 21:00","p":100.2,"s":14.9},{"t":"2026-10-28 02:00","p":101.26,"s":41.8},{"t":"2026-10-28 06:00","p":101.39,"s":51.2},{"t":"2026-10-28 10:00","p":101.16,"s":39.2},{"t":"2026-10-28 14:00","p":101.86,"s":56.2},{"t":"2026-10-28 18:00","p":102.65,"s":47.9},{"t":"2026-10-28 23:00","p":101.89,"s":20.1},{"t":"2026-10-29 03:00","p":101.5,"s":17.4},{"t":"2026-10-29 07:00","p":101.43,"s":12.2},{"t":"2026-10-29 11:00","p":101.22,"s":9.7},{"t":"2026-10-29 15:00","p":100.31,"s":-2.7},{"t":"2026-10-29 19:00","p":102.14,"s":41.1},{"t":"2026-10-30 00:00","p":102.86,"s":59.2},{"t":"2026-10-30 04:00","p":103.17,"s":54.1},{"t":"2026-10-30 08:00","p":103.83,"s":64.9},{"t":"2026-10-30 12:00","p":104.15,"s":60.3},{"t":"2026-10-30 16:00","p":104.08,"s":49.3},{"t":"2026-10-30 20:00","p":103.14,"s":22.4},{"t":"2026-11-02 02:00","p":101.75,"s":-2.5},{"t":"2026-11-02 06:00","p":100.52,"s":-13.4},{"t":"2026-11-02 10:00","p":99.7,"s":-14.8},{"t":"2026-11-02 14:00","p":97.65,"s":-14.1},{"t":"2026-11-02 18:00","p":96.01,"s":-17.6},{"t":"2026-11-02 22:00","p":96.26,"s":-2.7},{"t":"2026-11-03 03:00","p":96.61,"s":5.1},{"t":"2026-11-03 07:00","p":97.95,"s":32.3},{"t":"2026-11-03 11:00","p":97.53,"s":25.3},{"t":"2026-11-03 15:00","p":95.86,"s":1.4},{"t":"2026-11-03 19:00","p":95.89,"s":5.8},{"t":"2026-11-04 00:00","p":96.6,"s":23.1},{"t":"2026-11-04 04:00","p":95.65,"s":-0.5},{"t":"2026-11-04 08:00","p":96.14,"s":21.9},{"t":"2026-11-04 12:00","p":95.24,"s":-4.6},{"t":"2026-11-04 16:00","p":92.09,"s":-20.1},{"t":"2026-11-04 20:00","p":88.52,"s":-23.9},{"t":"2026-11-05 01:00","p":87.99,"s":-27.0},{"t":"2026-11-05 05:00","p":86.66,"s":-27.3},{"t":"2026-11-05 09:00","p":88.18,"s":-1.5},{"t":"2026-11-05 13:00","p":89.4,"s":19.3},{"t":"2026-11-05 17:00","p":90.09,"s":25.8},{"t":"2026-11-05 21:00","p":90.71,"s":34.5},{"t":"2026-11-06 02:00","p":91.26,"s":43.1},{"t":"2026-11-06 06:00","p":91.73,"s":44.1},{"t":"2026-11-06 10:00","p":89.21,"s":-2.2},{"t":"2026-11-06 14:00","p":90.79,"s":27.6},{"t":"2026-11-06 18:00","p":90.06,"s":-12.9},{"t":"2026-11-06 22:00","p":90.83,"s":27.2},{"t":"2026-11-09 03:00","p":91.04,"s":29.4},{"t":"2026-11-09 07:00","p":89.91,"s":-7.3},{"t":"2026-11-09 11:00","p":89.45,"s":-12.1},{"t":"2026-11-09 15:00","p":87.51,"s":-18.5},{"t":"2026-11-09 19:00","p":87.62,"s":-16.9},{"t":"2026-11-10 00:00","p":86.44,"s":-18.4},{"t":"2026-11-10 04:00","p":85.81,"s":-25.8},{"t":"2026-11-10 08:00","p":85.32,"s":-26.0},{"t":"2026-11-10 12:00","p":85.27,"s":-18.3},{"t":"2026-11-10 16:00","p":85.68,"s":2.5},{"t":"2026-11-10 20:00","p":86.32,"s":17.3},{"t":"2026-11-11 01:00","p":86.34,"s":30.1},{"t":"2026-11-11 05:00","p":86.64,"s":35.3},{"t":"2026-11-11 09:00","p":86.06,"s":8.0},{"t":"2026-11-11 13:00","p":87.19,"s":34.4},{"t":"2026-11-11 17:00","p":87.83,"s":29.1},{"t":"2026-11-11 21:00","p":86.33,"s":-4.9},{"t":"2026-11-12 02:00","p":85.69,"s":-21.1},{"t":"2026-11-12 06:00","p":85.62,"s":-18.4},{"t":"2026-11-12 10:00","p":86.27,"s":-8.8},{"t":"2026-11-12 14:00","p":86.64,"s":12.7},{"t":"2026-11-12 18:00","p":88.03,"s":39.4},{"t":"2026-11-12 22:00","p":88.7,"s":38.5},{"t":"2026-11-13 02:00","p":88.1,"s":17.7},{"t":"2026-11-13 06:00","p":88.38,"s":31.4},{"t":"2026-11-13 10:00","p":88.24,"s":15.2},{"t":"2026-11-13 14:00","p":89.1,"s":36.0},{"t":"2026-11-13 18:00","p":88.66,"s":5.3},{"t":"2026-11-13 22:00","p":88.93,"s":18.5},{"t":"2026-11-16 02:00","p":88.22,"s":-2.8},{"t":"2026-11-16 06:00","p":88.64,"s":15.1},{"t":"2026-11-16 10:00","p":88.46,"s":-5.9},{"t":"2026-11-16 14:00","p":87.7,"s":-17.6},{"t":"2026-11-16 18:00","p":86.09,"s":-23.3},{"t":"2026-11-16 22:00","p":85.06,"s":-25.5},{"t":"2026-11-17 03:00","p":85.1,"s":-22.2},{"t":"2026-11-17 07:00","p":84.93,"s":-22.8},{"t":"2026-11-17 11:00","p":86.02,"s":16.4},{"t":"2026-11-17 15:00","p":86.86,"s":33.3},{"t":"2026-11-17 19:00","p":86.47,"s":23.0},{"t":"2026-11-18 00:00","p":85.87,"s":4.1},{"t":"2026-11-18 04:00","p":84.76,"s":-19.5}]};
+const $ = id => document.getElementById(id);
+const pct = (x, d = 1) => x == null ? '–' : (x * 100).toFixed(d) + '%';
+const num = (x, d = 3) => x == null ? '–' : (+x).toFixed(d);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, text){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;return e}
+function pPill(p){if(p==null)return '<span class="pill neutral">n/a</span>';const c=p<0.01?'good':p<0.05?'warn':'neutral';return `<span class="pill ${c}">${p<0.0001?'<0.0001':p.toFixed(4)}</span>`}
+
+/* ---------- header ---------- */
+const s4 = D.signals.h4.sentiment_7pillar, T = D.trades;
+$('lede').textContent = `Sample ${D.meta.sample_start.slice(0,10)} → ${D.meta.sample_end.slice(0,10)}. What the project is built from, how its accuracy was measured, what the numbers say, and how to defend it in a viva.`;
+$('topKpis').innerHTML = [
+  ['bad', pct(s4.hit_rate), 'sentiment hit rate, 4h (coin = 50%)'],
+  ['bad', pct(T.target1_hit_rate)+' / '+pct(T.claimed_win_prob_avg,0), 'playbook realised vs claimed win rate'],
+  ['warn', num(D.signals.h4.sentiment_7pillar.brier_skill,3), 'Brier skill of "bullish %" (0 = no skill)'],
+  ['good', D.meta.n_signals.toLocaleString(), 'point-in-time decisions tested']
+].map(([c,b,s])=>`<div class="kpi ${c}"><b>${b}</b><span>${s}</span></div>`).join('');
+
+/* ---------- pillar calculator ---------- */
+const P = [
+  ['mtf','MTF alignment',.25,-100,100,0,'(MTF − 50) × 2'],
+  ['vwap','VWAP position',.20,-100,100,0,'% from VWAP × 40'],
+  ['crack','Crack margin',.15,-100,100,0,'(crack − $26) × 6'],
+  ['spread','Brent–WTI spread',.15,-100,100,0,'(spread − $5) × 15'],
+  ['usd','US dollar',.10,-100,100,0,'−ΔDXY% × 70'],
+  ['es','S&P 500',.10,-100,100,0,'ΔES% × 50'],
+  ['ovx','OVX volatility',.05,-25,15,0,'−25 / 0 / +15']];
+$('sliders').innerHTML = P.map(([k,n,w,mn,mx,v,f])=>`<div class="sl"><label for="sl_${k}">${n} · ${w*100}%<span id="v_${k}">0</span></label><input id="sl_${k}" type="range" min="${mn}" max="${mx}" value="${v}" step="1"><div class="note">${f}</div></div>`).join('');
+function calc(){let c=0;P.forEach(([k,,w])=>{const v=+$('sl_'+k).value;$('v_'+k).textContent=v;c+=w*v});c=Math.max(-100,Math.min(100,c));
+  $('compVal').textContent=(c>0?'+':'')+c.toFixed(1)+'  ·  bullish '+((c+100)/2).toFixed(1)+'%';
+  $('compLabel').textContent=c>=50?'Institutional bullish trend':c>=15?'Moderate bullish accumulation':c<=-50?'Institutional bearish trend':c<=-15?'Moderate bearish distribution':'Balanced / two-way';
+  $('gaugeMark').style.left=((c+100)/2)+'%'}
+P.forEach(([k])=>$('sl_'+k).addEventListener('input',calc));calc();
+
+/* ---------- price + EMA ---------- */
+function drawPrice(){
+  const svg=$('priceChart');svg.innerHTML='';const S=D.series,W=960,H=300,L=48,R=10,TOP=10,PH=220;
+  const span=+$('emaSpan').value;$('emaSpanVal').textContent=span;
+  const ps=S.map(d=>d.p),a=2/(span+1);let e=ps[0];const ema=ps.map(p=>e=a*p+(1-a)*e);
+  const lo=Math.min(...ps),hi=Math.max(...ps),x=i=>L+i*(W-L-R)/(S.length-1),y=v=>TOP+(hi-v)/(hi-lo)*PH;
+  for(let k=0;k<=4;k++){const v=lo+(hi-lo)*k/4;svg.append(el('line',{x1:L,x2:W-R,y1:y(v),y2:y(v),stroke:css('--line'),'stroke-width':1}));svg.append(el('text',{x:L-6,y:y(v)+4,'text-anchor':'end'},'$'+v.toFixed(0)))}
+  const path=arr=>arr.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join(' ');
+  svg.append(el('path',{d:path(ps),fill:'none',stroke:css('--crude'),'stroke-width':1.4}));
+  svg.append(el('path',{d:path(ema),fill:'none',stroke:css('--accent'),'stroke-width':2.2}));
+  const bw=(W-L-R)/S.length+.5;
+  S.forEach((d,i)=>{const c=d.s>=15?css('--good'):d.s<=-15?css('--bad'):css('--neutral');svg.append(el('rect',{x:x(i)-bw/2,y:TOP+PH+22,width:bw,height:18,fill:c,opacity:.85}))});
+  svg.append(el('text',{x:L,y:TOP+PH+16},'sentiment call at each point'));
+  [0,Math.floor(S.length/2),S.length-1].forEach(i=>svg.append(el('text',{x:x(i),y:H-4,'text-anchor':i?i==S.length-1?'end':'middle':'start'},S[i].t.slice(0,10))));
+  svg.append(el('text',{x:W-R,y:TOP+12,'text-anchor':'end'},'— price   — EMA('+span+')'));
+}
+$('emaSpan').addEventListener('input',drawPrice);
+
+/* ---------- leak demo ---------- */
+let leak=false;
+function drawLeak(){const v=leak?D.signals.h4.sanity_oracle_future_sign.hit_rate:s4.hit_rate;
+  $('leakKpi').className='kpi '+(leak?'good':'bad');$('leakKpi').querySelector('b').textContent=pct(v);
+  $('leakBtn').classList.toggle('on',leak);$('leakBtn').setAttribute('aria-pressed',leak);
+  $('leakBtn').textContent=leak?'Stop peeking (honest replay)':'Let the model peek into the future';
+  $('leakNote').textContent=leak?'Peeking: the "model" reads the answer. Any accuracy this high in a trading project should make you suspicious.':'Currently: honest replay, 4-hour horizon.'}
+$('leakBtn').addEventListener('click',()=>{leak=!leak;drawLeak()});
+
+/* ---------- accuracy explorer ---------- */
+const MODELS=[['sentiment_7pillar','7-pillar sentiment'],['mtf_confluence','MTF confluence'],['tf_1h_bias','1h timeframe bias'],
+  ['baseline_always_long','Baseline: always long'],['baseline_persistence','Baseline: persistence'],['sanity_random_coin','Sanity: random coin']];
+let H='h4';
+function tabs(id,cur,set){$(id).innerHTML=['h1','h4','h24'].map(h=>`<button aria-pressed="${h==cur}" data-h="${h}">${h.slice(1)}h</button>`).join('');
+  $(id).querySelectorAll('button').forEach(b=>b.onclick=()=>set(b.dataset.h))}
+function drawHits(){
+  tabs('hTabs',H,h=>{H=h;drawHits()});
+  const sg=D.signals[H],svg=$('hitChart');svg.innerHTML='';const W=960,L=190,R=60,rowH=40,lo=.45,hi=.56,x=v=>L+(v-lo)/(hi-lo)*(W-L-R);
+  for(let v=.45;v<=.5601;v+=.01){svg.append(el('line',{x1:x(v),x2:x(v),y1:6,y2:MODELS.length*rowH+6,stroke:css('--line')}));svg.append(el('text',{x:x(v),y:MODELS.length*rowH+22,'text-anchor':'middle'},(v*100).toFixed(0)+'%'))}
+  svg.append(el('line',{x1:x(.5),x2:x(.5),y1:0,y2:MODELS.length*rowH+8,stroke:css('--ink'),'stroke-width':1.5,'stroke-dasharray':'4 3'}));
+  const base=sg.sentiment_7pillar.base_rate_up;
+  svg.append(el('line',{x1:x(base),x2:x(base),y1:0,y2:MODELS.length*rowH+8,stroke:css('--warn'),'stroke-width':1.5}));
+  svg.append(el('text',{x:x(base)+4,y:MODELS.length*rowH+38,fill:css('--warn')},'share of up-moves '+pct(base)));
+  MODELS.forEach(([k,n],i)=>{const v=sg[k].hit_rate,y0=i*rowH+10;
+    svg.append(el('text',{x:L-10,y:y0+17,'text-anchor':'end',style:'fill:'+css('--ink')},n));
+    const c=k.startsWith('baseline')||k.startsWith('sanity')?css('--neutral'):css('--accent');
+    const xv=Math.max(lo,Math.min(hi,v));svg.append(el('rect',{x:x(lo),y:y0+4,width:Math.max(0,x(xv)-x(lo)),height:20,fill:c,rx:3}));
+    svg.append(el('text',{x:x(xv)+6,y:y0+18},pct(v)))});
+  svg.setAttribute('viewBox',`0 0 960 ${MODELS.length*rowH+48}`);
+  $('hitTable').innerHTML='<tr><th>Model</th><th>Coverage</th><th>% calls up</th><th>Hit rate</th><th>p vs 50%</th><th>Pesaran–Timmermann p</th><th>Balanced acc. (3-class)</th><th>MCC</th></tr>'+
+    MODELS.concat([['sanity_oracle_future_sign','Sanity: oracle (cheats)']]).map(([k,n])=>{const d=sg[k];return `<tr><td>${n}</td><td>${pct(d.coverage)}</td><td>${pct(d.pct_bull_calls)}</td><td>${pct(d.hit_rate)}</td><td>${pPill(d.binomial_p_vs_50pct)}</td><td>${pPill(d.pesaran_timmermann_p)}</td><td>${pct(d.bal_acc)}</td><td>${num(d.mcc)}</td></tr>`}).join('');
+  drawCM();drawRel();
+}
+function drawCM(){const svg=$('cmChart');svg.innerHTML='';const cm=D.signals[H].confusion,lab=['UP','FLAT','DOWN'],L=70,TOP=40,c=88,mx=Math.max(...cm.flat());
+  lab.forEach((l,i)=>{svg.append(el('text',{x:L+i*c+c/2,y:TOP-10,'text-anchor':'middle'},'pred '+l));svg.append(el('text',{x:L-8,y:TOP+i*c+c/2+4,'text-anchor':'end'},l))});
+  cm.forEach((row,i)=>row.forEach((v,j)=>{svg.append(el('rect',{x:L+j*c+2,y:TOP+i*c+2,width:c-4,height:c-4,rx:4,fill:css('--accent'),'fill-opacity':.12+.75*v/mx}));
+    svg.append(el('text',{x:L+j*c+c/2,y:TOP+i*c+c/2+4,'text-anchor':'middle',style:'fill:'+css('--ink')+';font-size:13px'},v.toLocaleString()))}));
+  svg.append(el('text',{x:L,y:TOP+3*c+22},'rows: actual outcome · horizon '+H.slice(1)+'h'))}
+function drawRel(){const svg=$('relChart');svg.innerHTML='';const r=D.signals[H].reliability,L=44,TOP=12,S=240,x=v=>L+v*S,y=v=>TOP+(1-v)*S;
+  for(let k=0;k<=5;k++){const v=k/5;svg.append(el('line',{x1:x(v),x2:x(v),y1:TOP,y2:TOP+S,stroke:css('--line')}));svg.append(el('line',{x1:L,x2:L+S,y1:y(v),y2:y(v),stroke:css('--line')}));
+    svg.append(el('text',{x:x(v),y:TOP+S+16,'text-anchor':'middle'},(v*100)+'%'));svg.append(el('text',{x:L-6,y:y(v)+4,'text-anchor':'end'},(v*100)+'%'))}
+  svg.append(el('line',{x1:x(0),y1:y(0),x2:x(1),y2:y(1),stroke:css('--muted'),'stroke-dasharray':'4 3'}));
+  const mx=Math.max(...r.map(b=>b.n));
+  r.forEach(b=>{svg.append(el('circle',{cx:x(b.mean_predicted),cy:y(b.observed_freq),r:3+11*Math.sqrt(b.n/mx),fill:css('--accent'),'fill-opacity':.55,stroke:css('--accent')}))});
+  svg.append(el('text',{x:L+S/2,y:TOP+S+34,'text-anchor':'middle'},'dashboard "bullish %"  →  actual share of up-moves ↑'))}
+
+/* ---------- trades ---------- */
+function drawTrades(){const svg=$('tradeChart');svg.innerHTML='';const st=Object.entries(T.by_setup),W=960,L=300,R=70,rowH=58,x=v=>L+v*(W-L-R);
+  for(let v=0;v<=0.8001;v+=.2){svg.append(el('line',{x1:x(v),x2:x(v),y1:4,y2:st.length*rowH+4,stroke:css('--line')}));svg.append(el('text',{x:x(v),y:st.length*rowH+20,'text-anchor':'middle'},(v*100).toFixed(0)+'%'))}
+  st.forEach(([name,g],i)=>{const y0=i*rowH+8,short=name.replace(/\s*\(.*\)/,'').toLowerCase().replace(/(^|\s)\S/g,m=>m.toUpperCase());
+    svg.append(el('text',{x:L-10,y:y0+16,'text-anchor':'end',style:'fill:'+css('--ink')},short));
+    svg.append(el('text',{x:L-10,y:y0+32,'text-anchor':'end'},g.n+' trades · '+(g.expectancy_usd>=0?'+':'')+'$'+g.expectancy_usd.toFixed(0)+'/trade'));
+    svg.append(el('rect',{x:x(0),y:y0+2,width:x(g.claimed_win_prob)-x(0),height:16,fill:css('--line'),rx:3}));
+    svg.append(el('text',{x:x(g.claimed_win_prob)+6,y:y0+15},'claimed '+pct(g.claimed_win_prob,0)));
+    svg.append(el('rect',{x:x(0),y:y0+22,width:x(g.target1_hit_rate)-x(0),height:16,fill:g.target1_hit_rate>=.5?css('--warn'):css('--bad'),rx:3}));
+    svg.append(el('text',{x:x(g.target1_hit_rate)+6,y:y0+35},'real '+pct(g.target1_hit_rate)))});
+  svg.setAttribute('viewBox',`0 0 960 ${st.length*rowH+28}`);
+  $('tradeKpis').innerHTML=[['bad','$'+T.expectancy_usd_per_trade.toFixed(0),'average result per trade, 1 contract'],['bad',num(T.profit_factor,2),'profit factor (needs > 1)'],
+    ['warn',T.filled_trades.toLocaleString(),'filled trades simulated'],['bad','$'+Math.round(T.max_drawdown_usd).toLocaleString(),'worst peak-to-trough']].map(([c,b,s])=>`<div class="kpi ${c}"><b>${b}</b><span>${s}</span></div>`).join('')}
+
+/* ---------- ML ---------- */
+let MH='h4';
+function drawML(){tabs('mlTabs',MH,h=>{MH=h;drawML()});const m=D.ml[MH];
+  const rows=[['rule_based_sentiment_same_window','Rule-based 7-pillar'],['logistic_regression','Logistic regression'],['gradient_boosting','Gradient boosting']];
+  $('mlTable').innerHTML='<tr><th>Model</th><th>% calls up</th><th>Hit rate</th><th>Share of up-moves</th><th>p vs 50%</th><th>Pesaran–Timmermann p</th><th>ROC-AUC</th></tr>'+
+   rows.map(([k,n])=>{const d=m[k];return `<tr><td>${n}</td><td>${pct(d.pct_bull)}</td><td>${pct(d.hit_rate)}</td><td>${pct(d.base)}</td><td>${pPill(d.p50)}</td><td>${pPill(d.pt_p)}</td><td>${num(d.auc)}</td></tr>`}).join('')}
+function drawTheil(){const svg=$('theilChart');svg.innerHTML='';const L=40,TOP=10,PH=190,W=420,lo=0.9,hi=1.35,y=v=>TOP+(hi-v)/(hi-lo)*PH;
+  for(let v=0.9;v<=1.3501;v+=.1){svg.append(el('line',{x1:L,x2:W-6,y1:y(v),y2:y(v),stroke:css('--line')}));svg.append(el('text',{x:L-6,y:y(v)+4,'text-anchor':'end'},v.toFixed(1)))}
+  svg.append(el('line',{x1:L,x2:W-6,y1:y(1),y2:y(1),stroke:css('--ink'),'stroke-dasharray':'4 3'}));
+  svg.append(el('text',{x:W-8,y:y(1)-5,'text-anchor':'end'},'random walk = 1.0'));
+  const gw=(W-L-10)/3;['h1','h4','h24'].forEach((h,gi)=>{const pf=D.ml[h].price;
+    [['ridge_regression',css('--accent')],['gradient_boosting_reg',css('--crude')]].forEach(([k,c],bi)=>{const v=pf[k].theils_u2,x0=L+gi*gw+18+bi*42;
+      svg.append(el('rect',{x:x0,y:y(v),width:34,height:y(lo)-y(v),fill:c,rx:3,opacity:.85}));svg.append(el('text',{x:x0+17,y:y(v)-4,'text-anchor':'middle'},v.toFixed(2)))});
+    svg.append(el('text',{x:L+gi*gw+56,y:TOP+PH+18,'text-anchor':'middle'},h.slice(1)+'h ahead'))});
+  svg.append(el('text',{x:L,y:TOP+PH+40},'■ ridge   '));svg.append(el('text',{x:L+70,y:TOP+PH+40},'■ gradient boosting'))}
+function drawCoef(){const svg=$('coefChart');svg.innerHTML='';const e=Object.entries(D.coef).slice(0,10),W=420,L=150,rowH=27,mx=Math.max(...e.map(([,v])=>Math.abs(v))),cx=L+(W-L-10)/2,sc=(W-L-10)/2/mx;
+  svg.append(el('line',{x1:cx,x2:cx,y1:0,y2:e.length*rowH,stroke:css('--muted')}));
+  e.forEach(([k,v],i)=>{const y0=i*rowH+4;svg.append(el('text',{x:L-8,y:y0+14,'text-anchor':'end'},k));
+    svg.append(el('rect',{x:v>=0?cx:cx+v*sc,y:y0+3,width:Math.abs(v)*sc,height:15,fill:v>=0?css('--good'):css('--bad'),rx:2}))});
+  svg.setAttribute('viewBox',`0 0 420 ${e.length*rowH+8}`)}
+
+/* ---------- bands ---------- */
+const BN={vwap_1sigma_next_close:'VWAP ±1σ · next close',vwap_2sigma_next_close:'VWAP ±2σ · next close',value_area_next_close:'Value Area · next close',value_area_close_24h_later:'Value Area · close 24h later'};
+$('bandTable').innerHTML='<tr><th>Band</th><th>Observed inside</th><th>Nominal</th><th>Gap</th><th>Mean width</th></tr>'+Object.entries(D.bands).map(([k,v])=>{const g=v.observed_coverage-v.nominal_coverage;return `<tr><td>${BN[k]||k}</td><td>${pct(v.observed_coverage)}</td><td>${pct(v.nominal_coverage)}</td><td><span class="pill ${Math.abs(g)<.05?'good':Math.abs(g)<.15?'warn':'bad'}">${(g*100).toFixed(1)} pts</span></td><td>$${v.mean_width.toFixed(2)}</td></tr>`}).join('')+
+  Object.entries(D.sweeps).map(([k,v])=>`<tr><td>Liquidity sweep: ${k.replace('swept_','')} → reversal in 4h</td><td>${pct(v.reversal_rate)}</td><td>${pct(v.base_rate)} base rate</td><td>${pPill(v.binomial_p_vs_base)}</td><td>${v.n_events} events</td></tr>`).join('');
+
+/* ---------- quiz ---------- */
+const Q=[
+ ['A model says "up" 72% of the time and is right 51.2% of the time. Oil rose in 51.3% of hours. Does it have skill?',['Yes, p < 0.01 vs 50%','No, it mostly learned the upward drift','Cannot tell'],1,'Its hit rate equals the base rate. Pesaran–Timmermann (p ≈ 0.08) confirms there is no timing skill beyond the drift.'],
+ ['Why are p-values computed on every 24th bar for the 24h horizon?',['To make the run faster','Overlapping 24h windows share 23 hours and are autocorrelated','Because Yahoo has gaps'],1,'Overlapping returns are not independent, so a naive test overstates significance by roughly √24.'],
+ ['Why not use ordinary K-fold cross-validation for the ML models?',['It leaks future information into training','It is too slow','scikit-learn does not support it'],0,'Random folds put future bars in the training set. Walk-forward with a purge gap only trains on the past.'],
+ ['A price model has MAPE 0.38% at 1 hour. Is that impressive?',['Yes, under 1% is excellent','Only if Theil U2 < 1','MAPE is the best metric for this'],1,'"Price stays the same" also gets about 0.38%. U2 = 1.004 means the model did no better than that.'],
+ ['The sentiment long/short strategy returned +17% vs +2% buy-and-hold. What should you report?',['That the strategy works','That it is not statistically distinguishable from luck (t ≈ 0.6)','Nothing'],1,'A Sharpe of 0.37 over ~2.4 years gives t ≈ 0.57. Report it with that caveat.'],
+ ['Low-OVX hours show a 57.5% hit rate with p = 0.04. Is that a finding?',['Yes, p < 0.05','A hypothesis: 3 regimes were tested, so the Bonferroni-adjusted p ≈ 0.12','No, ignore it'],1,'After testing several slices, a single p = 0.04 is expected by chance. Test it forward on new data before trusting it.']];
+let score=0,answered=0;
+$('quiz').innerHTML=Q.map(([q,o],i)=>`<div class="q"><strong>${i+1}. ${q}</strong><div class="opts">${o.map((t,j)=>`<button data-q="${i}" data-o="${j}">${t}</button>`).join('')}</div><div class="fb" id="fb${i}" aria-live="polite"></div></div>`).join('');
+$('quiz').querySelectorAll('button').forEach(b=>b.onclick=()=>{const i=+b.dataset.q,j=+b.dataset.o,[, ,a,ex]=Q[i];const box=b.parentElement;if(box.dataset.done)return;box.dataset.done=1;answered++;
+  box.querySelectorAll('button').forEach((x,k)=>{if(k==a)x.classList.add('right');else if(k==j)x.classList.add('wrong')});if(j==a)score++;
+  $('fb'+i).textContent=(j==a?'Correct. ':'Not quite. ')+ex;$('quizScore').textContent=`Score: ${score} / ${answered} answered of ${Q.length}`});
+
+/* ---------- viva ---------- */
+const V=[
+ ['Is this project machine learning?','The original dashboard is a rule-based quantitative model: technical indicators combined with hand-chosen weights. Machine learning was added in the evaluation stage. Logistic regression and gradient boosting were trained walk-forward on the same features to test whether learned weights beat hand-tuned ones.'],
+ ['How did you measure accuracy if the model does not predict a price?','Each output type got its own ground truth: direction calls against realised returns (hit rate, confusion matrix, MCC, Pesaran–Timmermann), the bullish % against outcomes (Brier score, calibration), trade setups against a bar-by-bar simulation, and bands against coverage. Every hourly call next to the actual price is in predictions_vs_actual.csv.'],
+ ['How do you know there is no look-ahead bias?','The backtest calls the same compute_snapshot function as the live server, on data sliced at each bar\'s close. Daily data only uses completed sessions. A replay of the latest bar matched the live dashboard (−24.9 vs −24.8). An oracle that deliberately cheats scores 100% and a random coin about 50%, which shows the scoring code is sound.'],
+ ['Your accuracy is about 50%. Is the project a failure?','No. It matches the literature: the no-change forecast is very hard to beat for oil (Alquist, Kilian & Vigfusson 2013), and technical-rule profits in commodity futures vanish after data-snooping control (Marshall et al. 2008). The contribution is a rigorous evaluation framework that found specific, fixable problems.'],
+ ['Why compare to baselines instead of 50%?','Oil rose in about 51–52% of windows. A model that always says up beats 50% with no skill, so a model has to beat the baselines and pass a test that accounts for base rates.'],
+ ['What would you improve next?','Replace the hard-coded win probabilities with empirical or calibrated ones. Turn fixed thresholds ($26 crack, $5 spread) into rolling z-scores. Drop the value-area rotation setup, which hit its target only 20% of the time. Fit pillar weights with regularised logistic regression inside the walk-forward loop. Run a 3-month forward test.'],
+ ['What are the limitations?','Yahoo continuous futures have roll gaps. 1h bars hide the order of high and low within a bar (handled conservatively). Real 15-minute data covers only the last 60 days. The sample is one 2.4-year macro regime.']];
+$('viva').innerHTML=V.map(([q,a])=>`<details><summary>${q}</summary><p>${a}</p></details>`).join('');
+
+function drawAll(){drawPrice();drawLeak();drawHits();drawTrades();drawML();drawTheil();drawCoef()}
+drawAll();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawAll);
+new MutationObserver(drawAll).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+</script>

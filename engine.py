@@ -310,6 +310,7 @@ class AdvancedOilEngine:
             bias = "NEUTRAL"
             action = "Two-Way Edge Scalping"
             entry_str = f"Buy near ${val:.2f} / Sell near ${vah:.2f}"
+            entry_min = entry_max = round(val, 2)  # long leg (the only leg with a defined stop)
             stop_loss = round(val - (0.5 * atr), 2)
             stop_ticks = 40
             target1 = round(poc, 2)
@@ -330,6 +331,8 @@ class AdvancedOilEngine:
             "bias": bias,
             "action": action,
             "entry_range": entry_str,
+            "entry_min": entry_min,
+            "entry_max": entry_max,
             "stop_loss": stop_loss,
             "stop_ticks": stop_ticks,
             "target1": target1,
@@ -456,9 +459,20 @@ class AdvancedOilEngine:
                 return self.cached_data
             raise RuntimeError("Unable to load live market data.")
 
-        macro_1h = data_bundle["macro_1h"]
-        cl_15m = data_bundle["cl_15m"]
-        cl_daily = data_bundle["cl_daily"]
+        data = self.compute_snapshot(data_bundle["macro_1h"], data_bundle["cl_15m"], data_bundle["cl_daily"])
+        self.cached_data = data
+        self.last_fetch_time = now_ts
+        return data
+
+    def compute_snapshot(self, macro_1h, cl_15m, cl_daily, include_display=True):
+        """
+        Pure, side-effect-free quantitative cycle.
+
+        Takes already-downloaded market data and returns the full signal snapshot.
+        Separated from `refresh()` so the exact same code can be replayed bar-by-bar
+        on historical data by `evaluation/backtest.py` (walk-forward, no look-ahead).
+        `include_display=False` skips chart/history payloads that only the UI needs.
+        """
 
         # Extract WTI 1h
         cl_1h = pd.DataFrame({
@@ -580,10 +594,10 @@ class AdvancedOilEngine:
 
         # Chart Series for Chart.js
         chart_candles = []
-        recent_bars = cl_df.iloc[-48:]
+        recent_bars = cl_df.iloc[-48:] if include_display else cl_df.iloc[0:0]
         for idx, bar in recent_bars.iterrows():
             chart_candles.append({
-                "time": idx.strftime("%b %d, %H:%M"),
+                "time": (idx.tz_convert("UTC") if idx.tzinfo else idx).strftime("%b %d, %H:%M"),
                 "open": round(float(bar['Open']), 2),
                 "high": round(float(bar['High']), 2),
                 "low": round(float(bar['Low']), 2),
@@ -598,7 +612,7 @@ class AdvancedOilEngine:
 
         # Compile Hourly History Log (24h)
         history_records = []
-        hist_sample = cl_df.iloc[-24:]
+        hist_sample = cl_df.iloc[-24:] if include_display else cl_df.iloc[0:0]
         for i in range(len(hist_sample)):
             bar = hist_sample.iloc[i]
             p_close = float(bar['Close'])
@@ -619,7 +633,7 @@ class AdvancedOilEngine:
                 h_badge = "neutral"
 
             history_records.append({
-                "timestamp": hist_sample.index[i].strftime("%H:%M UTC"),
+                "timestamp": (hist_sample.index[i].tz_convert("UTC") if hist_sample.index[i].tzinfo else hist_sample.index[i]).strftime("%H:%M UTC"),
                 "price": round(p_close, 2),
                 "change_1h": round(diff, 2),
                 "change_1h_pct": round(diff_pct, 2),
@@ -696,8 +710,6 @@ class AdvancedOilEngine:
             "history": history_records
         }
 
-        self.cached_data = data
-        self.last_fetch_time = now_ts
         return data
 
 # Singleton instance

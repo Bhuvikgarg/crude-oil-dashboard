@@ -40,6 +40,29 @@ An advanced institutional quantitative analytics terminal for Crude Oil (`CL` WT
 - VWAP Standard Deviation Bands (±1σ and ±2σ statistical volatility envelopes).
 - Session Liquidity Sweep & Trap Detector (Overnight High / Low stop run detection).
 
+## Documentation & Accuracy Evaluation
+
+| Document | Contents |
+|---|---|
+| [`docs/PROJECT_DOCUMENTATION.md`](docs/PROJECT_DOCUMENTATION.md) | Architecture, every formula, rule-based vs ML classification, code-review findings |
+| [`docs/EVALUATION_METHODOLOGY.md`](docs/EVALUATION_METHODOLOGY.md) | How accuracy is measured (walk-forward replay, baselines, statistical tests) + headline results |
+| [`reports/EVALUATION_RESULTS.md`](reports/EVALUATION_RESULTS.md) | Auto-generated backtest tables (13,436 hourly decisions, Jul 2024 → Nov 2026) |
+| [`reports/predictions_vs_actual.csv`](reports/predictions_vs_actual.csv) | Every hourly call mapped to the realised price |
+| [`docs/REFERENCES.md`](docs/REFERENCES.md) | 41 research papers / books behind the indicators, ML models and metrics |
+| [`docs/learning_report.html`](docs/learning_report.html) | Interactive learning report (open in a browser) |
+
+**Headline:** replayed point-in-time on 2.4 years of data, the directional signals are statistically
+indistinguishable from a coin flip (hit rate 49.6–51.6 %, all p > 0.3), and the playbook's claimed
+64–74 % win probabilities realise at 20–56 %. Gradient-boosting and logistic-regression baselines
+trained walk-forward on the same features do not beat a random walk either. See the methodology for why
+this is the expected — and still valuable — result.
+
+```bash
+pip install -r requirements-eval.txt
+python -m evaluation.run_evaluation --refresh   # ~4 min, writes reports/
+python -m pytest tests                          # metric unit tests
+```
+
 ## Running the Terminal
 The server is currently running live at:
 ```
@@ -48,6 +71,6 @@ http://localhost:8080
 
 To run or restart manually:
 ```bash
-cd /home/bhuvik/crude-oil-dashboard
-./start.sh
+pip install -r requirements.txt
+./start.sh            # or: python app.py
 ```

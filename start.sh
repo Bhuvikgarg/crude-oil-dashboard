@@ -8,4 +8,4 @@ echo " Starting PetroSync Crude Oil Regime & Sentiment Terminal "
 echo "=========================================================="
 
 PORT=${PORT:-8080}
-/home/bhuvik/anaconda3/bin/python app.py
+"${PYTHON:-python3}" app.py
