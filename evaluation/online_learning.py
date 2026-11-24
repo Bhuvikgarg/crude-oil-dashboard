@@ -154,6 +154,20 @@ def main():
     coef = dict(zip(X.columns, sgd_clf.coef_[0].round(4).tolist()))
     res['sgd_top_coefficients'] = dict(sorted(coef.items(), key=lambda kv: -abs(kv[1]))[:10])
 
+    # Sensitivity: how much of the learned weighting comes from the fixed share alpha?
+    Xp = np.clip(df[[f'pillar_{k}' for k in PILLARS]].to_numpy(float) / 100.0, -1, 1)
+    yy = np.where(df.fwd_ret_4.to_numpy() > 0, 1.0, -1.0); okp = df.fwd_ret_4.notna().to_numpy()
+    res['pillar_diagnostics'] = {k: {'direction_hit_rate': round(float((np.sign(Xp[okp, i]) == yy[okp])[Xp[okp, i] != 0].mean()), 4),
+                                     'mean_abs_vote': round(float(np.abs(Xp[okp, i]).mean()), 3),
+                                     'mean_squared_loss': round(float(((Xp[okp, i] - yy[okp]) ** 2 / 4).mean()), 4)}
+                                 for i, k in enumerate(PILLARS)}
+    res['alpha_sensitivity'] = {}
+    for a in (0.01, 0.001, 0.0):
+        s_a, W_a, _ = run_hedge(df, eta_best, a)
+        res['alpha_sensitivity'][str(a)] = {'final_weights': [round(v, 4) for v in W_a[-1]],
+                                            'lockbox_hit': evaluate(s_a, df, lock)['hit_rate'], 'lockbox_auc': evaluate(s_a, df, lock)['roc_auc']}
+        tried.append(f'hedge alpha={a} (sensitivity, eta={eta_best})')
+
     # Live learner starts from the weights learned over all history, then keeps updating hourly
     _, _, h_full = run_hedge(df, eta_best)
     state = {'eta': eta_best, 'alpha': 0.01, 'weights': h_full.w.tolist(), 'updates': h_full.updates,
@@ -183,6 +197,18 @@ def write_markdown(res, path):
     L += ['', '## Hedge: hand-tuned vs learned pillar weights (end of history)', '', '| Pillar | Hand-tuned | Learned |', '|---|---|---|']
     for k, a, b in zip(hw['pillars'], hw['hand'], hw['final']):
         L.append(f'| {k} | {a*100:.1f}% | {b*100:.1f}% |')
+    L += ['', '## Why the weights moved: pillar diagnostics', '',
+          '| Pillar | Direction hit rate | Mean |vote| | Mean squared loss |', '|---|---|---|---|']
+    for k, v in res['pillar_diagnostics'].items():
+        L.append(f"| {k} | {P(v['direction_hit_rate'])} | {v['mean_abs_vote']} | {v['mean_squared_loss']} |")
+    L += ['', 'No pillar beats 50 % on direction. Under squared loss a vote near 0 costs about 0.25, while a bold vote that is right '
+          'half the time costs more on average, so Hedge shifts weight to the pillars that are usually near zero (dollar, stocks).', '',
+          '## Sensitivity to the fixed share α (η fixed)', '', '| α | ' + ' | '.join(hw['pillars']) + ' | Lockbox hit | Lockbox AUC |',
+          '|---|' + '---|' * (len(hw['pillars']) + 2)]
+    for a, v in res['alpha_sensitivity'].items():
+        L.append(f'| {a} | ' + ' | '.join(f'{w*100:.1f}%' for w in v['final_weights']) + f" | {P(v['lockbox_hit'])} | {N(v['lockbox_auc'])} |")
+    L += ['', 'With α = 0.01 the fixed share keeps the weights near equal; with α = 0 almost all weight goes to the dollar and stock pillars. '
+          'Accuracy is at chance level in every case.']
     L += ['', '## Online logistic regression: largest coefficients (standardised)', '']
     L += [f'- `{k}`: {v:+.4f}' for k, v in res['sgd_top_coefficients'].items()]
     L += ['', f"Variants tried: {', '.join(pr['variants_tried'])}"]

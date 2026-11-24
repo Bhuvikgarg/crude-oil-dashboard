@@ -21,6 +21,29 @@ Each hour the model predicts first, is scored on the 4-hour outcome, then learns
 | usd_impact | 10.5% | 17.9% |
 | equity_risk_on | 10.5% | 17.9% |
 
+## Why the weights moved: pillar diagnostics
+
+| Pillar | Direction hit rate | Mean |vote| | Mean squared loss |
+|---|---|---|---|
+| mtf_alignment | 49.7% | 0.552 | 0.3538 |
+| order_flow_vwap | 49.2% | 0.37 | 0.311 |
+| crack_margin | 49.5% | 0.468 | 0.3384 |
+| brent_spread | 50.4% | 0.282 | 0.2764 |
+| usd_impact | 49.3% | 0.038 | 0.2516 |
+| equity_risk_on | 49.7% | 0.062 | 0.2525 |
+
+No pillar beats 50 % on direction. Under squared loss a vote near 0 costs about 0.25, while a bold vote that is right half the time costs more on average, so Hedge shifts weight to the pillars that are usually near zero (dollar, stocks).
+
+## Sensitivity to the fixed share α (η fixed)
+
+| α | mtf_alignment | order_flow_vwap | crack_margin | brent_spread | usd_impact | equity_risk_on | Lockbox hit | Lockbox AUC |
+|---|---|---|---|---|---|---|---|---|
+| 0.01 | 16.7% | 16.8% | 13.6% | 17.1% | 17.9% | 17.9% | 50.9% | 0.502 |
+| 0.001 | 11.1% | 12.1% | 5.4% | 14.7% | 28.7% | 28.0% | 50.3% | 0.505 |
+| 0.0 | 0.0% | 0.0% | 0.0% | 2.8% | 51.3% | 45.9% | 51.8% | 0.505 |
+
+With α = 0.01 the fixed share keeps the weights near equal; with α = 0 almost all weight goes to the dollar and stock pillars. Accuracy is at chance level in every case.
+
 ## Online logistic regression: largest coefficients (standardised)
 
 - `gold_oil`: +0.4101
@@ -34,4 +57,4 @@ Each hour the model predicts first, is scored on the 4-hour outcome, then learns
 - `pillar_mtf_alignment`: -0.0931
 - `atr_pct`: -0.0921
 
-Variants tried: hedge eta=0.01, hedge eta=0.05, hedge eta=0.2, hedge eta=0.5, sgd eta0=0.001, sgd eta0=0.01
+Variants tried: hedge eta=0.01, hedge eta=0.05, hedge eta=0.2, hedge eta=0.5, sgd eta0=0.001, sgd eta0=0.01, hedge alpha=0.01 (sensitivity, eta=0.01), hedge alpha=0.001 (sensitivity, eta=0.01), hedge alpha=0.0 (sensitivity, eta=0.01)

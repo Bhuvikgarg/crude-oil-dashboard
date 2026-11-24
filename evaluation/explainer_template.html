@@ -1,0 +1,521 @@
+<title>PetroSync from Scratch</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a guided path of ten chapters in one reading column (~70ch); every chapter pairs a short explanation with a "lab" panel to play with */
+:root{
+  --bg:#F1F4F2; --surface:#FBFCFA; --ink:#13201E; --muted:#4D5D5A; --line:#D0DAD6;
+  --accent:#0E6D70; --accent-soft:#D9ECEB; --crude:#3B2F2A; --amber:#9A600A; --amber-soft:#F4E6CF;
+  --up:#1D7A43; --down:#B0313A; --grid:#E1E8E5;
+  --display:'Space Grotesk',Arial,sans-serif; --body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1615; --surface:#162120; --ink:#E2EBE8; --muted:#9DB1AC; --line:#2A3A37;
+  --accent:#5FC0C1; --accent-soft:#163A3A; --crude:#D8C3B3; --amber:#E2A64F; --amber-soft:#3A2D18;
+  --up:#5CC47F; --down:#EF6E75; --grid:#22302E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1615; --surface:#162120; --ink:#E2EBE8; --muted:#9DB1AC; --line:#2A3A37;
+  --accent:#5FC0C1; --accent-soft:#163A3A; --crude:#D8C3B3; --amber:#E2A64F; --amber-soft:#3A2D18;
+  --up:#5CC47F; --down:#EF6E75; --grid:#22302E; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--body)}
+.wrap{max-width:980px;margin:0 auto;padding-block:40px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:64px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:clamp(2.1rem,5vw,3.2rem);font-weight:700}
+h2{font-size:1.7rem;font-weight:600}
+h3{font-size:1.05rem;font-weight:600}
+p{margin:0}
+.prose{max-width:68ch;display:flex;flex-direction:column;gap:12px}
+.lede{font-size:1.12rem;color:var(--muted)}
+.eyebrow{font:500 .74rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips a{font:500 .78rem var(--mono);color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:99px;padding:4px 10px;background:var(--surface)}
+.chips a.done{border-color:var(--accent);color:var(--accent)}
+.chips a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.ch{display:flex;flex-direction:column;gap:18px;scroll-margin-top:20px}
+.ch-head{display:flex;flex-direction:column;gap:8px}
+.lab{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.lab-title{font:500 .72rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn{font:600 .88rem var(--body);border:1px solid var(--accent);background:transparent;color:var(--accent);padding:8px 14px;border-radius:8px;cursor:pointer}
+.btn.solid{background:var(--accent);color:var(--surface)}
+.btn[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.btn:focus-visible,input:focus-visible,.flowbox:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent);width:100%}
+.slider{display:flex;flex-direction:column;gap:2px;min-width:0}
+.slider label{display:flex;justify-content:space-between;font-size:.85rem}
+.slider label span{font-family:var(--mono);color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px 24px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.stat{border-left:3px solid var(--accent);padding:2px 0 2px 12px}
+.stat strong{display:block;font:700 1.4rem/1.2 var(--display);font-variant-numeric:tabular-nums}
+.stat span{font-size:.84rem;color:var(--muted)}
+.stat.up{border-color:var(--up)} .stat.down{border-color:var(--down)} .stat.amber{border-color:var(--amber)}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;background:var(--bg)}
+.card b{font-family:var(--display)}
+.card span{font-size:.88rem;color:var(--muted)}
+.takeaway{background:var(--accent-soft);border-radius:10px;padding:14px 18px;max-width:68ch}
+.takeaway b:first-child{display:block;font:500 .72rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.note{font-size:.86rem;color:var(--muted)}
+svg text{fill:var(--muted);font-family:var(--mono);font-size:11px}
+.scroll{overflow-x:auto;min-width:0}
+.gauge{height:14px;border-radius:99px;background:linear-gradient(90deg,var(--down),var(--line) 50%,var(--up));position:relative}
+.gauge i{position:absolute;top:-5px;width:4px;height:24px;background:var(--ink);border-radius:2px;transform:translateX(-2px);transition:left .2s}
+.bars{display:flex;flex-direction:column;gap:8px}
+.barrow{display:grid;grid-template-columns:150px minmax(0,1fr) 92px;gap:10px;align-items:center;font-size:.86rem}
+@media (max-width:520px){.barrow{grid-template-columns:96px minmax(0,1fr) 78px}}
+.track{position:relative;height:22px;background:var(--grid);border-radius:4px;overflow:hidden}
+.track .ghost{position:absolute;left:0;top:0;height:22px;border-right:2px dashed var(--muted)}
+.track .fill{position:absolute;left:0;top:5px;height:12px;background:var(--accent);border-radius:3px;transition:width .15s}
+.mono{font-family:var(--mono);font-size:.86rem;font-variant-numeric:tabular-nums}
+.queue{display:flex;gap:6px;flex-wrap:wrap}
+.queue span{font:500 .74rem var(--mono);border:1px dashed var(--line);border-radius:6px;padding:3px 8px;color:var(--muted)}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.flowbox{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 14px;cursor:pointer;font:600 .9rem var(--body);color:var(--ink)}
+.flowbox.ml{border-color:var(--accent);background:var(--accent-soft)}
+.flowbox[aria-pressed="true"]{outline:2px solid var(--accent)}
+.arrow{color:var(--muted);font-family:var(--mono)}
+.quiz .q{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:8px}
+.quiz .opts{display:flex;flex-wrap:wrap;gap:8px}
+.quiz .opts button{font:500 .88rem var(--body);background:transparent;border:1px solid var(--line);color:var(--ink);padding:7px 12px;border-radius:8px;cursor:pointer;text-align:left}
+.quiz .opts button.right{border-color:var(--up);color:var(--up)}
+.quiz .opts button.wrong{border-color:var(--down);color:var(--down)}
+.check{display:flex;align-items:center;gap:8px;font-size:.86rem;color:var(--muted);cursor:pointer;user-select:none;align-self:flex-start}
+.check input{accent-color:var(--accent);width:16px;height:16px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="prose">
+  <span class="eyebrow">PetroSync · explained from the beginning</span>
+  <h1>Your project, one idea at a time</h1>
+  <p class="lede">Ten short chapters, from what a price bar is to how your self-learning model works. Each one has something to try, and most of them use your project’s real data. Tick “I get it” as you go.</p>
+  <nav class="chips" id="chips" aria-label="Chapters"></nav>
+</header>
+
+<!-- 1 -->
+<section class="ch" id="c1" data-title="1 · Raw material">
+  <div class="ch-head"><span class="eyebrow">Chapter 1 · The raw material</span><h2>One row of data is one hour of oil</h2></div>
+  <div class="prose">
+    <p>Your project watches <b>WTI crude oil futures</b>, the main US oil price. Every hour the market produces a <b>bar</b>: the open, high, low and close price for that hour, plus the volume traded. Over 2.4 years that gives <b>13,556 hourly bars</b>. That table is the starting point for everything else.</p>
+  </div>
+  <div class="lab">
+    <span class="lab-title">Try it · move along the chart to read the real prices (one point every 4 hours)</span>
+    <div class="scroll"><svg id="priceChart" viewBox="0 0 900 280" width="100%" role="img" aria-label="WTI price over the last 40 days"></svg></div>
+    <div class="grid3">
+      <div class="stat"><strong id="pTime">–</strong><span>bar close (UTC)</span></div>
+      <div class="stat"><strong id="pPrice">–</strong><span>WTI price, $ per barrel</span></div>
+      <div class="stat amber"><strong id="pMove">–</strong><span>change vs 4 hours before</span></div>
+    </div>
+  </div>
+  <div class="takeaway"><b>Remember</b> The question your ML model answers is simple: <i>will this number be higher in 4 hours?</i> That’s a yes/no question, which in ML is called <b>binary classification</b>.</div>
+  <label class="check"><input type="checkbox" data-ch="c1">I get it</label>
+</section>
+
+<!-- 2 -->
+<section class="ch" id="c2" data-title="2 · Indicators">
+  <div class="ch-head"><span class="eyebrow">Chapter 2 · Indicators</span><h2>Turning prices into signals</h2></div>
+  <div class="prose">
+    <p>Raw prices are hard to read, so traders compute <b>indicators</b>, simple formulas on past prices. The most important one in your project is the <b>EMA (exponential moving average)</b>: an average that gives more weight to recent hours. If the price is above its EMA, the trend is “up”.</p>
+  </div>
+  <div class="lab">
+    <span class="lab-title">Try it · change the EMA length and watch it smooth the price</span>
+    <div class="slider"><label for="emaSpan">EMA length (bars) <span id="emaVal">9</span></label><input id="emaSpan" type="range" min="2" max="50" value="9"></div>
+    <div class="scroll"><svg id="emaChart" viewBox="0 0 900 260" width="100%" role="img" aria-label="Price with EMA overlay"></svg></div>
+    <p class="note" id="emaNote">–</p>
+  </div>
+  <div class="grid2">
+    <div class="card"><b>RSI (0–100)</b><span>Momentum. Above 70 = rose a lot recently (overbought), below 30 = fell a lot (oversold).</span></div>
+    <div class="card"><b>ATR</b><span>Average size of one bar’s move, i.e. volatility in dollars. Used to scale stops and distances.</span></div>
+    <div class="card"><b>VWAP</b><span>Average price weighted by volume, a “fair value” line. Above it, buyers are in control.</span></div>
+    <div class="card"><b>Volume profile (POC)</b><span>The price where most volume traded recently, a level price tends to return to.</span></div>
+  </div>
+  <label class="check"><input type="checkbox" data-ch="c2">I get it</label>
+</section>
+
+<!-- 3 -->
+<section class="ch" id="c3" data-title="3 · One score">
+  <div class="ch-head"><span class="eyebrow">Chapter 3 · Many markets, one score</span><h2>The original dashboard is a weighted vote</h2></div>
+  <div class="prose">
+    <p>Oil doesn’t move alone. Your dashboard also watches the <b>US dollar</b> (oil is priced in dollars), <b>refinery margins</b> (the crack spread), the <b>Brent–WTI gap</b>, <b>stocks</b> (risk appetite) and <b>oil volatility</b> (OVX). Each becomes a “pillar” scored from −100 (bearish) to +100 (bullish). The final score is a <b>weighted sum</b> of the pillars, with weights a person chose by hand.</p>
+  </div>
+  <div class="lab">
+    <span class="lab-title">Try it · set each pillar and see the dashboard’s verdict</span>
+    <div class="grid2" id="pillarSliders"></div>
+    <div class="row" style="justify-content:space-between"><b id="pillarLabel">Balanced</b><span class="mono" id="pillarScore">0.0</span></div>
+    <div class="gauge"><i id="pillarMark" style="left:50%"></i></div>
+    <p class="note">score = 0.25·trend + 0.20·VWAP + 0.15·crack + 0.15·Brent–WTI + 0.10·dollar + 0.10·stocks + 0.05·volatility</p>
+  </div>
+  <div class="takeaway"><b>Remember</b> This is a <b>rule-based</b> system: the weights (25 %, 20 %, …) were never learned from data. That raises the question for chapter 4: could a computer learn better weights?</div>
+  <label class="check"><input type="checkbox" data-ch="c3">I get it</label>
+</section>
+
+<!-- 4 -->
+<section class="ch" id="c4" data-title="4 · Learning">
+  <div class="ch-head"><span class="eyebrow">Chapter 4 · What “learning” means</span><h2>A model learns by adjusting weights to reduce its mistakes</h2></div>
+  <div class="prose">
+    <p>Each dot is one example: its position left–right is the score, and it sits at the <b>top</b> if price went up afterwards or the <b>bottom</b> if it went down. <b>Logistic regression</b> draws an S-shaped curve giving P(up) for any score. The curve’s steepness is the <b>weight</b> and its shift is the <b>bias</b>. <b>Training</b> means nudging both, step by step, to reduce the error (log-loss). That process is called <b>gradient descent</b>.</p>
+  </div>
+  <div class="lab">
+    <div class="row"><span class="lab-title">Data</span><button class="btn" id="dsToy" aria-pressed="true">Practice data (has a pattern)</button><button class="btn" id="dsReal" aria-pressed="false">Real oil data (600 hours)</button></div>
+    <div class="scroll"><svg id="lrChart" viewBox="0 0 900 300" width="100%" role="img" aria-label="Logistic regression fit"></svg></div>
+    <div class="grid2">
+      <div class="slider"><label for="wSlider">Weight (steepness) <span id="wVal">0.00</span></label><input id="wSlider" type="range" min="-3" max="3" step="0.01" value="0"></div>
+      <div class="slider"><label for="bSlider">Bias (shift) <span id="bVal">0.00</span></label><input id="bSlider" type="range" min="-2" max="2" step="0.01" value="0"></div>
+    </div>
+    <div class="row"><button class="btn solid" id="trainBtn">Train it (gradient descent)</button><button class="btn" id="lrReset">Reset weights</button></div>
+    <div class="grid3">
+      <div class="stat"><strong id="lrAcc">–</strong><span>accuracy</span></div>
+      <div class="stat amber"><strong id="lrBase">–</strong><span>base rate (always guess the common answer)</span></div>
+      <div class="stat"><strong id="lrLoss">–</strong><span>log-loss (lower = better)</span></div>
+    </div>
+    <p class="note" id="lrNote">Press “Train it” and watch the curve find the pattern.</p>
+  </div>
+  <div class="takeaway"><b>The key lesson of your project</b> On the practice data, training finds a steep curve and high accuracy. On real oil data, training ends with an almost <b>flat</b> curve and accuracy close to the base rate. The method works; the oil score simply contains very little information about the next 4 hours.</div>
+  <label class="check"><input type="checkbox" data-ch="c4">I get it</label>
+</section>
+
+<!-- 5 -->
+<section class="ch" id="c5" data-title="5 · No peeking">
+  <div class="ch-head"><span class="eyebrow">Chapter 5 · No peeking at the future</span><h2>Train on the past, test on the future, then move forward</h2></div>
+  <div class="prose">
+    <p>The biggest mistake in financial ML is letting the model see the future by accident (<b>look-ahead bias</b>). If you shuffle the hours randomly into training and test sets, the model trains on hours that come <i>after</i> the ones it is tested on. Your project uses <b>walk-forward validation</b> instead, plus a small <b>purge gap</b> so that no training answer overlaps the test period.</p>
+  </div>
+  <div class="lab">
+    <div class="row"><span class="lab-title">Split</span><button class="btn" id="splitWF" aria-pressed="true">Walk-forward (correct)</button><button class="btn" id="splitRand" aria-pressed="false">Random shuffle (wrong)</button></div>
+    <div class="scroll"><svg id="wfChart" viewBox="0 0 900 120" width="100%" role="img" aria-label="Training and test blocks over time"></svg></div>
+    <div class="row"><button class="btn solid" id="wfNext">Next round</button><span class="note" id="wfNote">–</span></div>
+    <div class="row note"><span style="color:var(--accent)">■ train</span><span style="color:var(--amber)">■ purge gap</span><span>■ test</span><span style="color:var(--down)">■ future data used in training (leak)</span></div>
+  </div>
+  <div class="takeaway"><b>Remember</b> Your settings: at least 2,000 hours of training, retrain every 250 hours, purge gap of 4 hours. Two sanity checks prove the scoring is honest: a model that cheats on purpose scores 100 %, a coin scores about 50 %.</div>
+  <label class="check"><input type="checkbox" data-ch="c5">I get it</label>
+</section>
+
+<!-- 6 -->
+<section class="ch" id="c6" data-title="6 · Is 51 % good?">
+  <div class="ch-head"><span class="eyebrow">Chapter 6 · Is 51 % good?</span><h2>Luck can look like skill, unless you count carefully</h2></div>
+  <div class="prose">
+    <p>If a coin “predicts” oil, it is right about half the time, but never exactly 50 %. With a few hundred calls, a lucky coin can reach 53 %. A result only means something if it lands <b>outside</b> the range a coin produces. That’s what a <b>p-value</b> measures. Your project also uses the <b>Pesaran–Timmermann test</b>, which corrects for oil rising slightly more often than falling.</p>
+  </div>
+  <div class="lab">
+    <div class="slider"><label for="nCalls">Number of calls per experiment <span id="nVal">2000</span></label><input id="nCalls" type="range" min="100" max="5000" step="100" value="2000"></div>
+    <div class="row"><button class="btn solid" id="coinBtn">Run 60 coin experiments</button><span class="note">About 2,000 independent 4-hour calls is roughly what your evaluation used.</span></div>
+    <div class="scroll"><svg id="coinChart" viewBox="0 0 900 220" width="100%" role="img" aria-label="Hit rates from random coins versus your models"></svg></div>
+    <p class="note" id="coinNote">Each grey dot is one fair coin. The shaded band holds 95 % of coin results.</p>
+  </div>
+  <div class="takeaway"><b>Remember</b> Your models (49.1 %–51.3 % at 4 hours) sit inside the coin band. That is why the honest conclusion is “no reliable edge”, even though 51.3 % sounds better than 50 %.</div>
+  <label class="check"><input type="checkbox" data-ch="c6">I get it</label>
+</section>
+
+<!-- 7 -->
+<section class="ch" id="c7" data-title="7 · Honest probabilities">
+  <div class="ch-head"><span class="eyebrow">Chapter 7 · Honest probabilities</span><h2>Where ML clearly helped: calibration</h2></div>
+  <div class="prose">
+    <p>The old dashboard showed “bullish %” as if it were a probability. A probability is <b>calibrated</b> if “70 %” comes true about 70 % of the time. Using your backtest, the project checked what really happened after each reading, then trained a tiny logistic regression (<b>Platt scaling</b>) to map the score to an honest probability. That model now runs live.</p>
+  </div>
+  <div class="lab">
+    <div class="slider"><label for="calSlider">The old dashboard says “bullish” <span id="calVal">70 %</span></label><input id="calSlider" type="range" min="22" max="85" value="70"></div>
+    <div class="bars">
+      <div class="barrow"><span>Old dashboard said</span><div class="track"><div class="fill" id="calOld" style="background:var(--amber)"></div></div><span class="mono" id="calOldV">–</span></div>
+      <div class="barrow"><span>Actually went up</span><div class="track"><div class="fill" id="calReal" style="background:var(--muted)"></div></div><span class="mono" id="calRealV">–</span></div>
+      <div class="barrow"><span>Calibrated model says</span><div class="track"><div class="fill" id="calNew"></div></div><span class="mono" id="calNewV">–</span></div>
+    </div>
+    <p class="note" id="calNote">–</p>
+  </div>
+  <div class="takeaway"><b>Remember</b> Brier skill went from −0.079 (worse than guessing) to −0.001 (as good as the base rate), and calibration error from 0.12 to 0.01. The honest probability stays near 50–52 %.</div>
+  <label class="check"><input type="checkbox" data-ch="c7">I get it</label>
+</section>
+
+<!-- 8 -->
+<section class="ch" id="c8" data-title="8 · Self-learning">
+  <div class="ch-head"><span class="eyebrow">Chapter 8 · A model that keeps learning</span><h2>The Hedge algorithm re-weights the pillars after every outcome</h2></div>
+  <div class="prose">
+    <p>Each pillar is treated as an <b>expert</b> voting on the next 4 hours. When an outcome arrives, every expert’s weight is multiplied by <span class="mono">e<sup>−η·loss</sup></span>: right experts keep their weight, wrong ones shrink. The catch is <b>delayed feedback</b>: a 4-hour call can only be scored 4 hours later, so the model always learns from calls made 4 steps ago. A small <b>fixed share</b> (1 %) pulls every weight back towards equal each step, so no pillar can ever be switched off. Below it runs on <b>600 real consecutive hours</b> from your lockbox period.</p>
+  </div>
+  <div class="lab">
+    <div class="row">
+      <button class="btn solid" id="hPlay">Play</button><button class="btn" id="hStep">Step 1 hour</button><button class="btn" id="hReset">Reset</button>
+      <button class="btn" id="hShare" aria-pressed="true">Fixed share 1 %: on</button>
+      <span class="lab-title" style="margin-left:auto;text-transform:none;letter-spacing:0">Learning rate η</span>
+      <button class="btn" data-eta="0.01" aria-pressed="true">0.01 (your choice)</button><button class="btn" data-eta="0.2" aria-pressed="false">0.2</button><button class="btn" data-eta="1" aria-pressed="false">1.0</button>
+    </div>
+    <div class="bars" id="hBars"></div>
+    <div class="row note"><span>Dashed line = hand-tuned weight</span><span>Bar = learned weight</span></div>
+    <div class="grid3">
+      <div class="stat"><strong id="hT">0</strong><span>hours processed</span></div>
+      <div class="stat"><strong id="hAccL">–</strong><span>self-learning hit rate</span></div>
+      <div class="stat amber"><strong id="hAccF">–</strong><span>frozen hand-tuned hit rate</span></div>
+    </div>
+    <div class="row"><span class="lab-title">Waiting for outcome</span><div class="queue" id="hQueue"></div></div>
+    <p class="note" id="hNote">Press Play. Then turn the fixed share off and use η = 1.0: the weight piles onto the dollar and stock pillars, the two that almost always vote near zero.</p>
+  </div>
+  <div class="takeaway"><b>Remember</b> Every pillar is right about 49–50 % of the time on direction, so none is truly accurate. A cautious vote near zero costs less than a bold vote that is wrong half the time, so Hedge moves weight from the bold pillars (trend 26 % → 17 %) to the cautious ones (dollar and stocks 11 % → 18 %). Without the fixed share, nearly all weight goes to dollar and stocks. In every setting accuracy stays at chance level: learning cannot create a signal that isn’t in the data.</div>
+  <label class="check"><input type="checkbox" data-ch="c8">I get it</label>
+</section>
+
+<!-- 9 -->
+<section class="ch" id="c9" data-title="9 · Going live">
+  <div class="ch-head"><span class="eyebrow">Chapter 9 · From laptop to live</span><h2>How the pieces fit together</h2></div>
+  <div class="prose"><p>Click each box to see what it does. Teal boxes are where machine learning runs.</p></div>
+  <div class="lab">
+    <div class="flow" id="flow"></div>
+    <div class="card" id="flowInfo" aria-live="polite"><b>–</b><span>–</span></div>
+  </div>
+  <label class="check"><input type="checkbox" data-ch="c9">I get it</label>
+</section>
+
+<!-- 10 -->
+<section class="ch quiz" id="c10" data-title="10 · Check yourself">
+  <div class="ch-head"><span class="eyebrow">Chapter 10 · Check yourself</span><h2>Five questions</h2></div>
+  <div id="quiz"></div>
+  <p class="note" id="quizScore"></p>
+  <label class="check"><input type="checkbox" data-ch="c10">I get it</label>
+</section>
+
+</div>
+
+<script>
+const D = /*__DATA__*/null;
+const $ = id => document.getElementById(id);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = 'http://www.w3.org/2000/svg';
+const el = (t, a, txt) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+const pct = (x, d = 1) => (x * 100).toFixed(d) + '%';
+const sig = z => 1 / (1 + Math.exp(-z));
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+/* ---------- chapter chips + progress ---------- */
+const KEY = 'petrosync-explainer';
+let done = {}; try { done = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { done = {}; }
+const chs = [...document.querySelectorAll('section.ch')];
+function chips() { $('chips').innerHTML = chs.map(s => `<a href="#${s.id}" class="${done[s.id] ? 'done' : ''}">${s.dataset.title}</a>`).join(''); }
+document.querySelectorAll('input[data-ch]').forEach(cb => { cb.checked = !!done[cb.dataset.ch]; cb.addEventListener('change', () => { done[cb.dataset.ch] = cb.checked; try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (e) {} chips(); }); });
+chips();
+
+/* ---------- 1 · price chart with hover ---------- */
+const P = D.price, prices = P.map(d => d.p);
+function frame(svg, W, H, L, R, T, B, lo, hi, ticks, fmt) {
+  const y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  for (let k = 0; k <= ticks; k++) { const v = lo + (hi - lo) * k / ticks; svg.append(el('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: css('--grid'), 'stroke-width': 1 })); svg.append(el('text', { x: L - 8, y: y(v) + 4, 'text-anchor': 'end' }, fmt(v))); }
+  return y;
+}
+function drawPrice(hoverI) {
+  const svg = $('priceChart'); svg.innerHTML = '';
+  const W = 900, H = 280, L = 56, R = 12, T = 12, B = 28, lo = Math.min(...prices) - 0.5, hi = Math.max(...prices) + 0.5;
+  const y = frame(svg, W, H, L, R, T, B, lo, hi, 4, v => '$' + v.toFixed(0));
+  const x = i => L + i * (W - L - R) / (P.length - 1);
+  svg.append(el('path', { d: prices.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' '), fill: 'none', stroke: css('--crude'), 'stroke-width': 2 }));
+  [0, Math.floor(P.length / 2), P.length - 1].forEach((i, k) => svg.append(el('text', { x: x(i), y: H - 8, 'text-anchor': ['start', 'middle', 'end'][k] }, P[i].t.slice(0, 10))));
+  const i = hoverI ?? P.length - 1;
+  svg.append(el('line', { x1: x(i), x2: x(i), y1: T, y2: H - B, stroke: css('--accent'), 'stroke-dasharray': '3 3' }));
+  svg.append(el('circle', { cx: x(i), cy: y(prices[i]), r: 5, fill: css('--accent') }));
+  $('pTime').textContent = P[i].t.replace('T', ' ');
+  $('pPrice').textContent = '$' + prices[i].toFixed(2);
+  const mv = i ? prices[i] - prices[i - 1] : 0;
+  $('pMove').textContent = (mv >= 0 ? '+' : '−') + '$' + Math.abs(mv).toFixed(2);
+  $('pMove').style.color = mv >= 0 ? css('--up') : css('--down');
+  svg.onpointermove = e => { const r = svg.getBoundingClientRect(); const px = (e.clientX - r.left) / r.width * W; drawPrice(Math.max(0, Math.min(P.length - 1, Math.round((px - L) / (W - L - R) * (P.length - 1))))); };
+}
+
+/* ---------- 2 · EMA ---------- */
+function drawEma() {
+  const span = +$('emaSpan').value; $('emaVal').textContent = span;
+  const a = 2 / (span + 1); let e = prices[0]; const ema = prices.map(p => e = a * p + (1 - a) * e);
+  const svg = $('emaChart'); svg.innerHTML = '';
+  const W = 900, H = 260, L = 56, R = 12, T = 12, B = 24, lo = Math.min(...prices) - 0.5, hi = Math.max(...prices) + 0.5;
+  const y = frame(svg, W, H, L, R, T, B, lo, hi, 4, v => '$' + v.toFixed(0));
+  const x = i => L + i * (W - L - R) / (P.length - 1);
+  const path = arr => arr.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+  svg.append(el('path', { d: path(prices), fill: 'none', stroke: css('--crude'), 'stroke-width': 1.3, opacity: 0.6 }));
+  svg.append(el('path', { d: path(ema), fill: 'none', stroke: css('--accent'), 'stroke-width': 2.6 }));
+  let flips = 0; for (let i = 1; i < P.length; i++) if ((prices[i] > ema[i]) !== (prices[i - 1] > ema[i - 1])) flips++;
+  const above = prices[P.length - 1] > ema[P.length - 1];
+  $('emaNote').textContent = `With length ${span}, price crossed its EMA ${flips} times in these 40 days. Right now price is ${above ? 'above' : 'below'} the EMA, so this rule says the trend is ${above ? 'UP' : 'DOWN'}. Short lengths react fast but flip often; long lengths are smooth but late.`;
+}
+$('emaSpan').addEventListener('input', drawEma);
+
+/* ---------- 3 · pillars ---------- */
+const PIL = [['trend', 'Trend (EMA alignment)', .25], ['vwap', 'VWAP position', .20], ['crack', 'Refinery margin', .15], ['spread', 'Brent–WTI gap', .15], ['usd', 'US dollar', .10], ['spx', 'Stock market', .10], ['ovx', 'Volatility (OVX)', .05]];
+$('pillarSliders').innerHTML = PIL.map(([k, n, w]) => `<div class="slider"><label for="pl_${k}">${n} · ${w * 100}% <span id="pv_${k}">0</span></label><input id="pl_${k}" type="range" min="-100" max="100" value="0"></div>`).join('');
+function pillars() {
+  let s = 0; PIL.forEach(([k, , w]) => { const v = +$('pl_' + k).value; $('pv_' + k).textContent = v; s += w * v; });
+  $('pillarScore').textContent = (s > 0 ? '+' : '') + s.toFixed(1);
+  $('pillarLabel').textContent = s >= 50 ? 'Strong bullish' : s >= 15 ? 'Moderately bullish' : s <= -50 ? 'Strong bearish' : s <= -15 ? 'Moderately bearish' : 'Balanced (no call)';
+  $('pillarMark').style.left = ((s + 100) / 2) + '%';
+}
+PIL.forEach(([k]) => $('pl_' + k).addEventListener('input', pillars));
+
+/* ---------- 4 · logistic regression ---------- */
+const toyR = rng(7);
+const TOY = Array.from({ length: 120 }, () => { const x = toyR() * 200 - 100; return [x, toyR() < sig(0.045 * x) ? 1 : 0]; });
+let DS = TOY, w = 0, b = 0, training = false;
+const jit = rng(11); const JIT = Array.from({ length: 600 }, () => jit());
+function lrStats() {
+  let acc = 0, loss = 0, ups = 0;
+  DS.forEach(([x, yv]) => { const p = Math.min(1 - 1e-6, Math.max(1e-6, sig(w * x / 50 + b))); acc += ((p > 0.5 ? 1 : 0) === yv); loss -= yv * Math.log(p) + (1 - yv) * Math.log(1 - p); ups += yv; });
+  return { acc: acc / DS.length, loss: loss / DS.length, base: Math.max(ups, DS.length - ups) / DS.length };
+}
+function drawLR() {
+  $('wSlider').value = w; $('bSlider').value = b; $('wVal').textContent = w.toFixed(2); $('bVal').textContent = b.toFixed(2);
+  const svg = $('lrChart'); svg.innerHTML = '';
+  const W = 900, H = 300, L = 56, R = 12, T = 16, B = 30, x = v => L + (v + 100) / 200 * (W - L - R), y = v => T + (1 - v) * (H - T - B);
+  [0, 0.5, 1].forEach(v => { svg.append(el('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: css('--grid') })); svg.append(el('text', { x: L - 8, y: y(v) + 4, 'text-anchor': 'end' }, v === 0.5 ? '50%' : v ? 'up' : 'down')); });
+  [-100, -50, 0, 50, 100].forEach(v => svg.append(el('text', { x: x(v), y: H - 8, 'text-anchor': 'middle' }, (v > 0 ? '+' : '') + v)));
+  DS.forEach(([xv, yv], i) => svg.append(el('circle', { cx: x(Math.max(-100, Math.min(100, xv))), cy: y(yv) + (yv ? 1 : -1) * JIT[i % 600] * 18, r: 3.2, fill: yv ? css('--up') : css('--down'), 'fill-opacity': 0.55 })));
+  let d = ''; for (let v = -100; v <= 100; v += 2) d += (v === -100 ? 'M' : 'L') + x(v).toFixed(1) + ' ' + y(sig(w * v / 50 + b)).toFixed(1);
+  svg.append(el('path', { d, fill: 'none', stroke: css('--accent'), 'stroke-width': 3 }));
+  const s = lrStats();
+  $('lrAcc').textContent = pct(s.acc); $('lrBase').textContent = pct(s.base); $('lrLoss').textContent = s.loss.toFixed(3);
+}
+function train() {
+  if (training) return; training = true; let step = 0;
+  const tick = () => {
+    for (let k = 0; k < 4; k++) {
+      let gw = 0, gb = 0; DS.forEach(([x, yv]) => { const e = sig(w * x / 50 + b) - yv; gw += e * x / 50; gb += e; });
+      w -= 0.6 * gw / DS.length; b -= 0.6 * gb / DS.length;
+      w = Math.max(-3, Math.min(3, w)); b = Math.max(-2, Math.min(2, b));
+    }
+    drawLR(); step++;
+    if (step < 70) requestAnimationFrame(tick); else {
+      training = false; const s = lrStats();
+      $('lrNote').textContent = DS === TOY
+        ? `Trained: weight ${w.toFixed(2)}. A steep curve means the score really tells you something. Accuracy ${pct(s.acc)} beats the ${pct(s.base)} base rate.`
+        : `Trained on real oil: weight ${w.toFixed(2)}, so the curve is almost flat. Accuracy ${pct(s.acc)} is about the ${pct(s.base)} base rate. The score barely predicts the next 4 hours, which is exactly what your full evaluation found.`;
+    }
+  };
+  requestAnimationFrame(tick);
+}
+function setDS(real) { DS = real ? D.real : TOY; w = 0; b = 0; $('dsToy').setAttribute('aria-pressed', !real); $('dsReal').setAttribute('aria-pressed', real); $('lrNote').textContent = 'Press “Train it” and watch the curve.'; drawLR(); }
+$('dsToy').onclick = () => setDS(false); $('dsReal').onclick = () => setDS(true);
+$('trainBtn').onclick = train; $('lrReset').onclick = () => { w = 0; b = 0; drawLR(); };
+$('wSlider').oninput = e => { w = +e.target.value; drawLR(); }; $('bSlider').oninput = e => { b = +e.target.value; drawLR(); };
+
+/* ---------- 5 · walk-forward ---------- */
+let wfRound = 0, wfRandom = false; const NB = 14;
+function drawWF() {
+  const svg = $('wfChart'); svg.innerHTML = ''; const W = 900, L = 10, bw = (W - 2 * L) / NB;
+  let role = Array(NB).fill('none');
+  if (!wfRandom) {
+    const trainEnd = 3 + wfRound; for (let i = 0; i < trainEnd; i++) role[i] = 'train'; if (trainEnd < NB) role[trainEnd] = 'purge'; if (trainEnd + 1 < NB) role[trainEnd + 1] = 'test';
+    $('wfNote').textContent = trainEnd + 1 < NB ? `Round ${wfRound + 1}: learn from blocks 1–${trainEnd}, skip block ${trainEnd + 1} (purge), test on block ${trainEnd + 2}. Every training hour comes before every test hour.` : 'Finished: every block was tested by a model that only saw the past.';
+  } else {
+    const r = rng(100 + wfRound); role = role.map(() => r() < 0.3 ? 'test' : 'train');
+    const firstTest = role.indexOf('test');
+    role = role.map((v, i) => v === 'train' && i > firstTest && firstTest >= 0 ? 'leak' : v);
+    $('wfNote').textContent = 'Random shuffle: red blocks are from the future of a test block, yet they are used for training. The model can memorise what happens next, so its accuracy looks better than it really is.';
+  }
+  const col = { train: css('--accent'), purge: css('--amber'), test: css('--ink'), leak: css('--down'), none: css('--grid') };
+  role.forEach((r, i) => svg.append(el('rect', { x: L + i * bw + 2, y: 20, width: bw - 4, height: 56, rx: 6, fill: col[r] })));
+  svg.append(el('text', { x: L, y: 100 }, 'older'));
+  svg.append(el('text', { x: W - L, y: 100, 'text-anchor': 'end' }, 'newer → time'));
+}
+$('wfNext').onclick = () => { wfRound = (wfRound + 1) % (NB - 3); drawWF(); };
+$('splitWF').onclick = () => { wfRandom = false; wfRound = 0; $('splitWF').setAttribute('aria-pressed', true); $('splitRand').setAttribute('aria-pressed', false); drawWF(); };
+$('splitRand').onclick = () => { wfRandom = true; $('splitWF').setAttribute('aria-pressed', false); $('splitRand').setAttribute('aria-pressed', true); drawWF(); };
+
+/* ---------- 6 · coins ---------- */
+let coins = [];
+function drawCoins() {
+  const n = +$('nCalls').value; $('nVal').textContent = n.toLocaleString();
+  const svg = $('coinChart'); svg.innerHTML = '';
+  const W = 900, H = 220, L = 30, R = 30, lo = 0.44, hi = 0.56, x = v => L + (v - lo) / (hi - lo) * (W - L - R), base = 150;
+  const half = 1.96 * Math.sqrt(0.25 / n);
+  svg.append(el('rect', { x: x(0.5 - half), y: 20, width: x(0.5 + half) - x(0.5 - half), height: base - 10, fill: css('--accent-soft') }));
+  svg.append(el('line', { x1: L, x2: W - R, y1: base + 10, y2: base + 10, stroke: css('--muted') }));
+  for (let v = 0.44; v <= 0.5601; v += 0.02) svg.append(el('text', { x: x(v), y: base + 28, 'text-anchor': 'middle' }, (v * 100).toFixed(0) + '%'));
+  const cnt = {}; coins.forEach(v => { const k = Math.round(v * 400); cnt[k] = (cnt[k] || 0) + 1; const yy = base - (cnt[k] - 1) * 9; svg.append(el('circle', { cx: x(Math.max(lo, Math.min(hi, v))), cy: yy, r: 4, fill: css('--muted'), 'fill-opacity': .7 })); });
+  [['rules 49.1%', .491, '--amber'], ['logistic 50.7%', .507, '--accent'], ['boosting 51.3%', .513, '--up']].forEach(([lab, v, c], i) => {
+    svg.append(el('line', { x1: x(v), x2: x(v), y1: 14, y2: base + 10, stroke: css(c), 'stroke-width': 2.5 }));
+    svg.append(el('text', { x: x(v), y: 12 + i * 0 + (i === 1 ? 196 : 0) + (i === 1 ? 0 : 0), 'text-anchor': 'middle', style: 'fill:' + css(c) }, i === 1 ? '' : lab));
+  });
+  svg.append(el('text', { x: x(.507), y: H - 6, 'text-anchor': 'middle', style: 'fill:' + css('--accent') }, 'logistic 50.7%'));
+  $('coinNote').textContent = `With ${n.toLocaleString()} calls, 95% of fair coins land between ${pct(0.5 - half)} and ${pct(0.5 + half)} (shaded). ${coins.length ? `This run: coins ranged from ${pct(Math.min(...coins))} to ${pct(Math.max(...coins))}.` : 'Press the button to flip.'} Your models’ lines fall inside the shaded band, so luck can explain them.`;
+}
+$('coinBtn').onclick = () => { const n = +$('nCalls').value; const r = rng(Date.now() % 100000); coins = Array.from({ length: 60 }, () => { let h = 0; for (let i = 0; i < n; i++) h += r() < 0.5; return h / n; }); drawCoins(); };
+$('nCalls').oninput = () => { coins = []; drawCoins(); };
+
+/* ---------- 7 · calibration ---------- */
+function drawCal() {
+  const v = +$('calSlider').value / 100; $('calVal').textContent = Math.round(v * 100) + ' %';
+  const bin = D.rel.find(b => { const [a, c] = b.bin.split('-').map(Number); return v >= a && v < c; }) || D.rel[D.rel.length - 1];
+  const score = v * 200 - 100, cal = sig(D.cal.coef * score + D.cal.intercept);
+  [['calOld', 'calOldV', v], ['calReal', 'calRealV', bin.observed_freq], ['calNew', 'calNewV', cal]].forEach(([f, t, val]) => { $(f).style.width = (val * 100) + '%'; $(t).textContent = pct(val); });
+  $('calNote').textContent = `When the old dashboard said about ${Math.round(v * 100)}% bullish (${bin.n.toLocaleString()} such hours in the backtest), oil actually rose ${pct(bin.observed_freq)} of the time. The calibrated model says ${pct(cal)}, which is honest about how little the score knows.`;
+}
+$('calSlider').oninput = drawCal;
+
+/* ---------- 8 · Hedge simulator ---------- */
+const HN = ['Trend', 'VWAP', 'Refinery margin', 'Brent–WTI', 'US dollar', 'Stocks'];
+const HAND = [25, 20, 15, 15, 10, 10].map(v => v / 95);
+let H = {}, timer = null, ETA = 0.01, ALPHA = 0.01;
+function hReset() { H = { t: 0, w: HAND.slice(), okL: 0, okF: 0, n: 0, queue: [] }; hDraw(); }
+function hStep() {
+  if (H.t >= D.hedge.length) { hPause(); $('hNote').textContent = 'Finished 600 hours. Press Reset to run again, or try another learning rate.'; return; }
+  const row = D.hedge[H.t];
+  const sL = row.x.reduce((s, v, i) => s + v * H.w[i], 0), sF = row.x.reduce((s, v, i) => s + v * HAND[i], 0);
+  if (sL !== 0 || sF !== 0) { H.n++; H.okL += (Math.sign(sL) === row.y); H.okF += (Math.sign(sF) === row.y); }
+  H.queue.push({ t: H.t, x: row.x, y: row.y });
+  if (H.queue.length > 4) {
+    const old = H.queue.shift();
+    let w = H.w.map((wi, i) => wi * Math.exp(-ETA * ((old.x[i] - old.y) ** 2) / 4)); const s = w.reduce((a, c) => a + c, 0);
+    H.w = w.map(v => (1 - ALPHA) * v / s + ALPHA / 6);
+  }
+  H.t++; hDraw();
+}
+function hDraw() {
+  const mx = 0.45;
+  $('hBars').innerHTML = HN.map((n, i) => `<div class="barrow"><span>${n}</span><div class="track"><div class="ghost" style="width:${HAND[i] / mx * 100}%"></div><div class="fill" style="width:${H.w[i] / mx * 100}%"></div></div><span class="mono">${(HAND[i] * 100).toFixed(0)}% → ${(H.w[i] * 100).toFixed(1)}%</span></div>`).join('');
+  $('hT').textContent = H.t;
+  $('hAccL').textContent = H.n ? pct(H.okL / H.n) : '–';
+  $('hAccF').textContent = H.n ? pct(H.okF / H.n) : '–';
+  $('hQueue').innerHTML = H.queue.length ? H.queue.map(q => `<span>${D.hedge[q.t].t.slice(5)}h → ${q.y > 0 ? 'up' : 'down'}?</span>`).join('') : '<span>empty</span>';
+}
+function hPause() { clearInterval(timer); timer = null; $('hPlay').textContent = 'Play'; }
+$('hPlay').onclick = () => { if (timer) return hPause(); $('hPlay').textContent = 'Pause'; timer = setInterval(hStep, 40); };
+$('hStep').onclick = () => { hPause(); hStep(); };
+$('hReset').onclick = () => { hPause(); hReset(); };
+$('hShare').onclick = () => { ALPHA = ALPHA ? 0 : 0.01; $('hShare').setAttribute('aria-pressed', ALPHA > 0); $('hShare').textContent = 'Fixed share 1 %: ' + (ALPHA ? 'on' : 'off'); hPause(); hReset(); };
+document.querySelectorAll('[data-eta]').forEach(bt => bt.onclick = () => { ETA = +bt.dataset.eta; document.querySelectorAll('[data-eta]').forEach(x => x.setAttribute('aria-pressed', x === bt)); hPause(); hReset(); });
+
+/* ---------- 9 · flow ---------- */
+const FLOW = [
+  ['Yahoo Finance', false, 'Free market data for 9 markets, downloaded with the yfinance library. Hourly history goes back about 2 years.'],
+  ['Cleaning', false, 'Times converted to UTC; each market cleaned separately because they trade different hours; gaps are only filled from the past.'],
+  ['Engine (rules)', false, 'engine.py computes indicators, the 7 pillars, the sentiment score and trade setups. It is the baseline and the feature generator.'],
+  ['31 features', false, 'Engine scores, intermarket values, price structure and time features, rebuilt for every hour of history exactly as they looked live.'],
+  ['Walk-forward ML', true, 'Logistic regression, ridge and gradient boosting trained only on the past, retrained every 250 hours, with a purge gap.'],
+  ['Evaluation', true, 'Baselines, a held-back lockbox period, significance tests and sanity checks decide what really works.'],
+  ['Live dashboard', true, 'Flask + Chart.js. Shows the calibrated probability, the self-learning weights panel and a Backtest Reality Check card.'],
+  ['Forward test', true, 'Frozen, fingerprinted models record predictions every hour via GitHub Actions before outcomes exist, until Feb 2027.']
+];
+$('flow').innerHTML = FLOW.map(([n, ml], i) => `${i ? '<span class="arrow">→</span>' : ''}<button class="flowbox ${ml ? 'ml' : ''}" data-i="${i}" aria-pressed="false">${n}</button>`).join('');
+function flowPick(i) { document.querySelectorAll('.flowbox').forEach(b => b.setAttribute('aria-pressed', +b.dataset.i === i)); $('flowInfo').innerHTML = `<b>${FLOW[i][0]}${FLOW[i][1] ? ' · machine learning' : ''}</b><span>${FLOW[i][2]}</span>`; }
+document.querySelectorAll('.flowbox').forEach(b => b.onclick = () => flowPick(+b.dataset.i));
+flowPick(4);
+
+/* ---------- 10 · quiz ---------- */
+const Q = [
+  ['What question does the ML model answer?', ['What will the exact price be tomorrow?', 'Will WTI be higher 4 hours from now?', 'Which market is best to trade?'], 1, 'It is binary classification: up or not up, 4 hours ahead.'],
+  ['Why not shuffle the hours randomly into train and test?', ['It is slower', 'Future hours would end up in training and leak the answer', 'Shuffling loses data'], 1, 'Walk-forward keeps every training hour before every test hour.'],
+  ['A model gets 51.3 %. What do you need before calling it skill?', ['Nothing, it is above 50 %', 'A test showing it beats what luck and the upward drift can explain', 'A bigger font on the slide'], 1, 'The coin experiment shows 51.3 % is inside the luck band for this many calls.'],
+  ['What did calibration fix?', ['It made predictions more accurate', 'It made the shown probability honest', 'It made the dashboard faster'], 1, 'Brier skill went from −0.079 to −0.001: the probability now matches what happens.'],
+  ['Why did Hedge move weight to the dollar and stock pillars?', ['They predict direction best', 'No pillar beats 50 %, and those two rarely make bold calls, so they lose least', 'They have the biggest values'], 1, 'All pillars are right 49–50 % of the time. Cautious votes cost less, so Hedge rewards caution when nothing is predictive.']
+];
+let score = 0, answered = 0;
+$('quiz').innerHTML = Q.map(([q, o], i) => `<div class="q"><b>${i + 1}. ${q}</b><div class="opts">${o.map((t, j) => `<button data-q="${i}" data-o="${j}">${t}</button>`).join('')}</div><p class="note" id="qf${i}" aria-live="polite"></p></div>`).join('');
+$('quiz').querySelectorAll('button').forEach(bt => bt.onclick = () => {
+  const i = +bt.dataset.q, j = +bt.dataset.o, box = bt.parentElement; if (box.dataset.done) return; box.dataset.done = 1; answered++;
+  box.querySelectorAll('button').forEach((x, k) => { if (k === Q[i][2]) x.classList.add('right'); else if (k === j) x.classList.add('wrong'); });
+  if (j === Q[i][2]) score++; $('qf' + i).textContent = (j === Q[i][2] ? 'Correct. ' : 'Not quite. ') + Q[i][3];
+  $('quizScore').textContent = `Score: ${score} of ${answered} answered`;
+});
+
+/* ---------- boot + theme redraw ---------- */
+function drawAll() { drawPrice(); drawEma(); pillars(); drawLR(); drawWF(); drawCoins(); drawCal(); hDraw(); }
+hReset(); drawAll();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawAll);
+new MutationObserver(drawAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+</script>

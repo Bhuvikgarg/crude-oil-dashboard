@@ -1,0 +1,521 @@
+<title>PetroSync from Scratch</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a guided path of ten chapters in one reading column (~70ch); every chapter pairs a short explanation with a "lab" panel to play with */
+:root{
+  --bg:#F1F4F2; --surface:#FBFCFA; --ink:#13201E; --muted:#4D5D5A; --line:#D0DAD6;
+  --accent:#0E6D70; --accent-soft:#D9ECEB; --crude:#3B2F2A; --amber:#9A600A; --amber-soft:#F4E6CF;
+  --up:#1D7A43; --down:#B0313A; --grid:#E1E8E5;
+  --display:'Space Grotesk',Arial,sans-serif; --body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1615; --surface:#162120; --ink:#E2EBE8; --muted:#9DB1AC; --line:#2A3A37;
+  --accent:#5FC0C1; --accent-soft:#163A3A; --crude:#D8C3B3; --amber:#E2A64F; --amber-soft:#3A2D18;
+  --up:#5CC47F; --down:#EF6E75; --grid:#22302E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1615; --surface:#162120; --ink:#E2EBE8; --muted:#9DB1AC; --line:#2A3A37;
+  --accent:#5FC0C1; --accent-soft:#163A3A; --crude:#D8C3B3; --amber:#E2A64F; --amber-soft:#3A2D18;
+  --up:#5CC47F; --down:#EF6E75; --grid:#22302E; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--body)}
+.wrap{max-width:980px;margin:0 auto;padding-block:40px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:64px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:clamp(2.1rem,5vw,3.2rem);font-weight:700}
+h2{font-size:1.7rem;font-weight:600}
+h3{font-size:1.05rem;font-weight:600}
+p{margin:0}
+.prose{max-width:68ch;display:flex;flex-direction:column;gap:12px}
+.lede{font-size:1.12rem;color:var(--muted)}
+.eyebrow{font:500 .74rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips a{font:500 .78rem var(--mono);color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:99px;padding:4px 10px;background:var(--surface)}
+.chips a.done{border-color:var(--accent);color:var(--accent)}
+.chips a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.ch{display:flex;flex-direction:column;gap:18px;scroll-margin-top:20px}
+.ch-head{display:flex;flex-direction:column;gap:8px}
+.lab{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.lab-title{font:500 .72rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn{font:600 .88rem var(--body);border:1px solid var(--accent);background:transparent;color:var(--accent);padding:8px 14px;border-radius:8px;cursor:pointer}
+.btn.solid{background:var(--accent);color:var(--surface)}
+.btn[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.btn:focus-visible,input:focus-visible,.flowbox:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{accent-color:var(--accent);width:100%}
+.slider{display:flex;flex-direction:column;gap:2px;min-width:0}
+.slider label{display:flex;justify-content:space-between;font-size:.85rem}
+.slider label span{font-family:var(--mono);color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px 24px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.stat{border-left:3px solid var(--accent);padding:2px 0 2px 12px}
+.stat strong{display:block;font:700 1.4rem/1.2 var(--display);font-variant-numeric:tabular-nums}
+.stat span{font-size:.84rem;color:var(--muted)}
+.stat.up{border-color:var(--up)} .stat.down{border-color:var(--down)} .stat.amber{border-color:var(--amber)}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;background:var(--bg)}
+.card b{font-family:var(--display)}
+.card span{font-size:.88rem;color:var(--muted)}
+.takeaway{background:var(--accent-soft);border-radius:10px;padding:14px 18px;max-width:68ch}
+.takeaway b:first-child{display:block;font:500 .72rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.note{font-size:.86rem;color:var(--muted)}
+svg text{fill:var(--muted);font-family:var(--mono);font-size:11px}
+.scroll{overflow-x:auto;min-width:0}
+.gauge{height:14px;border-radius:99px;background:linear-gradient(90deg,var(--down),var(--line) 50%,var(--up));position:relative}
+.gauge i{position:absolute;top:-5px;width:4px;height:24px;background:var(--ink);border-radius:2px;transform:translateX(-2px);transition:left .2s}
+.bars{display:flex;flex-direction:column;gap:8px}
+.barrow{display:grid;grid-template-columns:150px minmax(0,1fr) 92px;gap:10px;align-items:center;font-size:.86rem}
+@media (max-width:520px){.barrow{grid-template-columns:96px minmax(0,1fr) 78px}}
+.track{position:relative;height:22px;background:var(--grid);border-radius:4px;overflow:hidden}
+.track .ghost{position:absolute;left:0;top:0;height:22px;border-right:2px dashed var(--muted)}
+.track .fill{position:absolute;left:0;top:5px;height:12px;background:var(--accent);border-radius:3px;transition:width .15s}
+.mono{font-family:var(--mono);font-size:.86rem;font-variant-numeric:tabular-nums}
+.queue{display:flex;gap:6px;flex-wrap:wrap}
+.queue span{font:500 .74rem var(--mono);border:1px dashed var(--line);border-radius:6px;padding:3px 8px;color:var(--muted)}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.flowbox{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 14px;cursor:pointer;font:600 .9rem var(--body);color:var(--ink)}
+.flowbox.ml{border-color:var(--accent);background:var(--accent-soft)}
+.flowbox[aria-pressed="true"]{outline:2px solid var(--accent)}
+.arrow{color:var(--muted);font-family:var(--mono)}
+.quiz .q{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:8px}
+.quiz .opts{display:flex;flex-wrap:wrap;gap:8px}
+.quiz .opts button{font:500 .88rem var(--body);background:transparent;border:1px solid var(--line);color:var(--ink);padding:7px 12px;border-radius:8px;cursor:pointer;text-align:left}
+.quiz .opts button.right{border-color:var(--up);color:var(--up)}
+.quiz .opts button.wrong{border-color:var(--down);color:var(--down)}
+.check{display:flex;align-items:center;gap:8px;font-size:.86rem;color:var(--muted);cursor:pointer;user-select:none;align-self:flex-start}
+.check input{accent-color:var(--accent);width:16px;height:16px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="prose">
+  <span class="eyebrow">PetroSync · explained from the beginning</span>
+  <h1>Your project, one idea at a time</h1>
+  <p class="lede">Ten short chapters, from what a price bar is to how your self-learning model works. Each one has something to try, and most of them use your project’s real data. Tick “I get it” as you go.</p>
+  <nav class="chips" id="chips" aria-label="Chapters"></nav>
+</header>
+
+<!-- 1 -->
+<section class="ch" id="c1" data-title="1 · Raw material">
+  <div class="ch-head"><span class="eyebrow">Chapter 1 · The raw material</span><h2>One row of data is one hour of oil</h2></div>
+  <div class="prose">
+    <p>Your project watches <b>WTI crude oil futures</b>, the main US oil price. Every hour the market produces a <b>bar</b>: the open, high, low and close price for that hour, plus the volume traded. Over 2.4 years that gives <b>13,556 hourly bars</b>. That table is the starting point for everything else.</p>
+  </div>
+  <div class="lab">
+    <span class="lab-title">Try it · move along the chart to read the real prices (one point every 4 hours)</span>
+    <div class="scroll"><svg id="priceChart" viewBox="0 0 900 280" width="100%" role="img" aria-label="WTI price over the last 40 days"></svg></div>
+    <div class="grid3">
+      <div class="stat"><strong id="pTime">–</strong><span>bar close (UTC)</span></div>
+      <div class="stat"><strong id="pPrice">–</strong><span>WTI price, $ per barrel</span></div>
+      <div class="stat amber"><strong id="pMove">–</strong><span>change vs 4 hours before</span></div>
+    </div>
+  </div>
+  <div class="takeaway"><b>Remember</b> The question your ML model answers is simple: <i>will this number be higher in 4 hours?</i> That’s a yes/no question, which in ML is called <b>binary classification</b>.</div>
+  <label class="check"><input type="checkbox" data-ch="c1">I get it</label>
+</section>
+
+<!-- 2 -->
+<section class="ch" id="c2" data-title="2 · Indicators">
+  <div class="ch-head"><span class="eyebrow">Chapter 2 · Indicators</span><h2>Turning prices into signals</h2></div>
+  <div class="prose">
+    <p>Raw prices are hard to read, so traders compute <b>indicators</b>, simple formulas on past prices. The most important one in your project is the <b>EMA (exponential moving average)</b>: an average that gives more weight to recent hours. If the price is above its EMA, the trend is “up”.</p>
+  </div>
+  <div class="lab">
+    <span class="lab-title">Try it · change the EMA length and watch it smooth the price</span>
+    <div class="slider"><label for="emaSpan">EMA length (bars) <span id="emaVal">9</span></label><input id="emaSpan" type="range" min="2" max="50" value="9"></div>
+    <div class="scroll"><svg id="emaChart" viewBox="0 0 900 260" width="100%" role="img" aria-label="Price with EMA overlay"></svg></div>
+    <p class="note" id="emaNote">–</p>
+  </div>
+  <div class="grid2">
+    <div class="card"><b>RSI (0–100)</b><span>Momentum. Above 70 = rose a lot recently (overbought), below 30 = fell a lot (oversold).</span></div>
+    <div class="card"><b>ATR</b><span>Average size of one bar’s move, i.e. volatility in dollars. Used to scale stops and distances.</span></div>
+    <div class="card"><b>VWAP</b><span>Average price weighted by volume, a “fair value” line. Above it, buyers are in control.</span></div>
+    <div class="card"><b>Volume profile (POC)</b><span>The price where most volume traded recently, a level price tends to return to.</span></div>
+  </div>
+  <label class="check"><input type="checkbox" data-ch="c2">I get it</label>
+</section>
+
+<!-- 3 -->
+<section class="ch" id="c3" data-title="3 · One score">
+  <div class="ch-head"><span class="eyebrow">Chapter 3 · Many markets, one score</span><h2>The original dashboard is a weighted vote</h2></div>
+  <div class="prose">
+    <p>Oil doesn’t move alone. Your dashboard also watches the <b>US dollar</b> (oil is priced in dollars), <b>refinery margins</b> (the crack spread), the <b>Brent–WTI gap</b>, <b>stocks</b> (risk appetite) and <b>oil volatility</b> (OVX). Each becomes a “pillar” scored from −100 (bearish) to +100 (bullish). The final score is a <b>weighted sum</b> of the pillars, with weights a person chose by hand.</p>
+  </div>
+  <div class="lab">
+    <span class="lab-title">Try it · set each pillar and see the dashboard’s verdict</span>
+    <div class="grid2" id="pillarSliders"></div>
+    <div class="row" style="justify-content:space-between"><b id="pillarLabel">Balanced</b><span class="mono" id="pillarScore">0.0</span></div>
+    <div class="gauge"><i id="pillarMark" style="left:50%"></i></div>
+    <p class="note">score = 0.25·trend + 0.20·VWAP + 0.15·crack + 0.15·Brent–WTI + 0.10·dollar + 0.10·stocks + 0.05·volatility</p>
+  </div>
+  <div class="takeaway"><b>Remember</b> This is a <b>rule-based</b> system: the weights (25 %, 20 %, …) were never learned from data. That raises the question for chapter 4: could a computer learn better weights?</div>
+  <label class="check"><input type="checkbox" data-ch="c3">I get it</label>
+</section>
+
+<!-- 4 -->
+<section class="ch" id="c4" data-title="4 · Learning">
+  <div class="ch-head"><span class="eyebrow">Chapter 4 · What “learning” means</span><h2>A model learns by adjusting weights to reduce its mistakes</h2></div>
+  <div class="prose">
+    <p>Each dot is one example: its position left–right is the score, and it sits at the <b>top</b> if price went up afterwards or the <b>bottom</b> if it went down. <b>Logistic regression</b> draws an S-shaped curve giving P(up) for any score. The curve’s steepness is the <b>weight</b> and its shift is the <b>bias</b>. <b>Training</b> means nudging both, step by step, to reduce the error (log-loss). That process is called <b>gradient descent</b>.</p>
+  </div>
+  <div class="lab">
+    <div class="row"><span class="lab-title">Data</span><button class="btn" id="dsToy" aria-pressed="true">Practice data (has a pattern)</button><button class="btn" id="dsReal" aria-pressed="false">Real oil data (600 hours)</button></div>
+    <div class="scroll"><svg id="lrChart" viewBox="0 0 900 300" width="100%" role="img" aria-label="Logistic regression fit"></svg></div>
+    <div class="grid2">
+      <div class="slider"><label for="wSlider">Weight (steepness) <span id="wVal">0.00</span></label><input id="wSlider" type="range" min="-3" max="3" step="0.01" value="0"></div>
+      <div class="slider"><label for="bSlider">Bias (shift) <span id="bVal">0.00</span></label><input id="bSlider" type="range" min="-2" max="2" step="0.01" value="0"></div>
+    </div>
+    <div class="row"><button class="btn solid" id="trainBtn">Train it (gradient descent)</button><button class="btn" id="lrReset">Reset weights</button></div>
+    <div class="grid3">
+      <div class="stat"><strong id="lrAcc">–</strong><span>accuracy</span></div>
+      <div class="stat amber"><strong id="lrBase">–</strong><span>base rate (always guess the common answer)</span></div>
+      <div class="stat"><strong id="lrLoss">–</strong><span>log-loss (lower = better)</span></div>
+    </div>
+    <p class="note" id="lrNote">Press “Train it” and watch the curve find the pattern.</p>
+  </div>
+  <div class="takeaway"><b>The key lesson of your project</b> On the practice data, training finds a steep curve and high accuracy. On real oil data, training ends with an almost <b>flat</b> curve and accuracy close to the base rate. The method works; the oil score simply contains very little information about the next 4 hours.</div>
+  <label class="check"><input type="checkbox" data-ch="c4">I get it</label>
+</section>
+
+<!-- 5 -->
+<section class="ch" id="c5" data-title="5 · No peeking">
+  <div class="ch-head"><span class="eyebrow">Chapter 5 · No peeking at the future</span><h2>Train on the past, test on the future, then move forward</h2></div>
+  <div class="prose">
+    <p>The biggest mistake in financial ML is letting the model see the future by accident (<b>look-ahead bias</b>). If you shuffle the hours randomly into training and test sets, the model trains on hours that come <i>after</i> the ones it is tested on. Your project uses <b>walk-forward validation</b> instead, plus a small <b>purge gap</b> so that no training answer overlaps the test period.</p>
+  </div>
+  <div class="lab">
+    <div class="row"><span class="lab-title">Split</span><button class="btn" id="splitWF" aria-pressed="true">Walk-forward (correct)</button><button class="btn" id="splitRand" aria-pressed="false">Random shuffle (wrong)</button></div>
+    <div class="scroll"><svg id="wfChart" viewBox="0 0 900 120" width="100%" role="img" aria-label="Training and test blocks over time"></svg></div>
+    <div class="row"><button class="btn solid" id="wfNext">Next round</button><span class="note" id="wfNote">–</span></div>
+    <div class="row note"><span style="color:var(--accent)">■ train</span><span style="color:var(--amber)">■ purge gap</span><span>■ test</span><span style="color:var(--down)">■ future data used in training (leak)</span></div>
+  </div>
+  <div class="takeaway"><b>Remember</b> Your settings: at least 2,000 hours of training, retrain every 250 hours, purge gap of 4 hours. Two sanity checks prove the scoring is honest: a model that cheats on purpose scores 100 %, a coin scores about 50 %.</div>
+  <label class="check"><input type="checkbox" data-ch="c5">I get it</label>
+</section>
+
+<!-- 6 -->
+<section class="ch" id="c6" data-title="6 · Is 51 % good?">
+  <div class="ch-head"><span class="eyebrow">Chapter 6 · Is 51 % good?</span><h2>Luck can look like skill, unless you count carefully</h2></div>
+  <div class="prose">
+    <p>If a coin “predicts” oil, it is right about half the time, but never exactly 50 %. With a few hundred calls, a lucky coin can reach 53 %. A result only means something if it lands <b>outside</b> the range a coin produces. That’s what a <b>p-value</b> measures. Your project also uses the <b>Pesaran–Timmermann test</b>, which corrects for oil rising slightly more often than falling.</p>
+  </div>
+  <div class="lab">
+    <div class="slider"><label for="nCalls">Number of calls per experiment <span id="nVal">2000</span></label><input id="nCalls" type="range" min="100" max="5000" step="100" value="2000"></div>
+    <div class="row"><button class="btn solid" id="coinBtn">Run 60 coin experiments</button><span class="note">About 2,000 independent 4-hour calls is roughly what your evaluation used.</span></div>
+    <div class="scroll"><svg id="coinChart" viewBox="0 0 900 220" width="100%" role="img" aria-label="Hit rates from random coins versus your models"></svg></div>
+    <p class="note" id="coinNote">Each grey dot is one fair coin. The shaded band holds 95 % of coin results.</p>
+  </div>
+  <div class="takeaway"><b>Remember</b> Your models (49.1 %–51.3 % at 4 hours) sit inside the coin band. That is why the honest conclusion is “no reliable edge”, even though 51.3 % sounds better than 50 %.</div>
+  <label class="check"><input type="checkbox" data-ch="c6">I get it</label>
+</section>
+
+<!-- 7 -->
+<section class="ch" id="c7" data-title="7 · Honest probabilities">
+  <div class="ch-head"><span class="eyebrow">Chapter 7 · Honest probabilities</span><h2>Where ML clearly helped: calibration</h2></div>
+  <div class="prose">
+    <p>The old dashboard showed “bullish %” as if it were a probability. A probability is <b>calibrated</b> if “70 %” comes true about 70 % of the time. Using your backtest, the project checked what really happened after each reading, then trained a tiny logistic regression (<b>Platt scaling</b>) to map the score to an honest probability. That model now runs live.</p>
+  </div>
+  <div class="lab">
+    <div class="slider"><label for="calSlider">The old dashboard says “bullish” <span id="calVal">70 %</span></label><input id="calSlider" type="range" min="22" max="85" value="70"></div>
+    <div class="bars">
+      <div class="barrow"><span>Old dashboard said</span><div class="track"><div class="fill" id="calOld" style="background:var(--amber)"></div></div><span class="mono" id="calOldV">–</span></div>
+      <div class="barrow"><span>Actually went up</span><div class="track"><div class="fill" id="calReal" style="background:var(--muted)"></div></div><span class="mono" id="calRealV">–</span></div>
+      <div class="barrow"><span>Calibrated model says</span><div class="track"><div class="fill" id="calNew"></div></div><span class="mono" id="calNewV">–</span></div>
+    </div>
+    <p class="note" id="calNote">–</p>
+  </div>
+  <div class="takeaway"><b>Remember</b> Brier skill went from −0.079 (worse than guessing) to −0.001 (as good as the base rate), and calibration error from 0.12 to 0.01. The honest probability stays near 50–52 %.</div>
+  <label class="check"><input type="checkbox" data-ch="c7">I get it</label>
+</section>
+
+<!-- 8 -->
+<section class="ch" id="c8" data-title="8 · Self-learning">
+  <div class="ch-head"><span class="eyebrow">Chapter 8 · A model that keeps learning</span><h2>The Hedge algorithm re-weights the pillars after every outcome</h2></div>
+  <div class="prose">
+    <p>Each pillar is treated as an <b>expert</b> voting on the next 4 hours. When an outcome arrives, every expert’s weight is multiplied by <span class="mono">e<sup>−η·loss</sup></span>: right experts keep their weight, wrong ones shrink. The catch is <b>delayed feedback</b>: a 4-hour call can only be scored 4 hours later, so the model always learns from calls made 4 steps ago. A small <b>fixed share</b> (1 %) pulls every weight back towards equal each step, so no pillar can ever be switched off. Below it runs on <b>600 real consecutive hours</b> from your lockbox period.</p>
+  </div>
+  <div class="lab">
+    <div class="row">
+      <button class="btn solid" id="hPlay">Play</button><button class="btn" id="hStep">Step 1 hour</button><button class="btn" id="hReset">Reset</button>
+      <button class="btn" id="hShare" aria-pressed="true">Fixed share 1 %: on</button>
+      <span class="lab-title" style="margin-left:auto;text-transform:none;letter-spacing:0">Learning rate η</span>
+      <button class="btn" data-eta="0.01" aria-pressed="true">0.01 (your choice)</button><button class="btn" data-eta="0.2" aria-pressed="false">0.2</button><button class="btn" data-eta="1" aria-pressed="false">1.0</button>
+    </div>
+    <div class="bars" id="hBars"></div>
+    <div class="row note"><span>Dashed line = hand-tuned weight</span><span>Bar = learned weight</span></div>
+    <div class="grid3">
+      <div class="stat"><strong id="hT">0</strong><span>hours processed</span></div>
+      <div class="stat"><strong id="hAccL">–</strong><span>self-learning hit rate</span></div>
+      <div class="stat amber"><strong id="hAccF">–</strong><span>frozen hand-tuned hit rate</span></div>
+    </div>
+    <div class="row"><span class="lab-title">Waiting for outcome</span><div class="queue" id="hQueue"></div></div>
+    <p class="note" id="hNote">Press Play. Then turn the fixed share off and use η = 1.0: the weight piles onto the dollar and stock pillars, the two that almost always vote near zero.</p>
+  </div>
+  <div class="takeaway"><b>Remember</b> Every pillar is right about 49–50 % of the time on direction, so none is truly accurate. A cautious vote near zero costs less than a bold vote that is wrong half the time, so Hedge moves weight from the bold pillars (trend 26 % → 17 %) to the cautious ones (dollar and stocks 11 % → 18 %). Without the fixed share, nearly all weight goes to dollar and stocks. In every setting accuracy stays at chance level: learning cannot create a signal that isn’t in the data.</div>
+  <label class="check"><input type="checkbox" data-ch="c8">I get it</label>
+</section>
+
+<!-- 9 -->
+<section class="ch" id="c9" data-title="9 · Going live">
+  <div class="ch-head"><span class="eyebrow">Chapter 9 · From laptop to live</span><h2>How the pieces fit together</h2></div>
+  <div class="prose"><p>Click each box to see what it does. Teal boxes are where machine learning runs.</p></div>
+  <div class="lab">
+    <div class="flow" id="flow"></div>
+    <div class="card" id="flowInfo" aria-live="polite"><b>–</b><span>–</span></div>
+  </div>
+  <label class="check"><input type="checkbox" data-ch="c9">I get it</label>
+</section>
+
+<!-- 10 -->
+<section class="ch quiz" id="c10" data-title="10 · Check yourself">
+  <div class="ch-head"><span class="eyebrow">Chapter 10 · Check yourself</span><h2>Five questions</h2></div>
+  <div id="quiz"></div>
+  <p class="note" id="quizScore"></p>
+  <label class="check"><input type="checkbox" data-ch="c10">I get it</label>
+</section>
+
+</div>
+
+<script>
+const D = {"price":[{"t":"2026-09-21 16:00","p":92.31},{"t":"2026-09-21 20:00","p":92.14},{"t":"2026-09-22 01:00","p":92.72},{"t":"2026-09-22 05:00","p":93.38},{"t":"2026-09-22 09:00","p":90.42},{"t":"2026-09-22 13:00","p":90.39},{"t":"2026-09-22 17:00","p":91.4},{"t":"2026-09-22 21:00","p":89.85},{"t":"2026-09-23 02:00","p":89.91},{"t":"2026-09-23 06:00","p":89.31},{"t":"2026-09-23 10:00","p":90.03},{"t":"2026-09-23 14:00","p":91.98},{"t":"2026-09-23 18:00","p":91.66},{"t":"2026-09-23 23:00","p":92.22},{"t":"2026-09-24 03:00","p":91.33},{"t":"2026-09-24 07:00","p":92.74},{"t":"2026-09-24 11:00","p":93.12},{"t":"2026-09-24 15:00","p":95.56},{"t":"2026-09-24 19:00","p":94.39},{"t":"2026-09-25 00:00","p":93.97},{"t":"2026-09-25 04:00","p":93.12},{"t":"2026-09-25 08:00","p":93.58},{"t":"2026-09-25 12:00","p":92.53},{"t":"2026-09-25 16:00","p":92.85},{"t":"2026-09-25 20:00","p":92.23},{"t":"2026-09-28 01:00","p":93.3},{"t":"2026-09-28 05:00","p":94.07},{"t":"2026-09-28 09:00","p":95.6},{"t":"2026-09-28 13:00","p":94.25},{"t":"2026-09-28 17:00","p":93.1},{"t":"2026-09-28 21:00","p":93.29},{"t":"2026-09-29 02:00","p":93.59},{"t":"2026-09-29 06:00","p":94.1},{"t":"2026-09-29 10:00","p":92.5},{"t":"2026-09-29 14:00","p":90.9},{"t":"2026-09-29 18:00","p":90.1},{"t":"2026-09-29 23:00","p":89.3},{"t":"2026-09-30 03:00","p":89.62},{"t":"2026-09-30 07:00","p":89.74},{"t":"2026-09-30 11:00","p":90.59},{"t":"2026-09-30 15:00","p":91.59},{"t":"2026-09-30 19:00","p":90.6},{"t":"2026-10-01 00:00","p":90.01},{"t":"2026-10-01 04:00","p":89.14},{"t":"2026-10-01 08:00","p":92.4},{"t":"2026-10-01 12:00","p":91.64},{"t":"2026-10-01 16:00","p":92.66},{"t":"2026-10-01 20:00","p":93.3},{"t":"2026-10-02 01:00","p":93.15},{"t":"2026-10-02 05:00","p":92.55},{"t":"2026-10-02 09:00","p":89.34},{"t":"2026-10-02 13:00","p":89.3},{"t":"2026-10-02 17:00","p":91.57},{"t":"2026-10-02 21:00","p":91.11},{"t":"2026-10-05 01:00","p":90.34},{"t":"2026-10-05 05:00","p":90.33},{"t":"2026-10-05 09:00","p":90.62},{"t":"2026-10-05 13:00","p":90.08},{"t":"2026-10-05 17:00","p":90.26},{"t":"2026-10-05 21:00","p":89.3},{"t":"2026-10-06 02:00","p":89.55},{"t":"2026-10-06 06:00","p":89.45},{"t":"2026-10-06 10:00","p":87.61},{"t":"2026-10-06 14:00","p":87.95},{"t":"2026-10-06 18:00","p":89.46},{"t":"2026-10-06 23:00","p":89.79},{"t":"2026-10-07 03:00","p":90.17},{"t":"2026-10-07 07:00","p":90.18},{"t":"2026-10-07 11:00","p":89.96},{"t":"2026-10-07 15:00","p":89.57},{"t":"2026-10-07 19:00","p":88.47},{"t":"2026-10-08 00:00","p":89.0},{"t":"2026-10-08 04:00","p":89.87},{"t":"2026-10-08 08:00","p":91.68},{"t":"2026-10-08 12:00","p":92.32},{"t":"2026-10-08 16:00","p":92.68},{"t":"2026-10-08 20:00","p":91.1},{"t":"2026-10-09 01:00","p":91.07},{"t":"2026-10-09 05:00","p":90.29},{"t":"2026-10-09 09:00","p":90.27},{"t":"2026-10-09 13:00","p":91.24},{"t":"2026-10-09 17:00","p":91.22},{"t":"2026-10-09 21:00","p":91.85},{"t":"2026-10-12 02:00","p":90.09},{"t":"2026-10-12 06:00","p":90.77},{"t":"2026-10-12 10:00","p":92.69},{"t":"2026-10-12 14:00","p":93.82},{"t":"2026-10-12 18:00","p":93.87},{"t":"2026-10-12 23:00","p":93.4},{"t":"2026-10-13 03:00","p":92.39},{"t":"2026-10-13 07:00","p":92.36},{"t":"2026-10-13 11:00","p":91.78},{"t":"2026-10-13 15:00","p":93.93},{"t":"2026-10-13 19:00","p":94.22},{"t":"2026-10-14 00:00","p":94.77},{"t":"2026-10-14 04:00","p":94.79},{"t":"2026-10-14 08:00","p":94.25},{"t":"2026-10-14 12:00","p":95.78},{"t":"2026-10-14 16:00","p":95.22},{"t":"2026-10-14 20:00","p":95.15},{"t":"2026-10-15 01:00","p":94.34},{"t":"2026-10-15 05:00","p":94.08},{"t":"2026-10-15 09:00","p":95.38},{"t":"2026-10-15 13:00","p":93.97},{"t":"2026-10-15 17:00","p":96.6},{"t":"2026-10-15 21:00","p":96.12},{"t":"2026-10-16 02:00","p":95.99},{"t":"2026-10-16 06:00","p":95.6},{"t":"2026-10-16 10:00","p":95.72},{"t":"2026-10-16 14:00","p":95.69},{"t":"2026-10-16 18:00","p":98.62},{"t":"2026-10-18 23:00","p":98.16},{"t":"2026-10-19 03:00","p":97.55},{"t":"2026-10-19 07:00","p":96.94},{"t":"2026-10-19 11:00","p":98.0},{"t":"2026-10-19 15:00","p":97.63},{"t":"2026-10-19 19:00","p":98.23},{"t":"2026-10-20 00:00","p":98.22},{"t":"2026-10-20 04:00","p":98.59},{"t":"2026-10-20 08:00","p":99.43},{"t":"2026-10-20 12:00","p":100.51},{"t":"2026-10-20 16:00","p":97.5},{"t":"2026-10-20 20:00","p":98.24},{"t":"2026-10-21 01:00","p":98.5},{"t":"2026-10-21 05:00","p":98.92},{"t":"2026-10-21 09:00","p":99.45},{"t":"2026-10-21 13:00","p":97.36},{"t":"2026-10-21 17:00","p":96.65},{"t":"2026-10-21 21:00","p":97.71},{"t":"2026-10-22 02:00","p":98.35},{"t":"2026-10-22 06:00","p":99.23},{"t":"2026-10-22 10:00","p":99.45},{"t":"2026-10-22 14:00","p":99.04},{"t":"2026-10-22 18:00","p":99.83},{"t":"2026-10-22 23:00","p":99.0},{"t":"2026-10-23 03:00","p":99.94},{"t":"2026-10-23 07:00","p":100.77},{"t":"2026-10-23 11:00","p":101.13},{"t":"2026-10-23 15:00","p":102.28},{"t":"2026-10-23 19:00","p":103.39},{"t":"2026-10-26 00:00","p":102.13},{"t":"2026-10-26 04:00","p":100.96},{"t":"2026-10-26 08:00","p":101.55},{"t":"2026-10-26 12:00","p":101.08},{"t":"2026-10-26 16:00","p":102.95},{"t":"2026-10-26 20:00","p":101.59},{"t":"2026-10-27 01:00","p":101.03},{"t":"2026-10-27 05:00","p":100.68},{"t":"2026-10-27 09:00","p":102.3},{"t":"2026-10-27 13:00","p":100.93},{"t":"2026-10-27 17:00","p":100.05},{"t":"2026-10-27 21:00","p":100.2},{"t":"2026-10-28 02:00","p":101.26},{"t":"2026-10-28 06:00","p":101.39},{"t":"2026-10-28 10:00","p":101.16},{"t":"2026-10-28 14:00","p":101.86},{"t":"2026-10-28 18:00","p":102.65},{"t":"2026-10-28 23:00","p":101.89},{"t":"2026-10-29 03:00","p":101.5},{"t":"2026-10-29 07:00","p":101.43},{"t":"2026-10-29 11:00","p":101.22},{"t":"2026-10-29 15:00","p":100.31},{"t":"2026-10-29 19:00","p":102.14},{"t":"2026-10-30 00:00","p":102.86},{"t":"2026-10-30 04:00","p":103.17},{"t":"2026-10-30 08:00","p":103.83},{"t":"2026-10-30 12:00","p":104.15},{"t":"2026-10-30 16:00","p":104.08},{"t":"2026-10-30 20:00","p":103.14},{"t":"2026-11-02 02:00","p":101.75},{"t":"2026-11-02 06:00","p":100.52},{"t":"2026-11-02 10:00","p":99.7},{"t":"2026-11-02 14:00","p":97.65},{"t":"2026-11-02 18:00","p":96.01},{"t":"2026-11-02 22:00","p":96.26},{"t":"2026-11-03 03:00","p":96.61},{"t":"2026-11-03 07:00","p":97.95},{"t":"2026-11-03 11:00","p":97.53},{"t":"2026-11-03 15:00","p":95.86},{"t":"2026-11-03 19:00","p":95.89},{"t":"2026-11-04 00:00","p":96.6},{"t":"2026-11-04 04:00","p":95.65},{"t":"2026-11-04 08:00","p":96.14},{"t":"2026-11-04 12:00","p":95.24},{"t":"2026-11-04 16:00","p":92.09},{"t":"2026-11-04 20:00","p":88.52},{"t":"2026-11-05 01:00","p":87.99},{"t":"2026-11-05 05:00","p":86.66},{"t":"2026-11-05 09:00","p":88.18},{"t":"2026-11-05 13:00","p":89.4},{"t":"2026-11-05 17:00","p":90.09},{"t":"2026-11-05 21:00","p":90.71},{"t":"2026-11-06 02:00","p":91.26},{"t":"2026-11-06 06:00","p":91.73},{"t":"2026-11-06 10:00","p":89.21},{"t":"2026-11-06 14:00","p":90.79},{"t":"2026-11-06 18:00","p":90.06},{"t":"2026-11-06 22:00","p":90.83},{"t":"2026-11-09 03:00","p":91.04},{"t":"2026-11-09 07:00","p":89.91},{"t":"2026-11-09 11:00","p":89.45},{"t":"2026-11-09 15:00","p":87.51},{"t":"2026-11-09 19:00","p":87.62},{"t":"2026-11-10 00:00","p":86.44},{"t":"2026-11-10 04:00","p":85.81},{"t":"2026-11-10 08:00","p":85.32},{"t":"2026-11-10 12:00","p":85.27},{"t":"2026-11-10 16:00","p":85.68},{"t":"2026-11-10 20:00","p":86.32},{"t":"2026-11-11 01:00","p":86.34},{"t":"2026-11-11 05:00","p":86.64},{"t":"2026-11-11 09:00","p":86.06},{"t":"2026-11-11 13:00","p":87.19},{"t":"2026-11-11 17:00","p":87.83},{"t":"2026-11-11 21:00","p":86.33},{"t":"2026-11-12 02:00","p":85.69},{"t":"2026-11-12 06:00","p":85.62},{"t":"2026-11-12 10:00","p":86.27},{"t":"2026-11-12 14:00","p":86.64},{"t":"2026-11-12 18:00","p":88.03},{"t":"2026-11-12 22:00","p":88.7},{"t":"2026-11-13 02:00","p":88.1},{"t":"2026-11-13 06:00","p":88.38},{"t":"2026-11-13 10:00","p":88.24},{"t":"2026-11-13 14:00","p":89.1},{"t":"2026-11-13 18:00","p":88.66},{"t":"2026-11-13 22:00","p":88.93},{"t":"2026-11-16 02:00","p":88.22},{"t":"2026-11-16 06:00","p":88.64},{"t":"2026-11-16 10:00","p":88.46},{"t":"2026-11-16 14:00","p":87.7},{"t":"2026-11-16 18:00","p":86.09},{"t":"2026-11-16 22:00","p":85.06},{"t":"2026-11-17 03:00","p":85.1},{"t":"2026-11-17 07:00","p":84.93},{"t":"2026-11-17 11:00","p":86.02},{"t":"2026-11-17 15:00","p":86.86},{"t":"2026-11-17 19:00","p":86.47},{"t":"2026-11-18 00:00","p":85.87},{"t":"2026-11-18 04:00","p":84.76}],"real":[[-7.9,1],[-17.6,0],[-22.6,1],[-19.8,0],[-20.1,1],[48.8,1],[41.3,0],[39.6,1],[19.8,0],[-4.3,1],[12.4,1],[15.6,1],[38.8,0],[6.6,1],[33.4,0],[-36.2,0],[-45.9,0],[-39.6,0],[-30.7,1],[15.1,1],[26.2,1],[35.1,1],[-6.4,1],[5.6,0],[-1.7,0],[-11.2,1],[-17.0,1],[42.4,1],[30.7,1],[22.6,0],[-36.1,0],[-38.1,1],[-32.5,1],[-32.4,0],[-27.7,0],[-32.9,0],[-8.9,1],[14.4,0],[-7.6,1],[4.3,0],[-23.0,1],[14.6,0],[0.4,1],[0.4,0],[-20.1,0],[-24.8,1],[32.1,0],[50.7,0],[40.6,1],[10.4,1],[29.4,1],[35.9,1],[32.5,0],[4.5,1],[33.6,1],[52.7,0],[49.4,1],[18.4,0],[38.3,1],[52.5,1],[48.5,1],[31.6,0],[-1.9,0],[7.9,1],[14.1,1],[41.7,0],[30.4,1],[28.5,1],[40.9,1],[50.1,0],[22.2,1],[16.5,0],[29.7,1],[53.6,1],[54.3,1],[55.4,1],[39.5,0],[0.6,0],[9.7,1],[7.5,0],[5.8,0],[-11.4,1],[-0.9,0],[13.3,1],[39.8,0],[47.4,1],[53.4,0],[37.1,1],[18.8,0],[-4.3,1],[-9.6,0],[-11.3,0],[-14.2,1],[7.3,1],[26.0,0],[14.6,0],[-20.7,1],[27.5,1],[53.1,0],[32.4,0],[16.6,1],[26.0,1],[57.3,1],[47.3,1],[8.5,1],[33.6,1],[38.7,1],[57.0,0],[57.3,1],[44.5,0],[15.8,1],[20.7,1],[29.0,0],[-1.5,1],[6.6,0],[0.5,0],[14.9,1],[34.0,1],[49.0,0],[7.7,1],[27.8,1],[56.7,1],[60.1,0],[20.7,1],[46.9,0],[18.8,1],[42.4,0],[53.2,0],[23.1,1],[30.8,1],[12.3,0],[-12.4,0],[-19.0,1],[-11.7,1],[19.1,1],[34.7,0],[-5.9,1],[-16.1,1],[22.1,0],[-2.0,0],[-6.3,0],[-33.7,1],[-19.4,0],[-7.1,0],[-24.7,0],[-31.5,1],[-21.5,0],[6.3,1],[32.1,0],[35.8,0],[-20.5,0],[-24.6,0],[-30.8,0],[-28.9,0],[2.8,1],[40.2,0],[39.6,0],[43.3,0],[24.0,0],[-3.6,0],[-32.2,1],[9.0,1],[26.6,1],[42.6,1],[44.3,0],[27.3,1],[3.2,0],[2.5,0],[-18.0,0],[-33.3,1],[-21.1,1],[-12.0,0],[-10.6,0],[-32.0,1],[12.0,1],[44.4,0],[3.3,0],[-23.8,1],[-24.8,0],[-34.0,0],[-35.0,1],[-5.7,1],[8.1,0],[-14.4,1],[33.2,0],[38.3,1],[27.8,0],[-19.6,1],[-13.3,0],[-36.4,1],[-36.8,0],[-34.3,1],[-39.2,0],[-29.6,0],[-35.4,0],[-36.2,0],[-9.0,1],[18.7,0],[-9.6,0],[-34.0,0],[-34.5,1],[-20.0,0],[-22.1,1],[5.5,0],[-17.3,0],[-20.6,0],[-31.5,1],[-34.7,1],[36.0,0],[27.7,1],[10.2,1],[7.0,0],[-30.9,0],[19.7,0],[-19.3,0],[-15.5,0],[-22.1,1],[-9.9,0],[-11.3,0],[-25.5,0],[-24.0,0],[-21.9,0],[-20.1,1],[-0.4,1],[38.1,0],[33.8,0],[-4.7,0],[-28.3,0],[-24.1,1],[9.0,0],[-6.3,1],[20.2,1],[24.4,0],[24.4,0],[15.2,1],[2.6,0],[-11.0,0],[-19.5,0],[-29.4,1],[-26.0,0],[-20.7,0],[-22.0,0],[-24.5,1],[3.6,1],[26.1,1],[14.9,1],[22.8,0],[15.8,1],[3.7,1],[25.0,1],[31.2,0],[14.9,1],[43.0,1],[45.4,1],[32.6,1],[47.4,1],[15.0,0],[26.0,0],[-12.5,1],[-26.0,0],[-18.4,1],[2.8,0],[-6.4,0],[-18.6,1],[39.0,1],[51.8,0],[48.5,1],[49.2,1],[54.9,1],[55.1,1],[47.7,0],[13.3,1],[39.1,0],[35.4,0],[26.0,0],[23.5,1],[37.0,0],[10.0,1],[38.3,0],[-3.5,1],[20.2,1],[49.4,1],[55.2,1],[61.8,1],[35.6,0],[7.5,1],[39.1,1],[34.0,1],[39.7,1],[61.0,0],[48.6,1],[54.6,1],[43.6,0],[26.2,1],[45.8,1],[54.9,1],[53.4,1],[67.3,1],[55.5,0],[30.4,0],[-20.1,0],[-2.4,0],[-12.2,1],[-17.5,0],[0.3,0],[-18.2,0],[-14.4,1],[-20.7,1],[9.0,0],[-14.6,1],[47.8,0],[41.1,1],[57.5,0],[47.9,0],[18.4,1],[25.9,0],[20.2,0],[11.6,0],[-20.7,1],[26.3,1],[41.4,0],[-6.8,0],[-11.2,1],[-26.0,1],[4.5,1],[30.0,1],[25.1,1],[-26.5,0],[-26.2,0],[-11.6,0],[-0.5,1],[-2.5,0],[-7.0,0],[11.0,0],[6.6,1],[34.6,1],[37.6,1],[39.6,0],[17.3,0],[27.5,1],[24.7,1],[38.4,0],[32.1,1],[53.2,1],[47.1,1],[46.6,1],[54.2,0],[35.3,1],[32.3,1],[44.0,0],[35.5,0],[-1.9,0],[-10.7,1],[5.6,0],[-13.8,1],[-5.3,1],[-0.5,1],[51.9,0],[3.1,1],[38.8,0],[45.4,0],[38.0,1],[20.2,1],[56.7,0],[57.7,0],[27.5,1],[38.2,0],[34.6,1],[36.5,1],[46.0,0],[49.9,0],[8.6,1],[22.4,1],[59.5,0],[46.1,0],[37.7,0],[26.1,1],[40.4,1],[46.9,0],[-2.9,1],[1.5,0],[9.1,0],[13.6,0],[29.8,0],[-15.0,0],[-11.7,0],[-14.3,0],[-22.4,0],[-18.7,1],[49.0,0],[26.5,0],[26.9,0],[32.2,0],[40.1,1],[40.0,0],[24.8,0],[6.5,1],[26.3,1],[48.3,1],[55.2,1],[45.6,0],[14.6,1],[28.7,1],[44.9,1],[53.6,1],[59.3,1],[56.2,0],[28.8,0],[33.3,1],[32.8,1],[45.2,0],[54.5,0],[22.2,1],[39.3,1],[19.8,0],[-7.6,1],[26.7,1],[58.5,1],[60.5,0],[25.0,1],[46.4,0],[48.1,1],[58.9,0],[49.5,1],[35.6,0],[43.3,1],[57.4,1],[59.3,1],[58.3,0],[6.7,0],[-7.1,1],[7.6,1],[54.4,0],[42.1,1],[31.0,0],[9.6,1],[35.4,1],[7.1,1],[54.1,0],[33.4,0],[22.7,0],[-7.3,0],[-11.5,0],[-13.6,1],[-12.3,0],[-15.0,1],[27.1,0],[18.2,0],[-25.7,1],[1.7,0],[-13.3,0],[-24.2,1],[-13.1,0],[-16.0,1],[-12.2,1],[16.7,1],[-15.0,1],[30.4,0],[-4.6,1],[-8.8,1],[15.6,1],[32.3,1],[31.4,0],[34.6,1],[47.8,1],[53.8,0],[16.1,0],[6.3,0],[-15.7,0],[-1.9,1],[18.0,1],[41.2,1],[9.5,0],[0.0,1],[10.1,1],[-14.6,0],[-14.1,0],[-22.8,1],[2.2,0],[16.6,1],[29.2,0],[-4.3,0],[-18.4,1],[22.9,1],[38.8,1],[32.2,0],[12.8,0],[-11.5,1],[31.8,0],[16.8,0],[3.6,1],[4.1,1],[7.6,0],[7.9,1],[-6.9,0],[-17.2,1],[36.8,1],[54.6,0],[23.2,1],[40.9,0],[7.4,1],[32.5,1],[64.1,1],[62.6,0],[22.7,0],[-6.7,1],[0.5,1],[52.5,0],[55.1,0],[11.4,1],[54.1,1],[57.6,0],[30.2,0],[16.8,0],[25.7,1],[51.8,1],[58.5,0],[30.0,1],[50.0,1],[26.1,0],[-2.2,1],[7.4,1],[29.2,1],[48.8,0],[36.4,0],[14.6,1],[25.7,1],[67.4,0],[38.0,0],[56.8,0],[48.7,1],[38.0,1],[55.9,1],[67.9,0],[23.1,1],[35.9,1],[58.0,1],[34.5,0],[3.5,1],[39.9,1],[64.6,0],[65.2,0],[52.9,0],[61.3,1],[56.7,1],[66.6,1],[59.9,0],[13.7,1],[7.0,1],[14.7,1],[20.5,0],[13.3,1],[40.0,0],[9.0,1],[10.0,1],[48.9,1],[48.7,1],[60.3,0],[20.8,0],[11.4,1],[32.8,0],[37.9,1],[42.7,1],[38.1,1],[49.6,1],[36.7,0],[-14.3,0],[-10.8,0],[-14.2,0],[-14.1,1],[13.2,1],[20.5,0],[4.0,1],[29.8,0],[14.1,1],[-5.7,0],[-28.4,1],[-25.7,0],[-21.3,1],[14.4,1],[32.3,1],[43.0,1],[37.6,0],[10.1,0],[12.8,0],[6.1,0],[-3.5,0],[-26.9,1],[-27.7,1],[-22.2,0],[-29.1,1],[1.6,1],[18.1,0],[35.8,0],[33.6,1],[42.1,0],[-3.4,0],[-25.4,1],[-15.5,1],[32.2,1]],"hedge":[{"t":"2026-04-01 00","x":[-0.24,-0.47,0.88,-0.44,0.09,0.13],"y":1},{"t":"2026-04-01 01","x":[-0.24,-0.24,0.9,-0.41,-0.0,0.02],"y":1},{"t":"2026-04-01 02","x":[0.18,0.11,0.94,-0.33,-0.07,-0.09],"y":-1},{"t":"2026-04-01 03","x":[0.18,0.18,0.93,-0.39,0.04,-0.02],"y":-1},{"t":"2026-04-01 04","x":[0.18,0.07,0.93,-0.4,-0.05,0.01],"y":-1},{"t":"2026-04-01 05","x":[-0.24,-0.07,0.93,-0.42,0.03,0.04],"y":-1},{"t":"2026-04-01 06","x":[-0.52,-0.56,0.93,-0.47,0.03,0.06],"y":-1},{"t":"2026-04-01 07","x":[-0.52,-1.0,0.91,-0.46,0.15,0.21],"y":1},{"t":"2026-04-01 08","x":[-0.52,-1.0,0.96,-0.34,-0.08,-0.15],"y":1},{"t":"2026-04-01 09","x":[-0.52,-1.0,1.0,-0.28,0.1,0.01],"y":1},{"t":"2026-04-01 10","x":[-0.24,-0.77,1.0,-0.21,-0.01,0.01],"y":-1},{"t":"2026-04-01 11","x":[-0.24,-0.77,1.0,-0.3,0.03,0.1],"y":-1},{"t":"2026-04-01 12","x":[-0.52,-1.0,1.0,-0.32,0.06,0.09],"y":1},{"t":"2026-04-01 13","x":[0.18,-0.39,0.9,-0.46,-0.04,-0.24],"y":-1},{"t":"2026-04-01 14","x":[-0.24,-0.94,0.85,-0.41,0.03,0.11],"y":1},{"t":"2026-04-01 15","x":[-0.52,-0.8,0.83,-0.41,0.06,0.17],"y":1},{"t":"2026-04-01 16","x":[-0.1,-0.43,0.86,-0.42,-0.04,0.1],"y":-1},{"t":"2026-04-01 17","x":[-0.1,-0.19,0.8,-0.52,0.04,-0.01],"y":-1},{"t":"2026-04-01 18","x":[-0.52,-0.34,0.78,-0.57,-0.13,-0.08],"y":-1},{"t":"2026-04-01 19","x":[0.18,-0.04,0.83,-0.55,-0.09,-0.18],"y":-1},{"t":"2026-04-01 20","x":[-0.24,-0.06,0.83,-0.54,0.02,0.06],"y":-1},{"t":"2026-04-01 21","x":[-0.24,-0.28,0.83,-0.54,0.04,-0.02],"y":1},{"t":"2026-04-01 23","x":[-0.24,-0.21,0.81,-0.51,0.0,-0.03],"y":1},{"t":"2026-04-02 00","x":[-0.24,-0.25,0.81,-0.5,-0.01,0.01],"y":1},{"t":"2026-04-02 01","x":[-0.52,-0.6,0.84,-0.54,0.04,0.12],"y":1},{"t":"2026-04-02 02","x":[0.46,1.0,0.96,-0.48,-0.27,-0.54],"y":1},{"t":"2026-04-02 03","x":[0.88,1.0,1.0,-0.44,-0.04,-0.07],"y":1},{"t":"2026-04-02 04","x":[0.88,1.0,1.0,-0.43,-0.05,-0.1],"y":1},{"t":"2026-04-02 05","x":[0.88,1.0,1.0,-0.43,-0.01,-0.03],"y":1},{"t":"2026-04-02 06","x":[0.88,1.0,0.99,-0.47,-0.07,-0.08],"y":1},{"t":"2026-04-02 07","x":[0.88,1.0,0.96,-0.51,0.05,0.08],"y":1},{"t":"2026-04-02 08","x":[0.88,1.0,0.67,-0.52,-0.02,0.12],"y":1},{"t":"2026-04-02 09","x":[0.88,1.0,0.66,-0.5,-0.05,-0.05],"y":1},{"t":"2026-04-02 10","x":[0.88,1.0,0.66,-0.65,0.01,-0.01],"y":1},{"t":"2026-04-02 11","x":[0.88,1.0,0.65,-0.63,-0.07,-0.03],"y":1},{"t":"2026-04-02 12","x":[1.0,1.0,0.6,-0.84,0.04,-0.22],"y":1},{"t":"2026-04-02 13","x":[1.0,1.0,0.77,-1.0,0.04,0.07],"y":-1},{"t":"2026-04-02 14","x":[1.0,1.0,0.77,-1.0,0.04,0.33],"y":1},{"t":"2026-04-02 15","x":[0.88,1.0,0.68,-1.0,0.11,0.45],"y":1},{"t":"2026-04-02 16","x":[1.0,1.0,0.54,-1.0,-0.02,-0.1],"y":-1},{"t":"2026-04-02 17","x":[1.0,1.0,0.61,-1.0,-0.03,-0.04],"y":1},{"t":"2026-04-02 18","x":[1.0,1.0,0.65,-1.0,-0.02,-0.02],"y":1},{"t":"2026-04-02 19","x":[1.0,1.0,0.67,-1.0,-0.01,0.09],"y":1},{"t":"2026-04-02 20","x":[1.0,0.98,0.69,-1.0,-0.02,0.11],"y":1},{"t":"2026-04-02 21","x":[1.0,1.0,0.69,-1.0,0.02,0.01],"y":-1},{"t":"2026-04-05 23","x":[1.0,1.0,0.74,-1.0,-0.13,-0.19],"y":-1},{"t":"2026-04-06 00","x":[1.0,1.0,0.71,-1.0,0.13,0.0],"y":-1},{"t":"2026-04-06 01","x":[1.0,1.0,0.72,-0.98,-0.0,0.17],"y":-1},{"t":"2026-04-06 02","x":[0.3,0.79,0.77,-0.93,-0.0,0.0],"y":-1},{"t":"2026-04-06 03","x":[0.3,0.46,0.8,-0.97,-0.0,0.04],"y":-1},{"t":"2026-04-06 04","x":[0.3,0.33,0.76,-0.98,-0.0,-0.03],"y":-1},{"t":"2026-04-06 05","x":[0.3,0.35,0.76,-1.0,-0.07,0.07],"y":-1},{"t":"2026-04-06 06","x":[1.0,0.44,0.7,-1.0,0.01,-0.03],"y":-1},{"t":"2026-04-06 07","x":[0.3,0.1,0.71,-0.98,0.03,0.06],"y":-1},{"t":"2026-04-06 08","x":[0.3,-0.47,0.71,-0.95,0.17,0.08],"y":1},{"t":"2026-04-06 09","x":[0.02,-0.47,0.7,-0.99,-0.04,0.08],"y":1},{"t":"2026-04-06 10","x":[0.72,0.21,0.63,-1.0,-0.02,-0.06],"y":1},{"t":"2026-04-06 11","x":[0.3,-0.37,0.72,-1.0,-0.01,-0.05],"y":1},{"t":"2026-04-06 12","x":[0.3,-0.34,0.76,-0.97,-0.02,-0.03],"y":1},{"t":"2026-04-06 13","x":[0.02,-0.35,0.68,-1.0,0.05,0.02],"y":1},{"t":"2026-04-06 14","x":[0.44,0.33,0.62,-1.0,0.03,0.15],"y":1},{"t":"2026-04-06 15","x":[0.72,0.02,0.7,-1.0,-0.09,-0.08],"y":1},{"t":"2026-04-06 16","x":[0.72,0.2,0.67,-1.0,-0.0,0.03],"y":1},{"t":"2026-04-06 17","x":[0.72,0.29,0.65,-1.0,0.0,0.01],"y":1},{"t":"2026-04-06 18","x":[1.0,0.88,0.63,-1.0,-0.03,-0.11],"y":-1},{"t":"2026-04-06 19","x":[0.72,0.16,0.64,-1.0,0.02,0.14],"y":1},{"t":"2026-04-06 20","x":[0.72,0.22,0.62,-1.0,-0.01,0.04],"y":1},{"t":"2026-04-06 21","x":[0.72,0.26,0.64,-1.0,0.0,-0.02],"y":1},{"t":"2026-04-06 23","x":[1.0,0.53,0.62,-1.0,0.0,-0.06],"y":1},{"t":"2026-04-07 00","x":[1.0,0.73,0.62,-1.0,-0.01,-0.01],"y":1},{"t":"2026-04-07 01","x":[0.72,0.55,0.66,-1.0,-0.03,-0.01],"y":1},{"t":"2026-04-07 02","x":[1.0,1.0,0.66,-1.0,-0.05,-0.2],"y":1},{"t":"2026-04-07 03","x":[1.0,1.0,0.64,-1.0,0.0,0.05],"y":-1},{"t":"2026-04-07 04","x":[1.0,1.0,0.6,-1.0,0.03,0.01],"y":-1},{"t":"2026-04-07 05","x":[1.0,1.0,0.6,-1.0,0.03,0.02],"y":-1},{"t":"2026-04-07 06","x":[1.0,1.0,0.62,-1.0,-0.01,-0.02],"y":-1},{"t":"2026-04-07 07","x":[1.0,0.92,0.71,-1.0,0.04,0.03],"y":-1},{"t":"2026-04-07 08","x":[1.0,1.0,0.73,-1.0,-0.03,0.01],"y":1},{"t":"2026-04-07 09","x":[0.3,0.05,0.71,-1.0,0.18,0.2],"y":1},{"t":"2026-04-07 10","x":[0.3,-0.03,0.69,-1.0,-0.07,0.05],"y":1},{"t":"2026-04-07 11","x":[0.72,0.52,0.76,-1.0,-0.07,-0.32],"y":1},{"t":"2026-04-07 12","x":[1.0,1.0,0.65,-1.0,0.03,0.01],"y":-1},{"t":"2026-04-07 13","x":[0.72,0.66,0.64,-1.0,0.0,0.03],"y":1},{"t":"2026-04-07 14","x":[0.72,0.96,0.53,-1.0,-0.01,-0.16],"y":-1},{"t":"2026-04-07 15","x":[1.0,0.88,0.52,-1.0,0.04,-0.11],"y":-1},{"t":"2026-04-07 16","x":[0.3,0.23,0.56,-1.0,-0.0,0.1],"y":-1},{"t":"2026-04-07 17","x":[0.72,0.24,0.61,-1.0,0.01,0.17],"y":-1},{"t":"2026-04-07 18","x":[0.3,-0.21,0.72,-1.0,0.04,0.05],"y":-1},{"t":"2026-04-07 19","x":[0.72,0.19,0.67,-1.0,-0.02,-0.21],"y":-1},{"t":"2026-04-07 20","x":[0.3,-0.8,0.6,-1.0,0.13,0.4],"y":-1},{"t":"2026-04-07 21","x":[-0.4,-1.0,0.63,-1.0,0.01,0.06],"y":-1},{"t":"2026-04-07 23","x":[-0.7,-1.0,0.69,-1.0,0.09,0.96],"y":-1},{"t":"2026-04-08 00","x":[-0.7,-1.0,0.73,-0.98,0.42,0.09],"y":1},{"t":"2026-04-08 01","x":[-0.7,-1.0,0.55,-1.0,-0.06,-0.01],"y":-1},{"t":"2026-04-08 02","x":[-0.7,-1.0,0.54,-1.0,0.04,0.04],"y":-1},{"t":"2026-04-08 03","x":[-0.7,-1.0,0.59,-0.9,-0.01,0.06],"y":-1},{"t":"2026-04-08 04","x":[-0.7,-1.0,0.54,-1.0,-0.01,-0.02],"y":-1},{"t":"2026-04-08 05","x":[-0.7,-1.0,0.57,-1.0,0.04,0.03],"y":-1},{"t":"2026-04-08 06","x":[-0.7,-1.0,0.59,-1.0,0.08,0.12],"y":-1},{"t":"2026-04-08 07","x":[-0.7,-1.0,0.6,-1.0,0.02,-0.05],"y":-1},{"t":"2026-04-08 08","x":[-0.7,-1.0,0.72,-0.94,0.0,-0.08],"y":-1},{"t":"2026-04-08 09","x":[-0.7,-1.0,0.73,-0.84,-0.08,0.11],"y":-1},{"t":"2026-04-08 10","x":[-0.7,-1.0,0.76,-0.8,-0.02,-0.01],"y":-1},{"t":"2026-04-08 11","x":[-0.7,-1.0,0.72,-0.87,0.06,0.01],"y":1},{"t":"2026-04-08 12","x":[-0.7,-1.0,0.72,-0.88,0.08,0.04],"y":1},{"t":"2026-04-08 13","x":[-0.7,-1.0,0.76,-0.96,0.09,-0.06],"y":1},{"t":"2026-04-08 14","x":[-0.7,-1.0,0.81,-0.92,-0.12,-0.15],"y":1},{"t":"2026-04-08 15","x":[0.0,-1.0,0.79,-0.9,-0.01,-0.13],"y":-1},{"t":"2026-04-08 16","x":[-0.42,-1.0,0.8,-0.79,-0.06,0.15],"y":1},{"t":"2026-04-08 17","x":[-0.7,-1.0,0.87,-0.74,-0.02,0.09],"y":1},{"t":"2026-04-08 18","x":[0.0,-1.0,0.83,-0.79,-0.04,-0.02],"y":1},{"t":"2026-04-08 19","x":[0.0,-0.99,0.86,-0.71,-0.14,-0.21],"y":1},{"t":"2026-04-08 20","x":[0.0,-0.16,0.84,-0.72,0.1,0.22],"y":1},{"t":"2026-04-08 21","x":[0.0,0.44,0.83,-0.79,-0.04,-0.06],"y":1},{"t":"2026-04-08 23","x":[0.0,0.76,0.82,-0.75,0.0,-0.0],"y":1},{"t":"2026-04-09 00","x":[0.28,0.9,0.85,-0.76,-0.05,-0.02],"y":1},{"t":"2026-04-09 01","x":[0.28,1.0,0.87,-0.72,-0.03,-0.01],"y":1},{"t":"2026-04-09 02","x":[0.0,0.85,0.85,-0.76,0.02,-0.01],"y":1},{"t":"2026-04-09 03","x":[0.28,0.98,0.82,-0.8,0.02,-0.01],"y":-1},{"t":"2026-04-09 04","x":[0.28,0.97,0.8,-0.83,-0.01,-0.0],"y":1},{"t":"2026-04-09 05","x":[0.28,1.0,0.84,-0.81,0.02,-0.01],"y":1},{"t":"2026-04-09 06","x":[0.28,1.0,0.87,-0.84,-0.04,0.02],"y":1},{"t":"2026-04-09 07","x":[0.28,0.9,0.88,-0.77,0.02,-0.0],"y":1},{"t":"2026-04-09 08","x":[0.28,1.0,0.94,-0.64,-0.01,-0.09],"y":1},{"t":"2026-04-09 09","x":[0.28,1.0,0.96,-0.7,0.04,-0.03],"y":1},{"t":"2026-04-09 10","x":[0.28,1.0,0.93,-0.71,0.01,0.05],"y":1},{"t":"2026-04-09 11","x":[0.7,1.0,0.86,-0.89,-0.02,-0.05],"y":1},{"t":"2026-04-09 12","x":[0.7,1.0,0.85,-0.9,0.11,0.07],"y":1},{"t":"2026-04-09 13","x":[0.7,1.0,0.88,-0.9,-0.03,0.01],"y":-1},{"t":"2026-04-09 14","x":[0.7,1.0,0.82,-1.0,-0.01,0.07],"y":-1},{"t":"2026-04-09 15","x":[0.7,1.0,0.81,-1.0,-0.01,0.0],"y":-1},{"t":"2026-04-09 16","x":[0.0,0.65,0.72,-1.0,0.14,0.26],"y":1},{"t":"2026-04-09 17","x":[0.0,-0.14,0.78,-1.0,0.03,0.08],"y":1},{"t":"2026-04-09 18","x":[0.0,-0.62,0.8,-0.96,0.02,0.05],"y":1},{"t":"2026-04-09 19","x":[0.0,0.16,0.79,-1.0,-0.09,-0.11],"y":1},{"t":"2026-04-09 20","x":[0.42,0.31,0.76,-1.0,0.01,0.05],"y":-1},{"t":"2026-04-09 21","x":[0.0,-0.26,0.82,-0.98,0.0,-0.01],"y":1},{"t":"2026-04-09 23","x":[0.42,0.14,0.77,-1.0,0.0,-0.05],"y":-1},{"t":"2026-04-10 00","x":[0.42,-0.02,0.81,-1.0,-0.06,0.02],"y":-1},{"t":"2026-04-10 01","x":[0.42,0.09,0.82,-1.0,-0.03,0.06],"y":-1},{"t":"2026-04-10 02","x":[0.0,-0.04,0.8,-1.0,0.04,0.01],"y":1},{"t":"2026-04-10 03","x":[0.42,0.01,0.78,-1.0,-0.02,-0.02],"y":-1},{"t":"2026-04-10 04","x":[0.0,-0.39,0.82,-0.99,0.02,0.02],"y":1},{"t":"2026-04-10 05","x":[0.0,-0.14,0.83,-1.0,-0.02,-0.03],"y":1},{"t":"2026-04-10 06","x":[0.14,-0.06,0.83,-1.0,-0.01,-0.0],"y":-1},{"t":"2026-04-10 07","x":[0.42,-0.05,0.82,-1.0,-0.03,-0.04],"y":-1},{"t":"2026-04-10 08","x":[0.7,0.35,0.83,-1.0,-0.03,0.04],"y":-1},{"t":"2026-04-10 09","x":[0.7,0.57,0.79,-1.0,0.04,-0.07],"y":-1},{"t":"2026-04-10 10","x":[0.0,-0.14,0.76,-1.0,0.11,0.08],"y":-1},{"t":"2026-04-10 11","x":[0.0,-0.36,0.77,-1.0,0.01,0.01],"y":1},{"t":"2026-04-10 12","x":[0.0,-0.32,0.75,-1.0,0.02,0.0],"y":1},{"t":"2026-04-10 13","x":[-0.42,-0.27,0.76,-1.0,0.04,0.05],"y":1},{"t":"2026-04-10 14","x":[-0.42,-0.16,0.71,-1.0,0.03,-0.01],"y":-1},{"t":"2026-04-10 15","x":[-0.42,-0.06,0.67,-1.0,-0.01,0.04],"y":-1},{"t":"2026-04-10 16","x":[0.42,0.33,0.72,-1.0,-0.03,-0.14],"y":-1},{"t":"2026-04-10 17","x":[-0.42,0.04,0.71,-0.96,-0.01,0.0],"y":-1},{"t":"2026-04-10 18","x":[-0.42,-0.07,0.71,-0.98,0.01,0.0],"y":1},{"t":"2026-04-10 19","x":[-0.7,-0.75,0.73,-1.0,0.04,-0.01],"y":1},{"t":"2026-04-10 20","x":[-0.7,-0.8,0.73,-0.98,-0.02,0.0],"y":1},{"t":"2026-04-10 21","x":[-0.7,-0.63,0.76,-1.0,-0.01,-0.0],"y":1},{"t":"2026-04-12 23","x":[1.0,1.0,0.8,-1.0,-0.3,-0.56],"y":1},{"t":"2026-04-13 00","x":[1.0,1.0,0.81,-0.99,0.02,0.04],"y":1},{"t":"2026-04-13 01","x":[1.0,1.0,0.8,-1.0,0.05,0.12],"y":1},{"t":"2026-04-13 02","x":[1.0,1.0,0.76,-1.0,-0.01,0.04],"y":1},{"t":"2026-04-13 03","x":[1.0,1.0,0.76,-1.0,0.01,0.0],"y":-1},{"t":"2026-04-13 04","x":[1.0,1.0,0.75,-1.0,0.0,-0.03],"y":-1},{"t":"2026-04-13 05","x":[1.0,1.0,0.77,-1.0,-0.01,0.04],"y":-1},{"t":"2026-04-13 06","x":[1.0,1.0,0.79,-1.0,0.01,0.0],"y":1},{"t":"2026-04-13 07","x":[0.58,1.0,0.8,-1.0,0.0,0.05],"y":1},{"t":"2026-04-13 08","x":[1.0,1.0,0.61,-1.0,0.07,-0.01],"y":1},{"t":"2026-04-13 09","x":[1.0,1.0,0.6,-1.0,-0.05,0.01],"y":-1},{"t":"2026-04-13 10","x":[1.0,1.0,0.59,-1.0,-0.0,0.0],"y":-1},{"t":"2026-04-13 11","x":[0.58,1.0,0.61,-1.0,0.03,0.06],"y":-1},{"t":"2026-04-13 12","x":[1.0,1.0,0.58,-1.0,-0.07,-0.12],"y":-1},{"t":"2026-04-13 13","x":[0.3,1.0,0.62,-1.0,0.08,0.13],"y":-1},{"t":"2026-04-13 14","x":[0.02,0.69,0.61,-0.97,0.07,0.26],"y":-1},{"t":"2026-04-13 15","x":[0.02,0.71,0.61,-0.97,0.05,0.06],"y":-1},{"t":"2026-04-13 16","x":[0.3,0.87,0.65,-0.88,-0.02,-0.08],"y":-1},{"t":"2026-04-13 17","x":[-0.28,-0.52,0.72,-0.68,0.12,0.21],"y":-1},{"t":"2026-04-13 18","x":[-0.7,-0.66,0.71,-0.74,0.03,-0.01],"y":-1},{"t":"2026-04-13 19","x":[-0.7,-1.0,0.69,-0.67,0.14,0.08],"y":-1},{"t":"2026-04-13 20","x":[-0.7,-1.0,0.68,-0.71,-0.02,0.19],"y":-1},{"t":"2026-04-13 21","x":[-0.7,-1.0,0.65,-0.73,-0.01,0.04],"y":-1},{"t":"2026-04-13 23","x":[-0.7,-1.0,0.68,-0.68,0.03,-0.0],"y":-1},{"t":"2026-04-14 00","x":[-0.7,-1.0,0.68,-0.64,0.02,-0.01],"y":1},{"t":"2026-04-14 01","x":[-0.7,-1.0,0.72,-0.65,0.0,0.0],"y":1},{"t":"2026-04-14 02","x":[-0.7,-1.0,0.73,-0.66,-0.04,-0.02],"y":1},{"t":"2026-04-14 03","x":[-0.7,-1.0,0.74,-0.6,0.01,0.01],"y":1},{"t":"2026-04-14 04","x":[-0.7,-1.0,0.72,-0.57,0.04,-0.01],"y":-1},{"t":"2026-04-14 05","x":[-0.7,-1.0,0.73,-0.57,0.0,0.01],"y":-1},{"t":"2026-04-14 06","x":[-0.7,-1.0,0.74,-0.57,-0.02,-0.02],"y":-1},{"t":"2026-04-14 07","x":[-0.7,-1.0,0.77,-0.48,0.06,0.03],"y":-1},{"t":"2026-04-14 08","x":[-0.7,-1.0,0.81,-0.44,0.02,0.05],"y":1},{"t":"2026-04-14 09","x":[-0.7,-1.0,0.79,-0.5,0.01,0.05],"y":-1},{"t":"2026-04-14 10","x":[-0.42,-1.0,0.79,-0.47,0.03,-0.04],"y":-1},{"t":"2026-04-14 11","x":[0.0,-1.0,0.76,-0.5,0.05,-0.03],"y":-1},{"t":"2026-04-14 12","x":[0.0,-1.0,0.75,-0.52,0.02,0.07],"y":-1},{"t":"2026-04-14 13","x":[-0.7,-1.0,0.77,-0.47,0.04,0.01],"y":-1},{"t":"2026-04-14 14","x":[-0.7,-1.0,0.8,-0.43,-0.04,0.12],"y":-1},{"t":"2026-04-14 15","x":[-0.7,-1.0,0.78,-0.4,0.04,0.15],"y":-1},{"t":"2026-04-14 16","x":[-0.7,-1.0,0.79,-0.33,-0.1,0.1],"y":-1},{"t":"2026-04-14 17","x":[-0.7,-1.0,0.78,-0.37,0.02,0.01],"y":-1},{"t":"2026-04-14 18","x":[-0.7,-1.0,0.82,-0.3,0.02,0.06],"y":-1},{"t":"2026-04-14 19","x":[-0.7,-1.0,0.86,-0.25,-0.03,-0.07],"y":-1},{"t":"2026-04-14 20","x":[-0.7,-0.94,0.86,-0.28,-0.01,0.12],"y":-1},{"t":"2026-04-14 21","x":[-0.7,-0.85,0.84,-0.29,0.02,-0.01],"y":-1},{"t":"2026-04-14 23","x":[-0.88,-0.97,0.87,-0.23,0.01,0.01],"y":-1},{"t":"2026-04-15 00","x":[-0.88,-1.0,0.89,-0.18,0.02,0.03],"y":1},{"t":"2026-04-15 01","x":[-0.88,-1.0,0.89,-0.17,-0.02,0.0],"y":1},{"t":"2026-04-15 02","x":[-0.88,-1.0,0.89,-0.14,-0.02,0.02],"y":1},{"t":"2026-04-15 03","x":[-0.88,-1.0,0.9,-0.15,-0.05,-0.04],"y":-1},{"t":"2026-04-15 04","x":[-0.88,-1.0,0.9,-0.12,0.03,0.04],"y":-1},{"t":"2026-04-15 05","x":[-0.46,-0.8,0.9,-0.14,0.0,-0.02],"y":-1},{"t":"2026-04-15 06","x":[-0.88,-0.98,0.91,-0.1,0.01,-0.03],"y":1},{"t":"2026-04-15 07","x":[-0.88,-1.0,0.89,-0.18,-0.04,0.01],"y":1},{"t":"2026-04-15 08","x":[-0.88,-1.0,0.88,-0.15,0.02,0.0],"y":1},{"t":"2026-04-15 09","x":[-0.18,-0.78,0.94,-0.15,0.03,0.02],"y":1},{"t":"2026-04-15 10","x":[-0.18,-0.34,0.91,-0.17,-0.05,-0.06],"y":-1},{"t":"2026-04-15 11","x":[-0.18,-0.09,0.89,-0.24,-0.03,0.01],"y":-1},{"t":"2026-04-15 12","x":[-0.6,-0.49,0.86,-0.2,0.02,0.05],"y":1},{"t":"2026-04-15 13","x":[-0.18,-0.3,0.85,-0.26,0.01,-0.0],"y":-1},{"t":"2026-04-15 14","x":[-0.6,-0.58,0.89,-0.22,0.02,0.07],"y":1},{"t":"2026-04-15 15","x":[0.1,0.12,0.97,-0.34,0.06,0.08],"y":-1},{"t":"2026-04-15 16","x":[0.1,0.18,0.99,-0.25,0.01,0.02],"y":-1},{"t":"2026-04-15 17","x":[-0.6,-0.01,1.0,-0.17,0.02,-0.03],"y":-1},{"t":"2026-04-15 18","x":[-0.18,0.33,0.98,-0.3,-0.04,0.07],"y":-1},{"t":"2026-04-15 19","x":[-0.6,-0.24,1.0,-0.21,0.03,0.15],"y":-1},{"t":"2026-04-15 20","x":[-0.6,-0.31,1.0,-0.18,-0.0,0.01],"y":-1},{"t":"2026-04-15 21","x":[-0.6,-0.13,0.99,-0.22,-0.02,-0.01],"y":1},{"t":"2026-04-15 23","x":[-0.6,-0.3,1.0,-0.2,0.02,0.05],"y":1},{"t":"2026-04-16 00","x":[-0.6,-0.31,0.99,-0.2,0.03,0.03],"y":1},{"t":"2026-04-16 01","x":[-0.6,-0.34,1.0,-0.18,0.01,0.03],"y":1},{"t":"2026-04-16 02","x":[-0.18,-0.14,0.99,-0.21,-0.02,-0.01],"y":1},{"t":"2026-04-16 03","x":[-0.18,-0.13,0.99,-0.23,0.09,-0.0],"y":1},{"t":"2026-04-16 04","x":[-0.18,-0.02,0.98,-0.26,-0.02,-0.0],"y":-1},{"t":"2026-04-16 05","x":[-0.18,-0.01,0.97,-0.26,-0.03,-0.0],"y":-1},{"t":"2026-04-16 06","x":[-0.18,-0.1,0.98,-0.26,-0.04,0.02],"y":-1},{"t":"2026-04-16 07","x":[-0.18,-0.09,0.98,-0.22,0.01,0.03],"y":-1},{"t":"2026-04-16 08","x":[-0.88,-1.0,1.0,0.3,-0.07,-0.04],"y":-1},{"t":"2026-04-16 09","x":[-0.88,-1.0,1.0,0.31,-0.04,-0.02],"y":1},{"t":"2026-04-16 10","x":[-0.88,-0.94,1.0,0.3,-0.04,0.01],"y":1},{"t":"2026-04-16 11","x":[-0.88,-1.0,1.0,0.31,-0.0,-0.03],"y":1},{"t":"2026-04-16 12","x":[-0.88,-1.0,1.0,0.32,0.03,0.03],"y":1},{"t":"2026-04-16 13","x":[-0.88,-0.85,1.0,0.32,-0.02,0.01],"y":1},{"t":"2026-04-16 14","x":[-0.18,-0.37,1.0,0.35,-0.04,-0.09],"y":1},{"t":"2026-04-16 15","x":[-0.18,-0.23,1.0,0.4,-0.02,0.03],"y":1},{"t":"2026-04-16 16","x":[-0.18,-0.18,1.0,0.45,0.06,0.17],"y":-1},{"t":"2026-04-16 17","x":[-0.18,0.29,1.0,0.5,-0.04,-0.1],"y":-1},{"t":"2026-04-16 18","x":[-0.18,0.45,1.0,0.46,-0.01,-0.01],"y":-1},{"t":"2026-04-16 19","x":[-0.6,-0.0,1.0,0.47,0.04,0.01],"y":-1},{"t":"2026-04-16 20","x":[-0.6,-0.11,1.0,0.46,0.01,0.06],"y":1},{"t":"2026-04-16 21","x":[-0.88,-0.3,1.0,0.5,0.0,0.01],"y":1},{"t":"2026-04-16 23","x":[-0.6,-0.32,1.0,0.5,0.02,0.03],"y":1},{"t":"2026-04-17 00","x":[-0.6,-0.12,1.0,0.51,-0.02,0.01],"y":-1},{"t":"2026-04-17 01","x":[-0.18,-0.08,1.0,0.48,-0.02,-0.01],"y":-1},{"t":"2026-04-17 02","x":[-0.6,-0.17,1.0,0.51,-0.01,0.0],"y":-1},{"t":"2026-04-17 03","x":[-0.32,-0.19,1.0,0.51,0.01,-0.03],"y":1},{"t":"2026-04-17 04","x":[-0.6,-0.2,1.0,0.5,0.03,-0.0],"y":1},{"t":"2026-04-17 05","x":[-0.6,-0.31,1.0,0.53,-0.01,0.01],"y":-1},{"t":"2026-04-17 06","x":[-0.6,-0.32,1.0,0.54,-0.01,0.01],"y":-1},{"t":"2026-04-17 07","x":[-0.18,-0.04,1.0,0.54,-0.03,-0.01],"y":-1},{"t":"2026-04-17 08","x":[-0.46,-0.12,1.0,-0.34,0.05,0.05],"y":-1},{"t":"2026-04-17 09","x":[-0.88,-0.51,1.0,-0.33,0.07,0.03],"y":-1},{"t":"2026-04-17 10","x":[-0.88,-1.0,1.0,0.53,0.0,0.02],"y":-1},{"t":"2026-04-17 11","x":[-0.88,-0.98,1.0,0.53,-0.01,-0.01],"y":-1},{"t":"2026-04-17 12","x":[-0.88,-1.0,1.0,0.51,0.01,0.07],"y":-1},{"t":"2026-04-17 13","x":[-1.0,-1.0,1.0,0.46,0.25,0.25],"y":-1},{"t":"2026-04-17 14","x":[-1.0,-1.0,1.0,0.32,0.01,0.05],"y":1},{"t":"2026-04-17 15","x":[-1.0,-1.0,1.0,0.33,-0.05,0.16],"y":1},{"t":"2026-04-17 16","x":[-1.0,-1.0,1.0,0.43,-0.08,0.02],"y":1},{"t":"2026-04-17 17","x":[-1.0,-1.0,1.0,0.37,-0.0,0.08],"y":1},{"t":"2026-04-17 18","x":[-1.0,-0.98,1.0,0.47,-0.02,-0.12],"y":1},{"t":"2026-04-17 19","x":[-1.0,-0.09,1.0,0.42,-0.09,-0.04],"y":1},{"t":"2026-04-17 20","x":[-1.0,0.04,1.0,0.4,-0.07,0.02],"y":1},{"t":"2026-04-17 21","x":[-1.0,-0.15,1.0,0.42,-0.02,0.0],"y":1},{"t":"2026-04-20 10","x":[-0.3,1.0,1.0,0.35,0.05,0.09],"y":-1},{"t":"2026-04-20 11","x":[-0.3,1.0,1.0,0.38,0.02,-0.01],"y":-1},{"t":"2026-04-20 12","x":[-0.3,1.0,1.0,0.38,-0.0,0.02],"y":1},{"t":"2026-04-20 13","x":[-0.3,1.0,1.0,0.44,-0.01,0.05],"y":1},{"t":"2026-04-20 14","x":[-0.3,1.0,1.0,0.41,0.07,0.14],"y":1},{"t":"2026-04-20 15","x":[-0.02,1.0,1.0,0.48,-0.01,-0.17],"y":1},{"t":"2026-04-20 16","x":[0.4,1.0,1.0,0.47,0.07,0.03],"y":-1},{"t":"2026-04-20 17","x":[0.4,1.0,1.0,0.46,0.0,0.01],"y":-1},{"t":"2026-04-20 18","x":[0.4,1.0,1.0,0.44,-0.01,0.01],"y":-1},{"t":"2026-04-20 19","x":[0.4,1.0,1.0,0.46,-0.02,0.04],"y":-1},{"t":"2026-04-20 20","x":[0.4,1.0,1.0,0.47,0.02,0.04],"y":-1},{"t":"2026-04-20 21","x":[-0.02,0.93,1.0,0.51,0.01,0.03],"y":1},{"t":"2026-04-20 23","x":[-0.02,1.0,1.0,0.55,0.0,0.04],"y":1},{"t":"2026-04-21 00","x":[-0.02,1.0,1.0,0.52,-0.01,-0.02],"y":1},{"t":"2026-04-21 01","x":[-0.3,1.0,1.0,0.49,-0.01,0.02],"y":-1},{"t":"2026-04-21 02","x":[0.12,1.0,1.0,0.52,-0.01,0.0],"y":-1},{"t":"2026-04-21 03","x":[0.12,1.0,1.0,0.49,-0.01,-0.01],"y":-1},{"t":"2026-04-21 04","x":[0.12,0.83,1.0,0.49,-0.02,-0.01],"y":-1},{"t":"2026-04-21 05","x":[-0.3,0.37,1.0,0.5,0.0,0.03],"y":1},{"t":"2026-04-21 06","x":[-0.58,0.18,1.0,0.49,0.02,-0.0],"y":1},{"t":"2026-04-21 07","x":[0.12,0.21,1.0,0.5,-0.01,0.02],"y":1},{"t":"2026-04-21 08","x":[-0.58,-0.1,1.0,-0.21,-0.07,-0.03],"y":1},{"t":"2026-04-21 09","x":[0.12,0.01,1.0,-0.22,-0.02,0.04],"y":1},{"t":"2026-04-21 10","x":[0.12,-0.07,1.0,-0.21,-0.02,0.03],"y":1},{"t":"2026-04-21 11","x":[0.12,-0.09,1.0,-0.24,0.01,0.05],"y":1},{"t":"2026-04-21 12","x":[0.52,0.32,1.0,-0.28,0.04,-0.0],"y":1},{"t":"2026-04-21 13","x":[0.4,0.18,1.0,-0.23,-0.04,-0.08],"y":1},{"t":"2026-04-21 14","x":[-0.3,-0.07,1.0,-0.19,0.04,0.03],"y":1},{"t":"2026-04-21 15","x":[0.52,0.72,1.0,-0.27,-0.08,-0.23],"y":1},{"t":"2026-04-21 16","x":[0.52,1.0,1.0,-0.26,-0.0,-0.06],"y":1},{"t":"2026-04-21 17","x":[0.52,1.0,1.0,-0.25,-0.06,-0.08],"y":-1},{"t":"2026-04-21 18","x":[0.52,0.61,1.0,-0.22,0.02,0.01],"y":1},{"t":"2026-04-21 19","x":[0.52,0.26,1.0,-0.21,-0.01,0.04],"y":1},{"t":"2026-04-21 20","x":[0.52,1.0,1.0,-0.28,-0.1,-0.15],"y":-1},{"t":"2026-04-21 21","x":[0.52,0.67,1.0,-0.2,0.11,0.15],"y":-1},{"t":"2026-04-21 23","x":[0.52,0.69,1.0,-0.23,0.0,0.01],"y":-1},{"t":"2026-04-22 00","x":[0.52,0.76,1.0,-0.21,0.02,0.05],"y":-1},{"t":"2026-04-22 01","x":[0.52,0.44,1.0,-0.22,0.01,0.03],"y":-1},{"t":"2026-04-22 02","x":[0.1,0.24,1.0,-0.23,0.01,0.04],"y":-1},{"t":"2026-04-22 03","x":[-0.18,0.2,1.0,-0.21,-0.02,0.0],"y":-1},{"t":"2026-04-22 04","x":[-0.18,0.16,1.0,-0.2,-0.01,-0.02],"y":1},{"t":"2026-04-22 05","x":[0.52,0.3,1.0,-0.22,0.01,-0.05],"y":1},{"t":"2026-04-22 06","x":[-0.18,-0.07,1.0,-0.19,0.07,0.07],"y":1},{"t":"2026-04-22 07","x":[-0.18,-0.1,1.0,-0.19,-0.01,0.01],"y":1},{"t":"2026-04-22 08","x":[0.24,0.18,1.0,-0.18,0.02,0.0],"y":1},{"t":"2026-04-22 09","x":[0.24,0.78,1.0,-0.2,-0.01,-0.03],"y":1},{"t":"2026-04-22 10","x":[0.52,0.77,1.0,-0.2,-0.03,-0.0],"y":1},{"t":"2026-04-22 11","x":[-0.04,0.4,1.0,-0.19,0.02,0.01],"y":1},{"t":"2026-04-22 12","x":[0.24,0.41,1.0,-0.16,-0.09,0.02],"y":1},{"t":"2026-04-22 13","x":[0.24,0.9,1.0,-0.23,-0.05,-0.02],"y":1},{"t":"2026-04-22 14","x":[0.24,0.91,1.0,-0.23,0.09,0.1],"y":1},{"t":"2026-04-22 15","x":[0.52,0.99,1.0,-0.2,-0.12,0.04],"y":1},{"t":"2026-04-22 16","x":[0.7,1.0,1.0,0.55,-0.03,-0.03],"y":-1},{"t":"2026-04-22 17","x":[0.7,1.0,1.0,0.54,-0.0,-0.05],"y":-1},{"t":"2026-04-22 18","x":[0.52,0.82,1.0,0.59,-0.0,0.07],"y":-1},{"t":"2026-04-22 19","x":[0.52,0.87,1.0,0.6,-0.01,-0.03],"y":-1},{"t":"2026-04-22 20","x":[0.52,0.57,1.0,0.58,-0.02,0.11],"y":1},{"t":"2026-04-22 21","x":[0.52,0.64,1.0,0.6,0.0,-0.04],"y":1},{"t":"2026-04-22 23","x":[0.4,0.43,1.0,0.58,-0.0,-0.02],"y":1},{"t":"2026-04-23 00","x":[0.4,0.52,1.0,0.59,-0.01,0.01],"y":1},{"t":"2026-04-23 01","x":[0.4,0.5,1.0,0.61,0.04,-0.06],"y":1},{"t":"2026-04-23 02","x":[0.58,0.69,1.0,0.56,-0.02,-0.09],"y":1},{"t":"2026-04-23 03","x":[0.58,1.0,1.0,0.59,-0.07,-0.06],"y":-1},{"t":"2026-04-23 04","x":[0.58,1.0,1.0,0.58,-0.01,-0.05],"y":-1},{"t":"2026-04-23 05","x":[0.58,0.85,1.0,0.59,0.03,0.06],"y":1},{"t":"2026-04-23 06","x":[0.58,0.74,1.0,0.61,0.03,0.02],"y":1},{"t":"2026-04-23 07","x":[0.3,0.91,1.0,0.6,-0.02,0.04],"y":-1},{"t":"2026-04-23 08","x":[-0.12,0.56,1.0,-0.25,0.0,0.01],"y":-1},{"t":"2026-04-23 09","x":[0.58,1.0,1.0,-0.26,0.0,-0.08],"y":-1},{"t":"2026-04-23 10","x":[0.58,0.98,1.0,-0.25,-0.04,0.01],"y":-1},{"t":"2026-04-23 11","x":[-0.12,0.52,1.0,-0.24,-0.06,0.05],"y":-1},{"t":"2026-04-23 12","x":[-0.12,0.18,1.0,-0.21,0.07,0.12],"y":1},{"t":"2026-04-23 13","x":[-0.12,0.13,1.0,0.6,-0.02,-0.04],"y":1},{"t":"2026-04-23 14","x":[0.3,0.38,1.0,0.59,-0.0,0.05],"y":1},{"t":"2026-04-23 15","x":[-0.12,-0.11,1.0,0.65,0.1,0.11],"y":1},{"t":"2026-04-23 16","x":[0.3,0.39,1.0,0.62,-0.04,-0.04],"y":1},{"t":"2026-04-23 17","x":[0.3,0.32,1.0,0.62,-0.02,-0.02],"y":1},{"t":"2026-04-23 18","x":[0.3,0.8,1.0,0.58,-0.06,-0.3],"y":1},{"t":"2026-04-23 19","x":[0.58,0.88,1.0,0.6,-0.02,0.03],"y":1},{"t":"2026-04-23 20","x":[0.58,0.69,1.0,0.65,-0.02,0.1],"y":1},{"t":"2026-04-23 21","x":[0.58,0.9,1.0,0.67,-0.02,-0.07],"y":1},{"t":"2026-04-23 23","x":[0.58,0.93,1.0,0.65,-0.0,0.1],"y":-1},{"t":"2026-04-24 00","x":[0.58,0.81,1.0,0.64,-0.02,0.05],"y":-1},{"t":"2026-04-24 01","x":[0.58,0.94,1.0,0.67,0.01,0.02],"y":-1},{"t":"2026-04-24 02","x":[0.58,0.84,1.0,0.65,0.02,0.0],"y":-1},{"t":"2026-04-24 03","x":[0.58,0.59,1.0,0.66,-0.05,-0.1],"y":1},{"t":"2026-04-24 04","x":[0.58,0.64,1.0,0.65,-0.01,-0.02],"y":1},{"t":"2026-04-24 05","x":[0.16,0.38,1.0,0.67,0.01,0.04],"y":1},{"t":"2026-04-24 06","x":[0.16,0.34,1.0,0.67,0.02,0.04],"y":1},{"t":"2026-04-24 07","x":[0.58,0.57,1.0,0.7,-0.02,-0.02],"y":1},{"t":"2026-04-24 08","x":[0.58,0.64,1.0,-0.2,0.06,0.04],"y":-1},{"t":"2026-04-24 09","x":[0.3,0.71,1.0,-0.22,-0.0,-0.07],"y":-1},{"t":"2026-04-24 10","x":[0.58,1.0,1.0,-0.25,-0.01,0.0],"y":-1},{"t":"2026-04-24 11","x":[0.3,0.64,1.0,-0.25,0.08,0.05],"y":-1},{"t":"2026-04-24 12","x":[-0.4,-0.37,1.0,-0.17,0.06,0.14],"y":-1},{"t":"2026-04-24 13","x":[-0.12,0.2,1.0,-0.21,-0.03,-0.06],"y":-1},{"t":"2026-04-24 14","x":[-0.12,-0.16,1.0,-0.14,-0.02,-0.05],"y":-1},{"t":"2026-04-24 15","x":[-0.4,-0.22,1.0,-0.16,0.01,0.11],"y":-1},{"t":"2026-04-24 16","x":[-1.0,-0.86,1.0,-0.0,0.07,0.16],"y":1},{"t":"2026-04-24 17","x":[-0.82,-0.76,1.0,-0.01,0.01,-0.01],"y":1},{"t":"2026-04-24 18","x":[-0.82,-0.79,1.0,-0.02,-0.03,0.01],"y":1},{"t":"2026-04-24 19","x":[-0.54,-0.42,1.0,-0.04,0.02,-0.01],"y":1},{"t":"2026-04-24 20","x":[-0.12,-0.13,1.0,-0.01,0.01,0.03],"y":1},{"t":"2026-04-24 21","x":[-0.12,-0.07,1.0,-0.11,0.01,0.01],"y":1},{"t":"2026-04-26 23","x":[-0.12,0.42,1.0,-0.0,-0.08,-0.1],"y":-1},{"t":"2026-04-27 00","x":[-0.12,0.47,1.0,0.02,-0.01,-0.02],"y":-1},{"t":"2026-04-27 01","x":[0.3,0.44,1.0,0.02,0.06,0.08],"y":-1},{"t":"2026-04-27 02","x":[0.3,0.37,1.0,0.01,0.06,0.12],"y":1},{"t":"2026-04-27 03","x":[-0.12,0.11,1.0,0.0,0.01,-0.03],"y":1},{"t":"2026-04-27 04","x":[-0.12,0.15,1.0,0.01,0.02,-0.0],"y":1},{"t":"2026-04-27 05","x":[0.3,0.28,1.0,0.01,-0.02,-0.02],"y":1},{"t":"2026-04-27 06","x":[0.3,0.47,1.0,0.01,-0.03,-0.08],"y":1},{"t":"2026-04-27 07","x":[0.58,0.48,1.0,0.0,0.04,-0.01],"y":-1},{"t":"2026-04-27 08","x":[0.58,0.79,1.0,0.0,0.07,-0.01],"y":-1},{"t":"2026-04-27 09","x":[0.58,0.65,1.0,0.01,0.04,0.01],"y":-1},{"t":"2026-04-27 10","x":[0.58,0.68,1.0,0.01,-0.03,0.0],"y":-1},{"t":"2026-04-27 11","x":[-0.12,0.24,1.0,0.01,0.03,0.04],"y":1},{"t":"2026-04-27 12","x":[-0.12,0.13,1.0,0.01,-0.02,0.02],"y":1},{"t":"2026-04-27 13","x":[0.3,0.63,1.0,-0.03,0.01,-0.06],"y":1},{"t":"2026-04-27 14","x":[-0.12,0.37,1.0,0.06,-0.03,0.05],"y":1},{"t":"2026-04-27 15","x":[0.3,0.76,1.0,0.0,-0.01,-0.03],"y":-1},{"t":"2026-04-27 16","x":[0.3,0.46,1.0,0.03,-0.03,-0.01],"y":1},{"t":"2026-04-27 17","x":[0.3,0.51,1.0,0.02,-0.04,0.05],"y":1},{"t":"2026-04-27 18","x":[0.3,0.38,1.0,0.06,-0.01,0.05],"y":1},{"t":"2026-04-27 19","x":[0.3,0.26,1.0,0.02,-0.02,-0.0],"y":1},{"t":"2026-04-27 20","x":[0.3,0.11,1.0,0.03,-0.0,0.03],"y":1},{"t":"2026-04-27 21","x":[0.3,0.2,1.0,0.04,0.01,-0.01],"y":1},{"t":"2026-04-27 23","x":[0.42,0.16,1.0,0.04,-0.01,0.08],"y":1},{"t":"2026-04-28 00","x":[0.42,0.16,1.0,0.03,0.02,0.01],"y":1},{"t":"2026-04-28 01","x":[0.42,0.32,1.0,0.05,-0.03,-0.02],"y":1},{"t":"2026-04-28 02","x":[0.7,0.43,1.0,0.03,-0.04,-0.04],"y":1},{"t":"2026-04-28 03","x":[0.7,0.45,1.0,0.02,-0.02,-0.02],"y":1},{"t":"2026-04-28 04","x":[0.7,0.51,1.0,0.02,0.06,0.02],"y":1},{"t":"2026-04-28 05","x":[0.7,0.46,1.0,0.04,-0.01,0.01],"y":1},{"t":"2026-04-28 06","x":[0.7,0.74,1.0,0.05,-0.04,-0.08],"y":1},{"t":"2026-04-28 07","x":[0.7,0.79,1.0,0.04,-0.1,-0.03],"y":1},{"t":"2026-04-28 08","x":[0.7,0.96,1.0,0.1,0.03,0.02],"y":1},{"t":"2026-04-28 09","x":[0.7,0.95,1.0,0.03,0.02,0.03],"y":1},{"t":"2026-04-28 10","x":[0.7,1.0,1.0,-0.04,-0.06,-0.06],"y":-1},{"t":"2026-04-28 11","x":[0.7,1.0,1.0,-0.06,-0.01,-0.02],"y":-1},{"t":"2026-04-28 12","x":[0.7,1.0,1.0,-0.11,-0.07,-0.21],"y":-1},{"t":"2026-04-28 13","x":[0.7,0.71,1.0,-0.05,0.09,0.08],"y":-1},{"t":"2026-04-28 14","x":[0.7,0.57,1.0,-0.05,0.0,0.0],"y":1},{"t":"2026-04-28 15","x":[0.7,0.43,1.0,-0.1,-0.02,-0.07],"y":1},{"t":"2026-04-28 16","x":[0.7,0.49,1.0,-0.1,0.08,-0.04],"y":1},{"t":"2026-04-28 17","x":[0.28,0.15,1.0,-0.1,-0.02,0.01],"y":1},{"t":"2026-04-28 18","x":[0.7,0.51,1.0,-0.15,0.02,0.06],"y":-1},{"t":"2026-04-28 19","x":[0.7,0.32,1.0,-0.09,-0.01,0.03],"y":-1},{"t":"2026-04-28 20","x":[0.7,0.22,1.0,-0.08,-0.01,0.02],"y":-1},{"t":"2026-04-28 21","x":[0.0,0.06,1.0,-0.05,0.02,0.01],"y":1},{"t":"2026-04-28 23","x":[0.18,0.04,1.0,-0.07,0.02,0.02],"y":-1},{"t":"2026-04-29 00","x":[0.18,-0.04,1.0,-0.09,0.0,0.02],"y":-1},{"t":"2026-04-29 01","x":[0.18,-0.08,1.0,-0.06,-0.0,0.03],"y":1},{"t":"2026-04-29 02","x":[0.6,0.33,1.0,-0.08,-0.03,-0.04],"y":-1},{"t":"2026-04-29 03","x":[-0.1,-0.12,1.0,-0.03,-0.02,0.02],"y":1},{"t":"2026-04-29 04","x":[0.18,-0.11,1.0,-0.04,-0.01,0.01],"y":1},{"t":"2026-04-29 05","x":[0.18,-0.03,1.0,-0.02,-0.0,0.01],"y":1},{"t":"2026-04-29 06","x":[0.6,0.08,1.0,-0.02,-0.03,0.0],"y":1},{"t":"2026-04-29 07","x":[0.6,0.36,1.0,-0.03,-0.0,-0.04],"y":1},{"t":"2026-04-29 08","x":[0.88,0.78,1.0,-0.09,0.03,-0.04],"y":1},{"t":"2026-04-29 09","x":[0.88,1.0,1.0,-0.16,-0.03,-0.01],"y":1},{"t":"2026-04-29 10","x":[0.88,1.0,1.0,-0.16,-0.02,-0.02],"y":1},{"t":"2026-04-29 11","x":[0.88,1.0,1.0,-0.14,0.06,0.05],"y":1},{"t":"2026-04-29 12","x":[0.88,1.0,1.0,-0.11,-0.03,-0.02],"y":1},{"t":"2026-04-29 13","x":[0.88,1.0,1.0,-0.08,-0.03,-0.03],"y":1},{"t":"2026-04-29 14","x":[0.88,1.0,1.0,-0.05,-0.08,-0.06],"y":1},{"t":"2026-04-29 15","x":[0.88,1.0,1.0,-0.08,0.08,0.05],"y":1},{"t":"2026-04-29 16","x":[0.88,1.0,1.0,-0.11,-0.04,-0.1],"y":1},{"t":"2026-04-29 17","x":[0.88,1.0,1.0,-0.17,-0.05,-0.02],"y":1},{"t":"2026-04-29 18","x":[0.88,1.0,1.0,-0.17,0.04,0.06],"y":1},{"t":"2026-04-29 19","x":[0.88,1.0,1.0,-0.2,-0.1,-0.0],"y":1},{"t":"2026-04-29 20","x":[0.88,1.0,1.0,-0.2,0.01,0.08],"y":-1},{"t":"2026-04-29 21","x":[0.88,1.0,1.0,-0.24,-0.01,-0.2],"y":-1},{"t":"2026-04-29 23","x":[1.0,1.0,1.0,-0.2,-0.02,0.3],"y":-1},{"t":"2026-04-30 00","x":[1.0,1.0,1.0,-0.19,0.08,0.06],"y":1},{"t":"2026-04-30 01","x":[1.0,0.96,1.0,-0.18,-0.03,0.04],"y":1},{"t":"2026-04-30 02","x":[1.0,0.83,1.0,-0.22,-0.01,0.0],"y":1},{"t":"2026-04-30 03","x":[1.0,1.0,1.0,-0.21,-0.05,-0.15],"y":-1},{"t":"2026-04-30 04","x":[1.0,1.0,1.0,-0.18,-0.01,-0.03],"y":-1},{"t":"2026-04-30 05","x":[1.0,1.0,1.0,-0.18,-0.05,-0.19],"y":-1},{"t":"2026-04-30 06","x":[1.0,1.0,1.0,-0.13,-0.01,-0.01],"y":-1},{"t":"2026-04-30 07","x":[0.3,0.95,1.0,-0.14,0.06,0.07],"y":-1},{"t":"2026-04-30 08","x":[0.3,0.87,1.0,-1.0,0.08,0.06],"y":-1},{"t":"2026-04-30 09","x":[0.3,0.7,1.0,-1.0,0.04,0.03],"y":-1},{"t":"2026-04-30 10","x":[0.3,0.21,1.0,-1.0,0.09,0.04],"y":-1},{"t":"2026-04-30 11","x":[0.18,-0.01,1.0,-1.0,0.24,0.06],"y":-1},{"t":"2026-04-30 12","x":[-0.1,-0.69,1.0,-1.0,-0.0,0.1],"y":-1},{"t":"2026-04-30 13","x":[-0.1,-0.41,1.0,-0.15,-0.08,0.07],"y":-1},{"t":"2026-04-30 14","x":[-0.52,-0.36,1.0,-0.11,-0.01,-0.27],"y":-1},{"t":"2026-04-30 15","x":[-0.24,-0.21,1.0,-0.06,0.23,0.19],"y":-1},{"t":"2026-04-30 16","x":[-0.52,-0.88,1.0,0.07,0.0,0.05],"y":1},{"t":"2026-04-30 17","x":[-0.52,-0.6,1.0,0.05,-0.01,-0.02],"y":1},{"t":"2026-04-30 18","x":[-0.52,-0.94,1.0,0.03,0.01,0.19],"y":1},{"t":"2026-04-30 19","x":[-0.1,-0.23,1.0,0.09,0.07,0.09],"y":1},{"t":"2026-04-30 20","x":[-0.52,-0.26,1.0,0.11,-0.01,0.01],"y":1},{"t":"2026-04-30 21","x":[-0.1,-0.16,1.0,0.12,-0.02,0.06],"y":-1},{"t":"2026-04-30 23","x":[-0.1,-0.04,1.0,0.13,-0.01,0.02],"y":-1},{"t":"2026-05-01 00","x":[-0.1,-0.06,1.0,0.12,-0.04,0.02],"y":-1},{"t":"2026-05-01 01","x":[0.18,-0.05,1.0,0.15,-0.01,0.04],"y":-1},{"t":"2026-05-01 02","x":[-0.24,-0.16,1.0,0.16,0.01,0.03],"y":-1},{"t":"2026-05-01 03","x":[0.18,-0.08,1.0,0.13,0.01,-0.01],"y":1},{"t":"2026-05-01 04","x":[0.18,-0.07,1.0,0.14,-0.01,0.0],"y":1},{"t":"2026-05-01 05","x":[-0.24,-0.22,1.0,0.13,-0.03,-0.02],"y":1},{"t":"2026-05-01 06","x":[-0.24,-0.13,1.0,0.13,-0.03,-0.01],"y":1},{"t":"2026-05-01 07","x":[0.46,0.2,1.0,0.14,0.16,-0.03],"y":-1},{"t":"2026-05-01 08","x":[0.18,0.09,1.0,-0.9,-0.06,-0.02],"y":-1},{"t":"2026-05-01 09","x":[0.46,0.12,1.0,-0.89,0.05,0.0],"y":-1},{"t":"2026-05-01 10","x":[-0.24,0.1,1.0,0.13,-0.06,0.02],"y":-1},{"t":"2026-05-01 11","x":[-0.24,-0.01,1.0,0.18,0.06,0.01],"y":-1},{"t":"2026-05-01 12","x":[-0.52,-0.34,1.0,0.27,0.04,0.02],"y":-1},{"t":"2026-05-01 13","x":[-0.52,-0.42,1.0,0.29,0.03,0.02],"y":-1},{"t":"2026-05-01 14","x":[-0.52,-1.0,1.0,0.34,0.03,0.24],"y":1},{"t":"2026-05-01 15","x":[-0.52,-0.93,1.0,0.27,0.02,-0.1],"y":1},{"t":"2026-05-01 16","x":[-0.52,-1.0,1.0,0.24,-0.06,0.05],"y":1},{"t":"2026-05-01 17","x":[-0.52,-0.57,1.0,0.22,-0.09,-0.1],"y":1},{"t":"2026-05-01 18","x":[-0.52,-0.64,1.0,0.18,-0.02,0.06],"y":-1},{"t":"2026-05-01 19","x":[-0.52,-0.29,1.0,0.21,-0.03,-0.12],"y":-1},{"t":"2026-05-01 20","x":[-0.52,-0.2,1.0,0.21,-0.05,-0.04],"y":-1},{"t":"2026-05-01 21","x":[-0.52,-0.26,1.0,0.18,0.01,0.0],"y":-1},{"t":"2026-05-03 23","x":[-0.4,-0.56,1.0,0.21,0.08,0.0],"y":1},{"t":"2026-05-04 00","x":[-0.4,-0.29,1.0,0.22,-0.04,0.0],"y":1},{"t":"2026-05-04 01","x":[-0.4,-0.5,1.0,0.21,0.01,0.0],"y":1},{"t":"2026-05-04 02","x":[-0.4,-0.3,1.0,0.21,-0.02,0.0],"y":-1},{"t":"2026-05-04 03","x":[0.02,-0.22,1.0,0.22,0.01,0.0],"y":1},{"t":"2026-05-04 04","x":[0.02,-0.17,1.0,0.23,0.11,0.0],"y":1},{"t":"2026-05-04 05","x":[-0.12,-0.25,1.0,0.22,-0.08,0.07],"y":1},{"t":"2026-05-04 06","x":[-0.12,-0.52,1.0,0.19,0.01,0.01],"y":1},{"t":"2026-05-04 07","x":[0.3,0.07,1.0,0.2,-0.03,-0.05],"y":1},{"t":"2026-05-04 08","x":[0.58,0.49,1.0,0.25,-0.06,0.02],"y":1},{"t":"2026-05-04 09","x":[0.58,0.44,1.0,0.2,-0.0,-0.02],"y":-1},{"t":"2026-05-04 10","x":[0.3,0.38,1.0,0.26,-0.01,0.01],"y":-1},{"t":"2026-05-04 11","x":[1.0,1.0,1.0,0.25,-0.07,-0.12],"y":-1},{"t":"2026-05-04 12","x":[1.0,0.65,1.0,0.33,-0.06,-0.01],"y":1},{"t":"2026-05-04 13","x":[0.3,0.16,1.0,0.4,0.08,0.03],"y":1},{"t":"2026-05-04 14","x":[0.3,-0.07,1.0,0.52,0.04,0.06],"y":1},{"t":"2026-05-04 15","x":[0.72,0.38,1.0,0.56,-0.03,0.01],"y":1},{"t":"2026-05-04 16","x":[1.0,1.0,1.0,0.53,-0.07,-0.23],"y":-1},{"t":"2026-05-04 17","x":[1.0,1.0,1.0,0.56,-0.08,-0.07],"y":-1},{"t":"2026-05-04 18","x":[1.0,0.62,1.0,0.5,0.06,0.12],"y":-1},{"t":"2026-05-04 19","x":[1.0,0.67,1.0,0.54,0.05,-0.06],"y":-1},{"t":"2026-05-04 20","x":[1.0,0.43,1.0,0.57,-0.04,0.05],"y":-1},{"t":"2026-05-04 21","x":[1.0,0.36,1.0,0.54,-0.03,-0.04],"y":-1},{"t":"2026-05-04 23","x":[0.72,0.26,1.0,0.61,-0.01,0.02],"y":-1},{"t":"2026-05-05 00","x":[0.72,0.27,1.0,0.6,0.01,-0.0],"y":-1},{"t":"2026-05-05 01","x":[0.3,0.2,1.0,0.6,-0.03,0.03],"y":-1},{"t":"2026-05-05 02","x":[0.3,0.17,1.0,0.56,0.01,0.03],"y":-1},{"t":"2026-05-05 03","x":[0.3,-0.07,1.0,0.58,0.0,0.01],"y":1},{"t":"2026-05-05 04","x":[0.58,-0.0,1.0,0.58,-0.02,0.03],"y":1},{"t":"2026-05-05 05","x":[0.58,-0.09,1.0,0.58,-0.03,-0.01],"y":-1},{"t":"2026-05-05 06","x":[0.3,-0.06,1.0,0.61,0.03,0.03],"y":-1},{"t":"2026-05-05 07","x":[0.02,-0.02,1.0,0.65,0.03,0.03],"y":-1},{"t":"2026-05-05 08","x":[0.44,0.01,1.0,0.63,0.02,-0.0],"y":-1},{"t":"2026-05-05 09","x":[0.02,-0.42,1.0,0.58,0.0,0.05],"y":-1},{"t":"2026-05-05 10","x":[0.02,-0.2,1.0,0.57,-0.01,0.01],"y":-1},{"t":"2026-05-05 11","x":[-0.4,-0.14,1.0,0.58,-0.01,0.0],"y":-1},{"t":"2026-05-05 12","x":[-0.4,-0.27,1.0,0.56,-0.01,0.02],"y":-1},{"t":"2026-05-05 13","x":[-0.4,-0.44,1.0,0.57,0.01,0.02],"y":-1},{"t":"2026-05-05 14","x":[-0.52,-0.86,1.0,0.59,0.04,0.09],"y":1},{"t":"2026-05-05 15","x":[-0.52,-0.97,1.0,0.63,0.04,0.04],"y":1},{"t":"2026-05-05 16","x":[-0.4,-0.78,1.0,0.5,0.01,-0.01],"y":1},{"t":"2026-05-05 17","x":[-0.4,-0.61,1.0,0.49,-0.06,0.03],"y":1},{"t":"2026-05-05 18","x":[-0.52,-0.55,1.0,0.46,-0.01,0.04],"y":-1},{"t":"2026-05-05 19","x":[-0.4,-0.36,1.0,0.36,0.0,0.02],"y":-1},{"t":"2026-05-05 20","x":[0.02,-0.03,1.0,0.38,-0.03,-0.04],"y":-1},{"t":"2026-05-05 21","x":[0.02,-0.02,1.0,0.42,-0.01,0.06],"y":-1},{"t":"2026-05-05 23","x":[-0.7,-0.65,1.0,0.38,0.0,0.15],"y":-1},{"t":"2026-05-06 00","x":[-0.7,-1.0,1.0,0.38,0.12,-0.02],"y":1},{"t":"2026-05-06 01","x":[-0.7,-0.64,1.0,0.41,0.03,-0.07],"y":-1},{"t":"2026-05-06 02","x":[-0.7,-0.75,1.0,0.35,-0.0,0.03],"y":-1},{"t":"2026-05-06 03","x":[-0.7,-0.71,1.0,0.35,-0.03,-0.02],"y":1},{"t":"2026-05-06 04","x":[-0.7,-0.74,1.0,0.37,0.0,0.02],"y":-1},{"t":"2026-05-06 05","x":[-0.7,-0.79,1.0,0.4,0.22,0.01],"y":-1},{"t":"2026-05-06 06","x":[-0.7,-0.81,1.0,0.41,-0.05,0.02],"y":-1},{"t":"2026-05-06 07","x":[0.0,-0.57,1.0,0.38,-0.01,-0.01],"y":-1},{"t":"2026-05-06 08","x":[-0.7,-1.0,1.0,0.43,0.06,0.01],"y":-1},{"t":"2026-05-06 09","x":[-0.7,-1.0,1.0,0.42,0.11,0.17],"y":-1},{"t":"2026-05-06 10","x":[-0.7,-1.0,1.0,0.47,0.05,0.04],"y":1},{"t":"2026-05-06 11","x":[-0.7,-1.0,1.0,0.51,0.08,0.11],"y":1},{"t":"2026-05-06 12","x":[-0.7,-1.0,1.0,0.4,-0.11,-0.07],"y":1},{"t":"2026-05-06 13","x":[-0.7,-1.0,1.0,0.37,-0.09,-0.07],"y":1},{"t":"2026-05-06 14","x":[0.0,-0.59,1.0,0.26,-0.0,0.05],"y":-1},{"t":"2026-05-06 15","x":[-0.7,-0.94,1.0,0.29,0.0,0.17],"y":1},{"t":"2026-05-06 16","x":[-0.7,-0.48,1.0,0.28,-0.03,-0.04],"y":1},{"t":"2026-05-06 17","x":[-0.28,-0.12,1.0,0.26,-0.04,-0.05],"y":1},{"t":"2026-05-06 18","x":[-0.7,-0.29,1.0,0.2,0.01,0.08],"y":1},{"t":"2026-05-06 19","x":[-0.7,-0.17,1.0,0.15,0.01,0.06],"y":1},{"t":"2026-05-06 20","x":[-0.7,0.06,1.0,0.17,-0.01,0.05],"y":1},{"t":"2026-05-06 21","x":[-0.28,0.46,1.0,0.11,0.01,-0.0],"y":-1},{"t":"2026-05-06 23","x":[0.12,0.35,1.0,0.15,-0.01,-0.05],"y":-1},{"t":"2026-05-07 00","x":[0.12,0.36,1.0,0.15,-0.02,0.01],"y":-1},{"t":"2026-05-07 01","x":[0.12,0.51,1.0,0.16,0.01,0.03],"y":-1},{"t":"2026-05-07 02","x":[-0.02,0.25,1.0,0.2,0.06,0.04],"y":-1},{"t":"2026-05-07 03","x":[-0.02,0.39,1.0,0.17,-0.02,-0.01],"y":-1},{"t":"2026-05-07 04","x":[0.12,0.43,1.0,0.18,-0.04,0.01],"y":-1},{"t":"2026-05-07 05","x":[-0.3,0.35,1.0,0.17,0.01,0.02],"y":-1},{"t":"2026-05-07 06","x":[-0.3,0.27,1.0,0.19,0.0,0.0],"y":-1},{"t":"2026-05-07 07","x":[-0.3,-0.02,1.0,0.19,-0.01,0.04],"y":-1},{"t":"2026-05-07 08","x":[-0.7,-0.51,1.0,0.19,0.1,0.02],"y":-1},{"t":"2026-05-07 09","x":[-0.7,-0.63,1.0,0.18,0.01,-0.05],"y":-1},{"t":"2026-05-07 10","x":[-0.7,-0.56,1.0,0.17,-0.01,-0.01],"y":-1},{"t":"2026-05-07 11","x":[-0.7,-0.55,1.0,0.16,-0.01,0.01],"y":-1},{"t":"2026-05-07 12","x":[-0.7,-1.0,1.0,0.19,0.01,0.01],"y":1},{"t":"2026-05-07 13","x":[-0.7,-1.0,1.0,0.17,0.02,0.03],"y":1},{"t":"2026-05-07 14","x":[-0.7,-1.0,1.0,0.16,-0.03,-0.1],"y":1},{"t":"2026-05-07 15","x":[-0.7,-1.0,1.0,0.16,0.04,0.15],"y":1},{"t":"2026-05-07 16","x":[-0.28,-0.07,1.0,0.13,-0.09,-0.14],"y":1},{"t":"2026-05-07 17","x":[0.12,0.9,1.0,0.03,-0.03,-0.13],"y":1},{"t":"2026-05-07 18","x":[0.12,0.5,1.0,0.11,-0.06,-0.02],"y":1},{"t":"2026-05-07 19","x":[0.12,0.74,1.0,0.05,-0.0,-0.04],"y":1},{"t":"2026-05-07 20","x":[0.54,1.0,1.0,0.05,-0.1,0.03],"y":1},{"t":"2026-05-07 21","x":[0.82,1.0,1.0,0.07,-0.05,-0.08],"y":-1},{"t":"2026-05-07 23","x":[0.7,1.0,1.0,0.05,-0.01,-0.02],"y":-1},{"t":"2026-05-08 00","x":[0.7,1.0,1.0,0.07,0.02,0.09],"y":-1},{"t":"2026-05-08 01","x":[0.7,1.0,1.0,0.09,-0.02,0.07],"y":-1},{"t":"2026-05-08 02","x":[0.7,0.88,1.0,0.09,0.03,0.02],"y":-1},{"t":"2026-05-08 03","x":[0.28,0.75,1.0,0.08,-0.02,-0.01],"y":-1},{"t":"2026-05-08 04","x":[0.28,0.73,1.0,0.09,0.01,0.02],"y":-1},{"t":"2026-05-08 05","x":[0.28,0.78,1.0,0.07,0.03,0.01],"y":-1},{"t":"2026-05-08 06","x":[0.28,0.61,1.0,0.09,0.02,0.02],"y":-1},{"t":"2026-05-08 07","x":[0.28,0.49,1.0,0.07,0.04,0.04],"y":-1},{"t":"2026-05-08 08","x":[0.0,0.53,1.0,0.12,-0.01,-0.01],"y":-1},{"t":"2026-05-08 09","x":[-0.18,0.23,1.0,0.1,0.11,0.04],"y":1},{"t":"2026-05-08 10","x":[0.0,0.45,1.0,0.11,0.03,0.01],"y":-1},{"t":"2026-05-08 11","x":[-0.88,0.32,1.0,0.06,-0.03,0.01],"y":1},{"t":"2026-05-08 12","x":[-0.88,0.34,1.0,0.1,0.02,0.02],"y":1}],"rel":[{"bin":"0.1-0.2","n":1,"mean_predicted":0.191,"observed_freq":0.0},{"bin":"0.2-0.3","n":705,"mean_predicted":0.272,"observed_freq":0.5461},{"bin":"0.3-0.4","n":2811,"mean_predicted":0.3493,"observed_freq":0.5144},{"bin":"0.4-0.5","n":3141,"mean_predicted":0.4501,"observed_freq":0.5018},{"bin":"0.5-0.6","n":3475,"mean_predicted":0.5535,"observed_freq":0.5278},{"bin":"0.6-0.7","n":2201,"mean_predicted":0.6418,"observed_freq":0.5002},{"bin":"0.7-0.8","n":962,"mean_predicted":0.7475,"observed_freq":0.5146},{"bin":"0.8-0.9","n":140,"mean_predicted":0.8163,"observed_freq":0.3714}],"cal":{"coef":-0.0007614855160997336,"intercept":0.05196807804255004}};
+const $ = id => document.getElementById(id);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = 'http://www.w3.org/2000/svg';
+const el = (t, a, txt) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+const pct = (x, d = 1) => (x * 100).toFixed(d) + '%';
+const sig = z => 1 / (1 + Math.exp(-z));
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+/* ---------- chapter chips + progress ---------- */
+const KEY = 'petrosync-explainer';
+let done = {}; try { done = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { done = {}; }
+const chs = [...document.querySelectorAll('section.ch')];
+function chips() { $('chips').innerHTML = chs.map(s => `<a href="#${s.id}" class="${done[s.id] ? 'done' : ''}">${s.dataset.title}</a>`).join(''); }
+document.querySelectorAll('input[data-ch]').forEach(cb => { cb.checked = !!done[cb.dataset.ch]; cb.addEventListener('change', () => { done[cb.dataset.ch] = cb.checked; try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (e) {} chips(); }); });
+chips();
+
+/* ---------- 1 · price chart with hover ---------- */
+const P = D.price, prices = P.map(d => d.p);
+function frame(svg, W, H, L, R, T, B, lo, hi, ticks, fmt) {
+  const y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  for (let k = 0; k <= ticks; k++) { const v = lo + (hi - lo) * k / ticks; svg.append(el('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: css('--grid'), 'stroke-width': 1 })); svg.append(el('text', { x: L - 8, y: y(v) + 4, 'text-anchor': 'end' }, fmt(v))); }
+  return y;
+}
+function drawPrice(hoverI) {
+  const svg = $('priceChart'); svg.innerHTML = '';
+  const W = 900, H = 280, L = 56, R = 12, T = 12, B = 28, lo = Math.min(...prices) - 0.5, hi = Math.max(...prices) + 0.5;
+  const y = frame(svg, W, H, L, R, T, B, lo, hi, 4, v => '$' + v.toFixed(0));
+  const x = i => L + i * (W - L - R) / (P.length - 1);
+  svg.append(el('path', { d: prices.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' '), fill: 'none', stroke: css('--crude'), 'stroke-width': 2 }));
+  [0, Math.floor(P.length / 2), P.length - 1].forEach((i, k) => svg.append(el('text', { x: x(i), y: H - 8, 'text-anchor': ['start', 'middle', 'end'][k] }, P[i].t.slice(0, 10))));
+  const i = hoverI ?? P.length - 1;
+  svg.append(el('line', { x1: x(i), x2: x(i), y1: T, y2: H - B, stroke: css('--accent'), 'stroke-dasharray': '3 3' }));
+  svg.append(el('circle', { cx: x(i), cy: y(prices[i]), r: 5, fill: css('--accent') }));
+  $('pTime').textContent = P[i].t.replace('T', ' ');
+  $('pPrice').textContent = '$' + prices[i].toFixed(2);
+  const mv = i ? prices[i] - prices[i - 1] : 0;
+  $('pMove').textContent = (mv >= 0 ? '+' : '−') + '$' + Math.abs(mv).toFixed(2);
+  $('pMove').style.color = mv >= 0 ? css('--up') : css('--down');
+  svg.onpointermove = e => { const r = svg.getBoundingClientRect(); const px = (e.clientX - r.left) / r.width * W; drawPrice(Math.max(0, Math.min(P.length - 1, Math.round((px - L) / (W - L - R) * (P.length - 1))))); };
+}
+
+/* ---------- 2 · EMA ---------- */
+function drawEma() {
+  const span = +$('emaSpan').value; $('emaVal').textContent = span;
+  const a = 2 / (span + 1); let e = prices[0]; const ema = prices.map(p => e = a * p + (1 - a) * e);
+  const svg = $('emaChart'); svg.innerHTML = '';
+  const W = 900, H = 260, L = 56, R = 12, T = 12, B = 24, lo = Math.min(...prices) - 0.5, hi = Math.max(...prices) + 0.5;
+  const y = frame(svg, W, H, L, R, T, B, lo, hi, 4, v => '$' + v.toFixed(0));
+  const x = i => L + i * (W - L - R) / (P.length - 1);
+  const path = arr => arr.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+  svg.append(el('path', { d: path(prices), fill: 'none', stroke: css('--crude'), 'stroke-width': 1.3, opacity: 0.6 }));
+  svg.append(el('path', { d: path(ema), fill: 'none', stroke: css('--accent'), 'stroke-width': 2.6 }));
+  let flips = 0; for (let i = 1; i < P.length; i++) if ((prices[i] > ema[i]) !== (prices[i - 1] > ema[i - 1])) flips++;
+  const above = prices[P.length - 1] > ema[P.length - 1];
+  $('emaNote').textContent = `With length ${span}, price crossed its EMA ${flips} times in these 40 days. Right now price is ${above ? 'above' : 'below'} the EMA, so this rule says the trend is ${above ? 'UP' : 'DOWN'}. Short lengths react fast but flip often; long lengths are smooth but late.`;
+}
+$('emaSpan').addEventListener('input', drawEma);
+
+/* ---------- 3 · pillars ---------- */
+const PIL = [['trend', 'Trend (EMA alignment)', .25], ['vwap', 'VWAP position', .20], ['crack', 'Refinery margin', .15], ['spread', 'Brent–WTI gap', .15], ['usd', 'US dollar', .10], ['spx', 'Stock market', .10], ['ovx', 'Volatility (OVX)', .05]];
+$('pillarSliders').innerHTML = PIL.map(([k, n, w]) => `<div class="slider"><label for="pl_${k}">${n} · ${w * 100}% <span id="pv_${k}">0</span></label><input id="pl_${k}" type="range" min="-100" max="100" value="0"></div>`).join('');
+function pillars() {
+  let s = 0; PIL.forEach(([k, , w]) => { const v = +$('pl_' + k).value; $('pv_' + k).textContent = v; s += w * v; });
+  $('pillarScore').textContent = (s > 0 ? '+' : '') + s.toFixed(1);
+  $('pillarLabel').textContent = s >= 50 ? 'Strong bullish' : s >= 15 ? 'Moderately bullish' : s <= -50 ? 'Strong bearish' : s <= -15 ? 'Moderately bearish' : 'Balanced (no call)';
+  $('pillarMark').style.left = ((s + 100) / 2) + '%';
+}
+PIL.forEach(([k]) => $('pl_' + k).addEventListener('input', pillars));
+
+/* ---------- 4 · logistic regression ---------- */
+const toyR = rng(7);
+const TOY = Array.from({ length: 120 }, () => { const x = toyR() * 200 - 100; return [x, toyR() < sig(0.045 * x) ? 1 : 0]; });
+let DS = TOY, w = 0, b = 0, training = false;
+const jit = rng(11); const JIT = Array.from({ length: 600 }, () => jit());
+function lrStats() {
+  let acc = 0, loss = 0, ups = 0;
+  DS.forEach(([x, yv]) => { const p = Math.min(1 - 1e-6, Math.max(1e-6, sig(w * x / 50 + b))); acc += ((p > 0.5 ? 1 : 0) === yv); loss -= yv * Math.log(p) + (1 - yv) * Math.log(1 - p); ups += yv; });
+  return { acc: acc / DS.length, loss: loss / DS.length, base: Math.max(ups, DS.length - ups) / DS.length };
+}
+function drawLR() {
+  $('wSlider').value = w; $('bSlider').value = b; $('wVal').textContent = w.toFixed(2); $('bVal').textContent = b.toFixed(2);
+  const svg = $('lrChart'); svg.innerHTML = '';
+  const W = 900, H = 300, L = 56, R = 12, T = 16, B = 30, x = v => L + (v + 100) / 200 * (W - L - R), y = v => T + (1 - v) * (H - T - B);
+  [0, 0.5, 1].forEach(v => { svg.append(el('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: css('--grid') })); svg.append(el('text', { x: L - 8, y: y(v) + 4, 'text-anchor': 'end' }, v === 0.5 ? '50%' : v ? 'up' : 'down')); });
+  [-100, -50, 0, 50, 100].forEach(v => svg.append(el('text', { x: x(v), y: H - 8, 'text-anchor': 'middle' }, (v > 0 ? '+' : '') + v)));
+  DS.forEach(([xv, yv], i) => svg.append(el('circle', { cx: x(Math.max(-100, Math.min(100, xv))), cy: y(yv) + (yv ? 1 : -1) * JIT[i % 600] * 18, r: 3.2, fill: yv ? css('--up') : css('--down'), 'fill-opacity': 0.55 })));
+  let d = ''; for (let v = -100; v <= 100; v += 2) d += (v === -100 ? 'M' : 'L') + x(v).toFixed(1) + ' ' + y(sig(w * v / 50 + b)).toFixed(1);
+  svg.append(el('path', { d, fill: 'none', stroke: css('--accent'), 'stroke-width': 3 }));
+  const s = lrStats();
+  $('lrAcc').textContent = pct(s.acc); $('lrBase').textContent = pct(s.base); $('lrLoss').textContent = s.loss.toFixed(3);
+}
+function train() {
+  if (training) return; training = true; let step = 0;
+  const tick = () => {
+    for (let k = 0; k < 4; k++) {
+      let gw = 0, gb = 0; DS.forEach(([x, yv]) => { const e = sig(w * x / 50 + b) - yv; gw += e * x / 50; gb += e; });
+      w -= 0.6 * gw / DS.length; b -= 0.6 * gb / DS.length;
+      w = Math.max(-3, Math.min(3, w)); b = Math.max(-2, Math.min(2, b));
+    }
+    drawLR(); step++;
+    if (step < 70) requestAnimationFrame(tick); else {
+      training = false; const s = lrStats();
+      $('lrNote').textContent = DS === TOY
+        ? `Trained: weight ${w.toFixed(2)}. A steep curve means the score really tells you something. Accuracy ${pct(s.acc)} beats the ${pct(s.base)} base rate.`
+        : `Trained on real oil: weight ${w.toFixed(2)}, so the curve is almost flat. Accuracy ${pct(s.acc)} is about the ${pct(s.base)} base rate. The score barely predicts the next 4 hours, which is exactly what your full evaluation found.`;
+    }
+  };
+  requestAnimationFrame(tick);
+}
+function setDS(real) { DS = real ? D.real : TOY; w = 0; b = 0; $('dsToy').setAttribute('aria-pressed', !real); $('dsReal').setAttribute('aria-pressed', real); $('lrNote').textContent = 'Press “Train it” and watch the curve.'; drawLR(); }
+$('dsToy').onclick = () => setDS(false); $('dsReal').onclick = () => setDS(true);
+$('trainBtn').onclick = train; $('lrReset').onclick = () => { w = 0; b = 0; drawLR(); };
+$('wSlider').oninput = e => { w = +e.target.value; drawLR(); }; $('bSlider').oninput = e => { b = +e.target.value; drawLR(); };
+
+/* ---------- 5 · walk-forward ---------- */
+let wfRound = 0, wfRandom = false; const NB = 14;
+function drawWF() {
+  const svg = $('wfChart'); svg.innerHTML = ''; const W = 900, L = 10, bw = (W - 2 * L) / NB;
+  let role = Array(NB).fill('none');
+  if (!wfRandom) {
+    const trainEnd = 3 + wfRound; for (let i = 0; i < trainEnd; i++) role[i] = 'train'; if (trainEnd < NB) role[trainEnd] = 'purge'; if (trainEnd + 1 < NB) role[trainEnd + 1] = 'test';
+    $('wfNote').textContent = trainEnd + 1 < NB ? `Round ${wfRound + 1}: learn from blocks 1–${trainEnd}, skip block ${trainEnd + 1} (purge), test on block ${trainEnd + 2}. Every training hour comes before every test hour.` : 'Finished: every block was tested by a model that only saw the past.';
+  } else {
+    const r = rng(100 + wfRound); role = role.map(() => r() < 0.3 ? 'test' : 'train');
+    const firstTest = role.indexOf('test');
+    role = role.map((v, i) => v === 'train' && i > firstTest && firstTest >= 0 ? 'leak' : v);
+    $('wfNote').textContent = 'Random shuffle: red blocks are from the future of a test block, yet they are used for training. The model can memorise what happens next, so its accuracy looks better than it really is.';
+  }
+  const col = { train: css('--accent'), purge: css('--amber'), test: css('--ink'), leak: css('--down'), none: css('--grid') };
+  role.forEach((r, i) => svg.append(el('rect', { x: L + i * bw + 2, y: 20, width: bw - 4, height: 56, rx: 6, fill: col[r] })));
+  svg.append(el('text', { x: L, y: 100 }, 'older'));
+  svg.append(el('text', { x: W - L, y: 100, 'text-anchor': 'end' }, 'newer → time'));
+}
+$('wfNext').onclick = () => { wfRound = (wfRound + 1) % (NB - 3); drawWF(); };
+$('splitWF').onclick = () => { wfRandom = false; wfRound = 0; $('splitWF').setAttribute('aria-pressed', true); $('splitRand').setAttribute('aria-pressed', false); drawWF(); };
+$('splitRand').onclick = () => { wfRandom = true; $('splitWF').setAttribute('aria-pressed', false); $('splitRand').setAttribute('aria-pressed', true); drawWF(); };
+
+/* ---------- 6 · coins ---------- */
+let coins = [];
+function drawCoins() {
+  const n = +$('nCalls').value; $('nVal').textContent = n.toLocaleString();
+  const svg = $('coinChart'); svg.innerHTML = '';
+  const W = 900, H = 220, L = 30, R = 30, lo = 0.44, hi = 0.56, x = v => L + (v - lo) / (hi - lo) * (W - L - R), base = 150;
+  const half = 1.96 * Math.sqrt(0.25 / n);
+  svg.append(el('rect', { x: x(0.5 - half), y: 20, width: x(0.5 + half) - x(0.5 - half), height: base - 10, fill: css('--accent-soft') }));
+  svg.append(el('line', { x1: L, x2: W - R, y1: base + 10, y2: base + 10, stroke: css('--muted') }));
+  for (let v = 0.44; v <= 0.5601; v += 0.02) svg.append(el('text', { x: x(v), y: base + 28, 'text-anchor': 'middle' }, (v * 100).toFixed(0) + '%'));
+  const cnt = {}; coins.forEach(v => { const k = Math.round(v * 400); cnt[k] = (cnt[k] || 0) + 1; const yy = base - (cnt[k] - 1) * 9; svg.append(el('circle', { cx: x(Math.max(lo, Math.min(hi, v))), cy: yy, r: 4, fill: css('--muted'), 'fill-opacity': .7 })); });
+  [['rules 49.1%', .491, '--amber'], ['logistic 50.7%', .507, '--accent'], ['boosting 51.3%', .513, '--up']].forEach(([lab, v, c], i) => {
+    svg.append(el('line', { x1: x(v), x2: x(v), y1: 14, y2: base + 10, stroke: css(c), 'stroke-width': 2.5 }));
+    svg.append(el('text', { x: x(v), y: 12 + i * 0 + (i === 1 ? 196 : 0) + (i === 1 ? 0 : 0), 'text-anchor': 'middle', style: 'fill:' + css(c) }, i === 1 ? '' : lab));
+  });
+  svg.append(el('text', { x: x(.507), y: H - 6, 'text-anchor': 'middle', style: 'fill:' + css('--accent') }, 'logistic 50.7%'));
+  $('coinNote').textContent = `With ${n.toLocaleString()} calls, 95% of fair coins land between ${pct(0.5 - half)} and ${pct(0.5 + half)} (shaded). ${coins.length ? `This run: coins ranged from ${pct(Math.min(...coins))} to ${pct(Math.max(...coins))}.` : 'Press the button to flip.'} Your models’ lines fall inside the shaded band, so luck can explain them.`;
+}
+$('coinBtn').onclick = () => { const n = +$('nCalls').value; const r = rng(Date.now() % 100000); coins = Array.from({ length: 60 }, () => { let h = 0; for (let i = 0; i < n; i++) h += r() < 0.5; return h / n; }); drawCoins(); };
+$('nCalls').oninput = () => { coins = []; drawCoins(); };
+
+/* ---------- 7 · calibration ---------- */
+function drawCal() {
+  const v = +$('calSlider').value / 100; $('calVal').textContent = Math.round(v * 100) + ' %';
+  const bin = D.rel.find(b => { const [a, c] = b.bin.split('-').map(Number); return v >= a && v < c; }) || D.rel[D.rel.length - 1];
+  const score = v * 200 - 100, cal = sig(D.cal.coef * score + D.cal.intercept);
+  [['calOld', 'calOldV', v], ['calReal', 'calRealV', bin.observed_freq], ['calNew', 'calNewV', cal]].forEach(([f, t, val]) => { $(f).style.width = (val * 100) + '%'; $(t).textContent = pct(val); });
+  $('calNote').textContent = `When the old dashboard said about ${Math.round(v * 100)}% bullish (${bin.n.toLocaleString()} such hours in the backtest), oil actually rose ${pct(bin.observed_freq)} of the time. The calibrated model says ${pct(cal)}, which is honest about how little the score knows.`;
+}
+$('calSlider').oninput = drawCal;
+
+/* ---------- 8 · Hedge simulator ---------- */
+const HN = ['Trend', 'VWAP', 'Refinery margin', 'Brent–WTI', 'US dollar', 'Stocks'];
+const HAND = [25, 20, 15, 15, 10, 10].map(v => v / 95);
+let H = {}, timer = null, ETA = 0.01, ALPHA = 0.01;
+function hReset() { H = { t: 0, w: HAND.slice(), okL: 0, okF: 0, n: 0, queue: [] }; hDraw(); }
+function hStep() {
+  if (H.t >= D.hedge.length) { hPause(); $('hNote').textContent = 'Finished 600 hours. Press Reset to run again, or try another learning rate.'; return; }
+  const row = D.hedge[H.t];
+  const sL = row.x.reduce((s, v, i) => s + v * H.w[i], 0), sF = row.x.reduce((s, v, i) => s + v * HAND[i], 0);
+  if (sL !== 0 || sF !== 0) { H.n++; H.okL += (Math.sign(sL) === row.y); H.okF += (Math.sign(sF) === row.y); }
+  H.queue.push({ t: H.t, x: row.x, y: row.y });
+  if (H.queue.length > 4) {
+    const old = H.queue.shift();
+    let w = H.w.map((wi, i) => wi * Math.exp(-ETA * ((old.x[i] - old.y) ** 2) / 4)); const s = w.reduce((a, c) => a + c, 0);
+    H.w = w.map(v => (1 - ALPHA) * v / s + ALPHA / 6);
+  }
+  H.t++; hDraw();
+}
+function hDraw() {
+  const mx = 0.45;
+  $('hBars').innerHTML = HN.map((n, i) => `<div class="barrow"><span>${n}</span><div class="track"><div class="ghost" style="width:${HAND[i] / mx * 100}%"></div><div class="fill" style="width:${H.w[i] / mx * 100}%"></div></div><span class="mono">${(HAND[i] * 100).toFixed(0)}% → ${(H.w[i] * 100).toFixed(1)}%</span></div>`).join('');
+  $('hT').textContent = H.t;
+  $('hAccL').textContent = H.n ? pct(H.okL / H.n) : '–';
+  $('hAccF').textContent = H.n ? pct(H.okF / H.n) : '–';
+  $('hQueue').innerHTML = H.queue.length ? H.queue.map(q => `<span>${D.hedge[q.t].t.slice(5)}h → ${q.y > 0 ? 'up' : 'down'}?</span>`).join('') : '<span>empty</span>';
+}
+function hPause() { clearInterval(timer); timer = null; $('hPlay').textContent = 'Play'; }
+$('hPlay').onclick = () => { if (timer) return hPause(); $('hPlay').textContent = 'Pause'; timer = setInterval(hStep, 40); };
+$('hStep').onclick = () => { hPause(); hStep(); };
+$('hReset').onclick = () => { hPause(); hReset(); };
+$('hShare').onclick = () => { ALPHA = ALPHA ? 0 : 0.01; $('hShare').setAttribute('aria-pressed', ALPHA > 0); $('hShare').textContent = 'Fixed share 1 %: ' + (ALPHA ? 'on' : 'off'); hPause(); hReset(); };
+document.querySelectorAll('[data-eta]').forEach(bt => bt.onclick = () => { ETA = +bt.dataset.eta; document.querySelectorAll('[data-eta]').forEach(x => x.setAttribute('aria-pressed', x === bt)); hPause(); hReset(); });
+
+/* ---------- 9 · flow ---------- */
+const FLOW = [
+  ['Yahoo Finance', false, 'Free market data for 9 markets, downloaded with the yfinance library. Hourly history goes back about 2 years.'],
+  ['Cleaning', false, 'Times converted to UTC; each market cleaned separately because they trade different hours; gaps are only filled from the past.'],
+  ['Engine (rules)', false, 'engine.py computes indicators, the 7 pillars, the sentiment score and trade setups. It is the baseline and the feature generator.'],
+  ['31 features', false, 'Engine scores, intermarket values, price structure and time features, rebuilt for every hour of history exactly as they looked live.'],
+  ['Walk-forward ML', true, 'Logistic regression, ridge and gradient boosting trained only on the past, retrained every 250 hours, with a purge gap.'],
+  ['Evaluation', true, 'Baselines, a held-back lockbox period, significance tests and sanity checks decide what really works.'],
+  ['Live dashboard', true, 'Flask + Chart.js. Shows the calibrated probability, the self-learning weights panel and a Backtest Reality Check card.'],
+  ['Forward test', true, 'Frozen, fingerprinted models record predictions every hour via GitHub Actions before outcomes exist, until Feb 2027.']
+];
+$('flow').innerHTML = FLOW.map(([n, ml], i) => `${i ? '<span class="arrow">→</span>' : ''}<button class="flowbox ${ml ? 'ml' : ''}" data-i="${i}" aria-pressed="false">${n}</button>`).join('');
+function flowPick(i) { document.querySelectorAll('.flowbox').forEach(b => b.setAttribute('aria-pressed', +b.dataset.i === i)); $('flowInfo').innerHTML = `<b>${FLOW[i][0]}${FLOW[i][1] ? ' · machine learning' : ''}</b><span>${FLOW[i][2]}</span>`; }
+document.querySelectorAll('.flowbox').forEach(b => b.onclick = () => flowPick(+b.dataset.i));
+flowPick(4);
+
+/* ---------- 10 · quiz ---------- */
+const Q = [
+  ['What question does the ML model answer?', ['What will the exact price be tomorrow?', 'Will WTI be higher 4 hours from now?', 'Which market is best to trade?'], 1, 'It is binary classification: up or not up, 4 hours ahead.'],
+  ['Why not shuffle the hours randomly into train and test?', ['It is slower', 'Future hours would end up in training and leak the answer', 'Shuffling loses data'], 1, 'Walk-forward keeps every training hour before every test hour.'],
+  ['A model gets 51.3 %. What do you need before calling it skill?', ['Nothing, it is above 50 %', 'A test showing it beats what luck and the upward drift can explain', 'A bigger font on the slide'], 1, 'The coin experiment shows 51.3 % is inside the luck band for this many calls.'],
+  ['What did calibration fix?', ['It made predictions more accurate', 'It made the shown probability honest', 'It made the dashboard faster'], 1, 'Brier skill went from −0.079 to −0.001: the probability now matches what happens.'],
+  ['Why did Hedge move weight to the dollar and stock pillars?', ['They predict direction best', 'No pillar beats 50 %, and those two rarely make bold calls, so they lose least', 'They have the biggest values'], 1, 'All pillars are right 49–50 % of the time. Cautious votes cost less, so Hedge rewards caution when nothing is predictive.']
+];
+let score = 0, answered = 0;
+$('quiz').innerHTML = Q.map(([q, o], i) => `<div class="q"><b>${i + 1}. ${q}</b><div class="opts">${o.map((t, j) => `<button data-q="${i}" data-o="${j}">${t}</button>`).join('')}</div><p class="note" id="qf${i}" aria-live="polite"></p></div>`).join('');
+$('quiz').querySelectorAll('button').forEach(bt => bt.onclick = () => {
+  const i = +bt.dataset.q, j = +bt.dataset.o, box = bt.parentElement; if (box.dataset.done) return; box.dataset.done = 1; answered++;
+  box.querySelectorAll('button').forEach((x, k) => { if (k === Q[i][2]) x.classList.add('right'); else if (k === j) x.classList.add('wrong'); });
+  if (j === Q[i][2]) score++; $('qf' + i).textContent = (j === Q[i][2] ? 'Correct. ' : 'Not quite. ') + Q[i][3];
+  $('quizScore').textContent = `Score: ${score} of ${answered} answered`;
+});
+
+/* ---------- boot + theme redraw ---------- */
+function drawAll() { drawPrice(); drawEma(); pillars(); drawLR(); drawWF(); drawCoins(); drawCal(); hDraw(); }
+hReset(); drawAll();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawAll);
+new MutationObserver(drawAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+</script>

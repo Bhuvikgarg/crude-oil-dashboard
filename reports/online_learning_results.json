@@ -22,7 +22,10 @@
       "hedge eta=0.2",
       "hedge eta=0.5",
       "sgd eta0=0.001",
-      "sgd eta0=0.01"
+      "sgd eta0=0.01",
+      "hedge alpha=0.01 (sensitivity, eta=0.01)",
+      "hedge alpha=0.001 (sensitivity, eta=0.01)",
+      "hedge alpha=0.0 (sensitivity, eta=0.01)"
     ]
   },
   "models": {
@@ -6356,5 +6359,75 @@
     "mtf_score": -0.0931,
     "pillar_mtf_alignment": -0.0931,
     "atr_pct": -0.0921
+  },
+  "pillar_diagnostics": {
+    "mtf_alignment": {
+      "direction_hit_rate": 0.4967,
+      "mean_abs_vote": 0.552,
+      "mean_squared_loss": 0.3538
+    },
+    "order_flow_vwap": {
+      "direction_hit_rate": 0.4918,
+      "mean_abs_vote": 0.37,
+      "mean_squared_loss": 0.311
+    },
+    "crack_margin": {
+      "direction_hit_rate": 0.4946,
+      "mean_abs_vote": 0.468,
+      "mean_squared_loss": 0.3384
+    },
+    "brent_spread": {
+      "direction_hit_rate": 0.5039,
+      "mean_abs_vote": 0.282,
+      "mean_squared_loss": 0.2764
+    },
+    "usd_impact": {
+      "direction_hit_rate": 0.4934,
+      "mean_abs_vote": 0.038,
+      "mean_squared_loss": 0.2516
+    },
+    "equity_risk_on": {
+      "direction_hit_rate": 0.4969,
+      "mean_abs_vote": 0.062,
+      "mean_squared_loss": 0.2525
+    }
+  },
+  "alpha_sensitivity": {
+    "0.01": {
+      "final_weights": [
+        0.167,
+        0.1679,
+        0.1358,
+        0.1706,
+        0.1794,
+        0.1793
+      ],
+      "lockbox_hit": 0.5092,
+      "lockbox_auc": 0.5022
+    },
+    "0.001": {
+      "final_weights": [
+        0.1106,
+        0.1208,
+        0.0543,
+        0.1473,
+        0.2873,
+        0.2796
+      ],
+      "lockbox_hit": 0.5026,
+      "lockbox_auc": 0.5051
+    },
+    "0.0": {
+      "final_weights": [
+        0.0,
+        0.0004,
+        0.0,
+        0.0276,
+        0.5131,
+        0.459
+      ],
+      "lockbox_hit": 0.5185,
+      "lockbox_auc": 0.5048
+    }
   }
 }
