@@ -185,6 +185,9 @@ function updateUI(d) {
     document.getElementById('winProbVal').textContent = `${ts.win_probability}%`;
     renderRealityCheck(ts.setup_type);
 
+    // Self-learning pillar weights (Hedge)
+    renderLearning(d.online_learning, d.sentiment.score);
+
     // Calibrated probability (honest version of "bullish %")
     const cal = d.sentiment.calibrated_p_up_4h;
     document.getElementById('calibratedLine').hidden = (cal === null || cal === undefined);
@@ -552,6 +555,51 @@ function renderChart(candles) {
     });
 }
 
+
+
+// ===================== SELF-LEARNING WEIGHTS (HEDGE) =====================
+const LEARN_COLORS = ['#06b6d4', '#a855f7', '#f59e0b', '#10b981', '#f43f5e', '#3b82f6'];
+
+function renderLearning(o, engineScore) {
+    const card = document.getElementById('learningCard');
+    if (!o) { card.hidden = true; return; }
+    card.hidden = false;
+    document.getElementById('learningMeta').textContent =
+        `η ${o.eta} · fixed share α ${o.alpha} · ${o.updates_total.toLocaleString()} updates (${o.updates_live} live) · ` +
+        `learned up to ${o.trained_until || '--'} UTC` + (o.last_update ? ` · last live update ${o.last_update}` : '');
+    const maxW = Math.max(...o.pillars.map(p => Math.max(p.hand_weight, p.learned_weight)));
+    document.getElementById('learningRows').innerHTML = o.pillars.map((p, i) => {
+        const delta = (p.learned_weight - p.hand_weight) * 100;
+        const cls = delta > 0.05 ? 'text-bull' : delta < -0.05 ? 'text-bear' : '';
+        const voteCls = p.vote >= 15 ? 'text-bull' : p.vote <= -15 ? 'text-bear' : 'text-warning';
+        return `<div class="learning-row">
+            <span><i class="learning-dot" style="background:${LEARN_COLORS[i]}"></i>${p.name}</span>
+            <span class="mono ${voteCls}">${p.vote > 0 ? '+' : ''}${p.vote.toFixed(1)}</span>
+            <span class="learning-bars">
+                <span class="learning-bar hand" style="width:${(p.hand_weight / maxW) * 78}%"><em>${(p.hand_weight * 100).toFixed(1)}%</em></span>
+                <span class="learning-bar learned" style="width:${(p.learned_weight / maxW) * 78}%;background:${LEARN_COLORS[i]}"><em>${(p.learned_weight * 100).toFixed(1)}%</em></span>
+            </span>
+            <span class="mono ${cls}">${delta >= 0 ? '+' : ''}${delta.toFixed(1)} pts</span>
+        </div>`;
+    }).join('');
+    const sc = document.getElementById('learnedScore');
+    sc.textContent = `${o.learned_score > 0 ? '+' : ''}${o.learned_score.toFixed(1)} · ${o.learned_call}`;
+    setTone(sc, o.learned_call === 'BULL' ? 'good' : o.learned_call === 'BEAR' ? 'bad' : 'warn');
+    document.getElementById('learnedVsEngine').textContent = `hand-tuned engine: ${engineScore > 0 ? '+' : ''}${engineScore.toFixed(1)}`;
+
+    // weight history chart
+    const svg = document.getElementById('learningChart');
+    const h = o.history || [];
+    if (h.length > 1) {
+        const all = h.flatMap(r => r.w);
+        const lo = Math.min(...all) * 0.95, hi = Math.max(...all) * 1.05;
+        const x = i => (i / (h.length - 1)) * 400, y = v => 140 - ((v - lo) / (hi - lo)) * 140;
+        svg.innerHTML = o.pillars.map((p, k) =>
+            `<polyline fill="none" stroke="${LEARN_COLORS[k]}" stroke-width="2" vector-effect="non-scaling-stroke" points="${h.map((r, i) => `${x(i).toFixed(1)},${y(r.w[k]).toFixed(1)}`).join(' ')}"/>`
+        ).join('');
+        document.getElementById('learningLegend').textContent = `${h[0].t.slice(0, 10)} → ${h[h.length - 1].t.slice(0, 10)} · range ${(lo * 100).toFixed(0)}–${(hi * 100).toFixed(0)}%`;
+    }
+}
 
 // ===================== BACKTEST REALITY CHECK =====================
 // Loads the offline walk-forward evaluation (/api/metrics) once and compares the

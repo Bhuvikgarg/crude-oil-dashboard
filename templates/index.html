@@ -441,6 +441,40 @@
             </div>
         </section>
 
+        <!-- ROW 2c: SELF-LEARNING WEIGHTS (online learning, online_learner.py) -->
+        <section class="learning-section">
+            <div class="intel-card learning-card" id="learningCard" hidden>
+                <div class="card-top-bar reality-top">
+                    <div class="badge-title">
+                        <span class="section-icon">🧠</span>
+                        <h2>SELF-LEARNING PILLAR WEIGHTS · HEDGE ALGORITHM</h2>
+                    </div>
+                    <span class="help-hint" id="learningMeta">--</span>
+                </div>
+                <div class="learning-body">
+                    <div class="learning-table">
+                        <div class="learning-row learning-head">
+                            <span>Pillar</span><span>Vote now</span><span>Hand-tuned vs learned weight</span><span>Change</span>
+                        </div>
+                        <div id="learningRows"></div>
+                    </div>
+                    <div class="learning-side">
+                        <div class="param-box">
+                            <span class="param-title">LEARNED COMPOSITE SCORE</span>
+                            <span class="param-value" id="learnedScore">--</span>
+                            <span class="param-sub" id="learnedVsEngine">engine: --</span>
+                        </div>
+                        <div class="learning-chart-box">
+                            <span class="param-title">WEIGHT HISTORY (DAILY SAMPLES)</span>
+                            <svg id="learningChart" viewBox="0 0 400 140" preserveAspectRatio="none" class="learning-chart" role="img" aria-label="Learned pillar weights over time"></svg>
+                            <div class="learning-legend" id="learningLegend"></div>
+                        </div>
+                        <p class="reality-note">After every outcome, pillars that called the 4-hour move correctly gain weight (w ← w·e<sup>−η·loss</sup>) and wrong ones lose it. Each update uses only an outcome that already exists.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- ROW 3: COMPOSITE QUANT SENTIMENT & AUCTION LEVELS -->
         <section class="intel-split-row">
             

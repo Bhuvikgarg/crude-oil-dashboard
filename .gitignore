@@ -11,3 +11,4 @@ venv/
 .DS_Store
 evaluation/data_cache/
 forward_test/log/
+state/

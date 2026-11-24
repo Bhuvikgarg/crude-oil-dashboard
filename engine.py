@@ -1,3 +1,4 @@
+import os
 import time
 import math
 import logging
@@ -14,6 +15,14 @@ class AdvancedOilEngine:
         self.last_fetch_time = 0
         self.min_cache_seconds = 45 # cache for 45 seconds to keep it fresh yet rate-limit safe
         self.calibration = self._load_calibration()
+        # Self-learning pillar weights (Hedge). Starts from the weights learned on 2.4 years of
+        # history (reports/online_state_init.json) and keeps updating at every hourly refresh.
+        try:
+            from online_learner import LiveHedge
+            self.learner = LiveHedge.load(os.path.dirname(os.path.abspath(__file__)))
+        except Exception as e:
+            logging.warning(f"Online learner unavailable: {e}")
+            self.learner = None
 
     @staticmethod
     def _load_calibration():
@@ -480,6 +489,15 @@ class AdvancedOilEngine:
             raise RuntimeError("Unable to load live market data.")
 
         data = self.compute_snapshot(data_bundle["macro_1h"], data_bundle["cl_15m"], data_bundle["cl_daily"])
+        if self.learner is not None:
+            try:
+                close = data_bundle["macro_1h"]['Close']['CL=F'].dropna()
+                idx = close.index.tz_convert('UTC') if close.index.tz is not None else close.index.tz_localize('UTC')
+                close.index = idx + pd.Timedelta(hours=1)          # key each bar by its CLOSE time
+                self.learner.observe(close, data['sentiment']['breakdown'])
+                data['online_learning'] = self.learner.summary(data['sentiment']['breakdown'])
+            except Exception as e:
+                logging.warning(f"Online learner step skipped: {e}")
         self.cached_data = data
         self.last_fetch_time = now_ts
         return data
