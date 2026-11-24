@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PetroSync</title>
+<meta name="description" content="Crude oil signal engine with honest, walk-forward evaluation. Every number has an explanation.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='minimal.css') }}">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <span class="logo" aria-hidden="true"></span>
+    <span class="name">PetroSync</span>
+    <span class="status" id="status"><span class="dot"></span><span id="statusText">Connecting…</span></span>
+  </div>
+  <div class="actions">
+    <button class="ghost" id="tourBtn" title="Walk through the system step by step">How it works</button>
+    <button class="ghost icon" id="themeBtn" title="Switch light / dark" aria-label="Switch theme">◐</button>
+    <button class="ghost icon" id="refreshBtn" title="Fetch fresh market data now" aria-label="Refresh"><span id="refreshIcon">↻</span></button>
+  </div>
+</header>
+
+<!-- Pipeline strip: the whole system in one line -->
+<nav class="pipeline" id="pipeline" aria-label="System pipeline"></nav>
+
+<main>
+
+  <!-- 1. Price -->
+  <section class="hero" data-stage="data">
+    <div class="hero-left">
+      <div class="label">WTI crude oil · CL futures <button class="i" data-info="price" aria-label="About the price">i</button></div>
+      <div class="price" id="price">$--.--</div>
+      <div class="changes">
+        <span id="chg1h" class="chg">1h --</span>
+        <span id="chg24h" class="chg">24h --</span>
+      </div>
+      <div class="range">
+        <div class="range-head"><span>Day range</span><button class="i" data-info="dayrange" aria-label="About the day range">i</button></div>
+        <div class="range-track"><div class="range-dot" id="rangeDot"></div></div>
+        <div class="range-ends"><span id="dayLow">--</span><span id="dayHigh">--</span></div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="label">Last 48 hours <button class="i" data-info="chart" aria-label="About the chart">i</button>
+        <span class="legend"><i class="lg-price"></i>price <i class="lg-ema"></i>EMA 20 <i class="lg-vwap"></i>VWAP</span></div>
+      <svg id="spark" class="spark" viewBox="0 0 600 180" preserveAspectRatio="none" role="img" aria-label="WTI price over the last 48 hours"></svg>
+    </div>
+  </section>
+
+  <!-- 2. The three outputs -->
+  <section class="trio">
+    <article class="card" data-stage="score">
+      <div class="label">Signal score <button class="i" data-info="score" aria-label="About the signal score">i</button></div>
+      <div class="big" id="score">--</div>
+      <div class="sub" id="scoreLabel">--</div>
+      <div class="diverge"><div class="mid"></div><div class="fill" id="scoreFill"></div></div>
+      <div class="ends"><span>−100 bearish</span><span>+100 bullish</span></div>
+    </article>
+
+    <article class="card" data-stage="calibrate">
+      <div class="label">Chance price is higher in 4 h <button class="i" data-info="prob" aria-label="About the probability">i</button></div>
+      <div class="big" id="prob">--</div>
+      <div class="sub" id="probSub">--</div>
+      <div class="compare">
+        <div><span>Raw score says</span><b id="rawPct">--</b></div>
+        <div><span>History says</span><b id="calPct">--</b></div>
+      </div>
+    </article>
+
+    <article class="card" data-stage="vol">
+      <div class="label">Expected move · next 4 h <button class="i" data-info="vol" aria-label="About the volatility forecast">i</button></div>
+      <div class="big accent" id="volMove">--</div>
+      <div class="sub" id="volRange">--</div>
+      <div class="regime">
+        <div class="regime-dots" id="regimeDots"></div>
+        <span id="regimeName">--</span>
+        <button class="i" data-info="regime" aria-label="About the regime">i</button>
+      </div>
+    </article>
+  </section>
+
+  <!-- 3. Pillars -->
+  <section class="block" data-stage="pillars">
+    <div class="block-head">
+      <h2>What drives the score <button class="i" data-info="pillars" aria-label="About the pillars">i</button></h2>
+      <div class="head-note">Each pillar votes from −100 to +100</div>
+    </div>
+    <div class="pillar-head">
+      <span>Pillar</span><span>Vote now</span><span class="num">Hand weight</span><span class="num">Learned <button class="i" data-info="hedge" aria-label="About the learned weights">i</button></span>
+    </div>
+    <div id="pillarRows"></div>
+    <div class="learned-foot" data-stage="learn">
+      <span>Self-learning score: <b id="learnedScore">--</b> <span id="learnedCall" class="tag">--</span></span>
+      <span class="muted" id="learnedMeta">--</span>
+    </div>
+  </section>
+
+  <!-- 4. Trade plan -->
+  <section class="block" data-stage="plan">
+    <div class="block-head">
+      <h2>Trade plan <button class="i" data-info="plan" aria-label="About the trade plan">i</button></h2>
+      <span class="tag" id="planBias">--</span>
+    </div>
+    <div class="plan-title" id="planAction">--</div>
+    <div class="plan-type" id="planType">--</div>
+    <div class="levels">
+      <div><span>Entry <button class="i" data-info="entry" aria-label="About entry">i</button></span><b id="pEntry">--</b></div>
+      <div><span>Stop <button class="i" data-info="stop" aria-label="About the stop">i</button></span><b id="pStop" class="bear">--</b></div>
+      <div><span>Target 1 <button class="i" data-info="targets" aria-label="About targets">i</button></span><b id="pT1" class="bull">--</b></div>
+      <div><span>Target 2</span><b id="pT2" class="bull">--</b></div>
+      <div><span>Reward : risk <button class="i" data-info="rr" aria-label="About reward to risk">i</button></span><b id="pRR">--</b></div>
+    </div>
+    <div class="claim">
+      <div class="claim-row"><span>Playbook claims <button class="i" data-info="claimed" aria-label="About the claimed win rate">i</button></span>
+        <div class="bar"><div class="bar-fill neutral" id="claimBar"></div></div><b id="claimVal">--</b></div>
+      <div class="claim-row"><span>Backtest found <button class="i" data-info="backtestHit" aria-label="About the backtest win rate">i</button></span>
+        <div class="bar"><div class="bar-fill" id="realBar"></div></div><b id="realVal">--</b></div>
+      <p class="note" id="planNote">--</p>
+    </div>
+    <p class="rationale" id="planWhy">--</p>
+  </section>
+
+  <!-- 5. Context -->
+  <section class="block" data-stage="indicators">
+    <div class="block-head"><h2>Market context <button class="i" data-info="context" aria-label="About market context">i</button></h2></div>
+    <div class="kv" id="contextList"></div>
+    <div class="tf" id="tfRow"></div>
+  </section>
+
+  <!-- 6. Honest check -->
+  <section class="block" data-stage="evaluate">
+    <div class="block-head">
+      <h2>Does it actually work? <button class="i" data-info="evaluate" aria-label="About the evaluation">i</button></h2>
+      <div class="head-note" id="evalMeta">--</div>
+    </div>
+    <div class="stats" id="evalStats"></div>
+    <p class="verdict">Direction is close to a coin flip. <b>The size of the move is predictable.</b> Both results are measured walk-forward, on data the models never saw.</p>
+  </section>
+
+  <footer class="foot">
+    <span>Updated <span id="updated">--</span> · refreshes every hour</span>
+    <a href="/classic">Classic dashboard</a>
+  </footer>
+</main>
+
+<!-- Info drawer -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" aria-hidden="true" role="dialog" aria-labelledby="dTitle">
+  <div class="d-top">
+    <span class="d-stage" id="dStage">--</span>
+    <button class="ghost icon" id="dClose" aria-label="Close">✕</button>
+  </div>
+  <h3 id="dTitle">--</h3>
+  <div class="d-map" id="dMap"></div>
+  <div class="d-body" id="dBody"></div>
+  <div class="d-nav" id="dNav"></div>
+</aside>
+
+<script src="{{ url_for('static', filename='minimal.js') }}"></script>
+</body>
+</html>

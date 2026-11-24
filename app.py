@@ -27,6 +27,10 @@ updater_thread.start()
 
 @app.route('/')
 def index():
+    return render_template('minimal.html')
+
+@app.route('/classic')
+def classic():
     return render_template('index.html')
 
 @app.route('/api/data', methods=['GET'])
