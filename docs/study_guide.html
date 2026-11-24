@@ -1,0 +1,510 @@
+<title>PetroSync Viva Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: two-column study sheet — sticky section index on the left, one reading column (~70ch) on the right; stacks on phones */
+:root{
+  --bg:#F2F4F1; --surface:#FBFCFA; --ink:#14201E; --muted:#4F5E5B; --line:#D2DBD7;
+  --accent:#0E6D70; --accent-soft:#DCEDEC; --amber:#9A600A; --amber-soft:#F5E8D2;
+  --good:#1D7A43; --bad:#B0313A;
+  --display:'Space Grotesk',Arial,sans-serif; --body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101716; --surface:#172220; --ink:#E3EBE8; --muted:#9FB2AD; --line:#2A3A37;
+  --accent:#5FC0C1; --accent-soft:#16393A; --amber:#E2A64F; --amber-soft:#3A2D18; --good:#5CC47F; --bad:#EF6E75; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101716; --surface:#172220; --ink:#E3EBE8; --muted:#9FB2AD; --line:#2A3A37;
+  --accent:#5FC0C1; --accent-soft:#16393A; --amber:#E2A64F; --amber-soft:#3A2D18; --good:#5CC47F; --bad:#EF6E75; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--body)}
+.shell{max-width:1180px;margin:0 auto;padding-block:36px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;grid-template-columns:240px minmax(0,1fr);gap:48px}
+@media (max-width:900px){.shell{grid-template-columns:minmax(0,1fr);gap:24px}}
+nav.index{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;display:flex;flex-direction:column;gap:2px;font-size:.88rem}
+@media (max-width:900px){nav.index{position:static;flex-direction:row;flex-wrap:wrap;gap:6px}}
+nav.index a{color:var(--muted);text-decoration:none;padding:5px 10px;border-radius:6px;display:flex;align-items:center;gap:8px}
+nav.index a:hover,nav.index a:focus-visible{background:var(--accent-soft);color:var(--ink)}
+nav.index a.done::after{content:"✓";color:var(--good);margin-left:auto;font-weight:600}
+@media (max-width:900px){nav.index a{border:1px solid var(--line)}}
+.tools{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+main{min-width:0;display:flex;flex-direction:column;gap:52px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:clamp(2rem,4.4vw,2.9rem);font-weight:700}
+h2{font-size:1.65rem;font-weight:600}
+h3{font-size:1.08rem;font-weight:600;margin-top:6px}
+p,ul,ol{margin:0}
+ul,ol{padding-left:22px;display:flex;flex-direction:column;gap:6px}
+.eyebrow{font:500 .74rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+section.topic{display:flex;flex-direction:column;gap:14px;scroll-margin-top:24px}
+.topic-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px}
+.prose{max-width:72ch;display:flex;flex-direction:column;gap:12px}
+.lede{font-size:1.1rem;color:var(--muted);max-width:66ch}
+.say{background:var(--accent-soft);border-radius:10px;padding:14px 18px;max-width:72ch}
+.say b{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px;font-weight:500}
+.warn{background:var(--amber-soft);border-radius:10px;padding:14px 18px;max-width:72ch}
+.warn b{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);display:block;margin-bottom:4px;font-weight:500}
+.nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.num{border-left:3px solid var(--accent);padding:2px 0 2px 12px}
+.num strong{display:block;font:700 1.45rem/1.2 var(--display);font-variant-numeric:tabular-nums}
+.num span{font-size:.84rem;color:var(--muted)}
+.scroll{overflow-x:auto;min-width:0}
+table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:500 .72rem var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+code,.mono{font-family:var(--mono);font-size:.88em}
+code{background:var(--accent-soft);padding:1px 5px;border-radius:4px}
+.formula{font-family:var(--mono);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 16px;font-size:.92rem;overflow-x:auto;white-space:pre}
+.check{display:flex;align-items:center;gap:8px;font-size:.84rem;color:var(--muted);cursor:pointer;user-select:none}
+.check input{accent-color:var(--accent);width:16px;height:16px}
+.btn{font:600 .86rem var(--body);border:1px solid var(--accent);background:transparent;color:var(--accent);padding:7px 12px;border-radius:8px;cursor:pointer}
+.btn[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.btn:focus-visible,.check input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.qa{border-top:1px solid var(--line);padding:12px 0;display:flex;flex-direction:column;gap:6px;max-width:76ch}
+.qa .q{font-weight:600}
+.qa .a{color:var(--muted)}
+body.quiz .qa .a{filter:blur(6px);cursor:pointer;transition:filter .15s}
+body.quiz .qa .a.show{filter:none}
+.gloss{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 28px}
+.gloss div{border-top:1px solid var(--line);padding-top:8px}
+.gloss dt{font-weight:600}
+.gloss dd{margin:2px 0 0;color:var(--muted);font-size:.92rem}
+.flow{display:flex;flex-wrap:wrap;gap:8px}
+.flow span{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 12px;font-size:.88rem}
+.flow span.ml{border-color:var(--accent);background:var(--accent-soft)}
+.pill{display:inline-block;font:500 .72rem var(--mono);padding:1px 8px;border-radius:99px;border:1px solid currentColor}
+.pill.good{color:var(--good)} .pill.bad{color:var(--bad)} .pill.amber{color:var(--amber)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="shell">
+<nav class="index" id="index" aria-label="Sections">
+  <a href="#pitch">60-second pitch</a>
+  <a href="#intro">Introduction</a>
+  <a href="#objectives">Objectives</a>
+  <a href="#gaps">Research gaps</a>
+  <a href="#dataset">Dataset</a>
+  <a href="#cleaning">Cleaning</a>
+  <a href="#preprocessing">Preprocessing</a>
+  <a href="#preparation">Preparation</a>
+  <a href="#analysis">Analysis (EDA)</a>
+  <a href="#methodology">Methodology</a>
+  <a href="#selflearning">Self-learning model</a>
+  <a href="#tradeoffs">Model trade-offs</a>
+  <a href="#output">Output</a>
+  <a href="#deployment">Deployment &amp; demo</a>
+  <a href="#conclusion">Conclusion</a>
+  <a href="#glossary">Glossary</a>
+  <a href="#viva">Viva questions</a>
+  <a href="#checklist">Tomorrow’s checklist</a>
+  <div class="tools">
+    <button class="btn" id="quizBtn" aria-pressed="false">Quiz mode</button>
+  </div>
+</nav>
+
+<main>
+<header class="prose">
+  <span class="eyebrow">Viva guide · PetroSync crude-oil ML project</span>
+  <h1>Everything you need to present and defend the project</h1>
+  <p class="lede">Follow it in the same order as your slides. Each section has what to say, the numbers to remember, and the traps to avoid. Tick a section when you can explain it without notes. Quiz mode blurs the answers in the viva section; click an answer to reveal it.</p>
+</header>
+
+<section class="topic" id="pitch">
+  <div class="topic-head"><h2>60-second pitch</h2><label class="check"><input type="checkbox" data-sec="pitch">Revised</label></div>
+  <div class="say"><b>Memorise this</b>
+  I built PetroSync, a live crude-oil dashboard that turns nine markets into trading signals. I then made it a supervised machine-learning problem: will WTI be higher in four hours? I trained logistic regression, gradient boosting and a self-learning Hedge model on 13,436 hourly decisions, using walk-forward validation so no model ever saw the future. The honest result is that nothing predicts hourly direction better than chance, which matches the research on oil. But ML clearly improved the product: calibration fixed misleading probabilities, an ML filter improved trades, and the self-learning model showed which hand-tuned weights were unjustified. It all runs live, and a pre-registered forward test is checking the best candidates on future data.</div>
+</section>
+
+<section class="topic" id="intro">
+  <div class="topic-head"><h2>Introduction</h2><label class="check"><input type="checkbox" data-sec="intro">Revised</label></div>
+  <div class="prose">
+    <p><b>The problem.</b> Crude oil is one of the most traded commodities. Its price reacts every hour to supply, demand, the US dollar, refinery margins and fear (volatility). Traders use dashboards that show signals and "win probabilities", but those numbers are rarely checked.</p>
+    <p><b>What the project is, in three parts:</b></p>
+    <ol>
+      <li><b>A dashboard</b> (Flask + Chart.js) that downloads 9 markets hourly and computes 20+ indicators, a sentiment score (−100 to +100) and trade setups.</li>
+      <li><b>An ML layer</b> that turns those signals into features (31 of them) and learns to predict the 4-hour direction, calibrate probabilities, filter trades and re-weight itself.</li>
+      <li><b>A strict evaluation</b> that replays the system hour by hour on 2.4 years of history without look-ahead, plus a live forward test.</li>
+    </ol>
+  </div>
+  <div class="warn"><b>Be upfront</b> The original dashboard is rule-based (hand-chosen weights). Say so before anyone asks. ML is what learns from it, is compared against it, and now runs inside it.</div>
+</section>
+
+<section class="topic" id="objectives">
+  <div class="topic-head"><h2>Objectives</h2><label class="check"><input type="checkbox" data-sec="objectives">Revised</label></div>
+  <div class="scroll"><table>
+    <tr><th>#</th><th>Objective</th><th>How you show it was met</th></tr>
+    <tr><td>O1</td><td>Build a live crude-oil dashboard from 9 markets</td><td>Running Flask app, hourly refresh</td></tr>
+    <tr><td>O2</td><td>Frame the problem as supervised ML</td><td>31 features, binary label “higher in 4h?”</td></tr>
+    <tr><td>O3</td><td>Train ML models and compare with the rule engine</td><td>Logistic regression, ridge, gradient boosting, Hedge, online logistic regression</td></tr>
+    <tr><td>O4</td><td>Measure accuracy without look-ahead bias</td><td>Walk-forward replay, lockbox, significance tests, sanity checks</td></tr>
+    <tr><td>O5</td><td>Deploy ML and test it live</td><td>Calibrated probability + self-learning weights on the dashboard; 91-day forward test</td></tr>
+  </table></div>
+</section>
+
+<section class="topic" id="gaps">
+  <div class="topic-head"><h2>Research gaps</h2><label class="check"><input type="checkbox" data-sec="gaps">Revised</label></div>
+  <div class="prose">
+    <h3>What the literature says (one line each)</h3>
+    <ul>
+      <li><b>Brock, Lakonishok &amp; LeBaron (1992):</b> simple moving-average rules showed predictive power on 90 years of stock data.</li>
+      <li><b>Marshall, Cahan &amp; Cahan (2008):</b> on 15 commodity futures, profits from ~7,800 technical rules disappear once you correct for testing so many rules (data snooping).</li>
+      <li><b>Alquist, Kilian &amp; Vigfusson (2013):</b> for oil, the “no change” forecast is very hard to beat.</li>
+      <li><b>Bailey et al. (2014):</b> backtests tuned on history often just fit noise (backtest overfitting).</li>
+    </ul>
+    <h3>The gaps you address</h3>
+    <ul>
+      <li><b>G1</b> Trading tools report accuracy on the same data they were tuned on.</li>
+      <li><b>G2</b> The cited studies work at daily or monthly frequency, not hourly with intermarket data.</li>
+      <li><b>G3</b> Hand-tuned rules are rarely compared head-to-head with ML on the same features.</li>
+      <li><b>G4</b> Probabilities shown to traders are rarely checked for calibration, and few projects pre-register a live test.</li>
+    </ul>
+  </div>
+  <div class="warn"><b>Careful</b> Don’t claim “nobody has ever studied hourly oil”. Say “the studies I reviewed work at daily or monthly frequency”.</div>
+</section>
+
+<section class="topic" id="dataset">
+  <div class="topic-head"><h2>Dataset</h2><label class="check"><input type="checkbox" data-sec="dataset">Revised</label></div>
+  <div class="nums">
+    <div class="num"><strong>13,556</strong><span>hourly WTI bars</span></div>
+    <div class="num"><strong>Jul 2024 – Nov 2026</strong><span>about 2.4 years</span></div>
+    <div class="num"><strong>4,519</strong><span>15-minute bars (60 days)</span></div>
+    <div class="num"><strong>1,257</strong><span>daily bars (5 years)</span></div>
+  </div>
+  <div class="scroll"><table>
+    <tr><th>Ticker</th><th>Market</th><th>Why it matters for oil</th></tr>
+    <tr><td>CL=F</td><td>WTI crude futures</td><td>The target; all technical indicators</td></tr>
+    <tr><td>BZ=F</td><td>Brent crude futures</td><td>Brent–WTI spread = global vs US crude premium</td></tr>
+    <tr><td>DX-Y.NYB</td><td>US Dollar Index</td><td>Oil is priced in dollars; a stronger dollar usually weighs on oil</td></tr>
+    <tr><td>RB=F, HO=F</td><td>Gasoline, heating oil</td><td>3:2:1 crack spread = refinery profit, a demand signal</td></tr>
+    <tr><td>GC=F</td><td>Gold</td><td>Gold/oil ratio = inflation vs industrial demand</td></tr>
+    <tr><td>^OVX</td><td>CBOE oil volatility index</td><td>The “fear gauge” for oil</td></tr>
+    <tr><td>ES=F</td><td>S&amp;P 500 futures</td><td>Global risk appetite</td></tr>
+    <tr><td>XLE</td><td>Energy-sector ETF</td><td>Context only (not in the score)</td></tr>
+  </table></div>
+  <div class="prose"><p><b>Source:</b> Yahoo Finance via the <code>yfinance</code> Python library. <b>Limits:</b> hourly history only goes back ~730 days and 15-minute history ~60 days, which is why the backtest uses the hourly series as a stand-in for 15-minute data before that window.</p></div>
+</section>
+
+<section class="topic" id="cleaning">
+  <div class="topic-head"><h2>Data cleaning</h2><label class="check"><input type="checkbox" data-sec="cleaning">Revised</label></div>
+  <div class="scroll"><table>
+    <tr><th>Problem</th><th>Evidence in the data</th><th>Fix</th></tr>
+    <tr><td>Mixed time zones</td><td>Exchange time (US Eastern) was labelled “UTC” on the dashboard</td><td>Everything converted to UTC (bug fixed)</td></tr>
+    <tr><td>Different trading hours</td><td>Merged table of 19,362 rows; OVX 75 % and XLE 74 % empty</td><td>Clean each ticker separately; use the last value known at decision time</td></tr>
+    <tr><td>Weekend and maintenance gaps</td><td>643 gaps longer than 1 hour</td><td>Count horizons in trading bars, not clock hours</td></tr>
+    <tr><td>Zero-volume bars</td><td>3.7 % of bars</td><td>VWAP division guarded; volume profile uses a fallback volume</td></tr>
+    <tr><td>Infinite / missing features</td><td>Division by ATR = 0</td><td>inf → NaN → forward-fill → 0</td></tr>
+    <tr><td>Contract roll jumps</td><td>Continuous front-month futures jump at expiry</td><td>Kept; listed as a limitation</td></tr>
+  </table></div>
+  <div class="say"><b>Key principle</b> A fill may only use <i>past</i> values. A backward fill would copy future information into the past and fake the accuracy.</div>
+  <div class="prose"><p><b>Why the merged table looks so empty:</b> nothing is really missing. OVX and XLE only trade during US stock-market hours, while futures trade almost 24 hours. Merging them on time creates blanks.</p></div>
+</section>
+
+<section class="topic" id="preprocessing">
+  <div class="topic-head"><h2>Preprocessing &amp; feature engineering</h2><label class="check"><input type="checkbox" data-sec="preprocessing">Revised</label></div>
+  <div class="scroll"><table>
+    <tr><th>Group</th><th>Count</th><th>Features</th></tr>
+    <tr><td>Engine scores</td><td>13</td><td>Sentiment composite, MTF score, 15m/1h/daily timeframe scores, RSI 15m and 1h, six pillar values</td></tr>
+    <tr><td>Intermarket</td><td>6</td><td>Crack spread, Brent–WTI spread, OVX, dollar change, S&amp;P change, gold/oil ratio</td></tr>
+    <tr><td>Price structure</td><td>7</td><td>Distance to VWAP, EMA20 and POC (in ATR units), EMA20–EMA50 gap, ATR %, two liquidity-sweep flags</td></tr>
+    <tr><td>Time &amp; momentum</td><td>5</td><td>Past returns over 1, 4, 24 hours; hour of day as sine and cosine</td></tr>
+  </table></div>
+  <div class="prose">
+    <ul>
+      <li><b>Scale-free distances:</b> divided by ATR (average true range), so a $1 move means the same at $60 or $110 oil.</li>
+      <li><b>Standardisation:</b> <code>StandardScaler</code> (mean 0, std 1) for linear models, whose coefficients depend on scale. Trees don’t need it.</li>
+      <li><b>Rolling z-scores</b> (improvement experiment): (value − mean of last 500 bars) ÷ std, using only past bars, so levels that drift over time stay comparable.</li>
+      <li><b>Cyclical hour:</b> sin and cos of the hour, so the model knows 23:00 is next to 00:00.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="topic" id="preparation">
+  <div class="topic-head"><h2>Data preparation</h2><label class="check"><input type="checkbox" data-sec="preparation">Revised</label></div>
+  <div class="prose">
+    <p><b>Label:</b> y = 1 if WTI’s close 4 hourly bars later is higher than now, else 0. <b>51.3 %</b> of rows are “up”, so the classes are balanced and need no resampling. 1h and 24h labels were also tested.</p>
+    <p><b>Point-in-time rows (13,436):</b> for every hour of history, the exact live engine function (<code>compute_snapshot</code>) is re-run on data cut off at that bar’s close. The replay matched the live dashboard (−24.9 vs −24.8).</p>
+    <p><b>3-class view:</b> up / flat / down, where “flat” = move smaller than 0.25 × ATR × √h. Tiny moves aren’t scored as hits.</p>
+    <p><b>Time split (never random):</b></p>
+  </div>
+  <div class="scroll"><table>
+    <tr><th>Part</th><th>Period</th><th>Rows</th><th>Use</th></tr>
+    <tr><td>Development</td><td>Jul 2024 – Mar 2026</td><td>9,757</td><td>All tuning and choices</td></tr>
+    <tr><td>Lockbox</td><td>Apr – Nov 2026</td><td>3,679</td><td>Scored once, never tuned on</td></tr>
+    <tr><td>Live forward test</td><td>18 Nov 2026 – 17 Feb 2027</td><td>~1,500 expected</td><td>Future data, pre-registered</td></tr>
+  </table></div>
+</section>
+
+<section class="topic" id="analysis">
+  <div class="topic-head"><h2>Analysis (EDA)</h2><label class="check"><input type="checkbox" data-sec="analysis">Revised</label></div>
+  <div class="nums">
+    <div class="num"><strong>65.6</strong><span>excess kurtosis (normal = 0)</span></div>
+    <div class="num"><strong>−0.008</strong><span>lag-1 autocorrelation</span></div>
+    <div class="num"><strong>0.050</strong><span>best feature–target correlation</span></div>
+    <div class="num"><strong>51.3 %</strong><span>4-hour windows that went up</span></div>
+  </div>
+  <div class="prose">
+    <ul>
+      <li><b>Kurtosis 65.6:</b> returns are mostly tiny, with rare huge jumps (“fat tails”). Averages and normal-distribution assumptions break down, so ±1σ bands are too narrow (observed 60 % instead of 68 %).</li>
+      <li><b>Autocorrelation −0.008:</b> the last hour’s move says almost nothing about the next one. That’s also why ARIMA isn’t useful here.</li>
+      <li><b>Correlation 0.05 (Brent–WTI spread):</b> even the best single feature carries almost no information about the target.</li>
+      <li><b>51.3 % up:</b> a slight upward drift. A model that always says “up” already scores 51 %, so it’s the baseline to beat.</li>
+    </ul>
+  </div>
+  <div class="say"><b>What to say</b> “The analysis predicted the result before any model was trained: high noise and a weak signal mean honest accuracy will sit near 50 %, so the evaluation had to be strict enough to tell a small real edge from luck.”</div>
+</section>
+
+<section class="topic" id="methodology">
+  <div class="topic-head"><h2>Methodology</h2><label class="check"><input type="checkbox" data-sec="methodology">Revised</label></div>
+  <h3>The pipeline (ML steps highlighted)</h3>
+  <div class="flow"><span>1 Ingest (yfinance)</span><span>2 Align &amp; clean (UTC)</span><span>3 Point-in-time replay</span><span>4 31 features + labels</span><span class="ml">5 Walk-forward training</span><span class="ml">6 Evaluate (baselines, lockbox, tests)</span><span class="ml">7 Deploy (calibration, self-learning, forward test)</span></div>
+  <h3>Walk-forward validation</h3>
+  <div class="prose">
+    <p>Train on everything before a point, test on the next block, move forward, repeat. <b>Minimum training data</b> 2,000 rows, <b>retrain every</b> 250 rows (~2 weeks), with a <b>purge gap</b> equal to the label horizon (4 bars; 30 for trade labels). The purge removes training rows whose 4-hour answer overlaps the test block.</p>
+    <p><b>Why not normal K-fold cross-validation?</b> Random folds put future hours in the training set, which leaks the answer and inflates accuracy (Bergmeir &amp; Benítez 2012; López de Prado 2018).</p>
+  </div>
+  <h3>Models and parameters</h3>
+  <div class="scroll"><table>
+    <tr><th>Model</th><th>Type</th><th>Parameters</th><th>Role</th></tr>
+    <tr><td>7-pillar rule engine</td><td>Hand-weighted linear score</td><td>Weights 25/20/15/15/10/10/5 %; bull ≥ +15, bear ≤ −15</td><td>Baseline</td></tr>
+    <tr><td>Logistic regression</td><td>Linear classifier</td><td>StandardScaler; C = 0.1 (strong L2); max_iter 2,000</td><td>Learned weights</td></tr>
+    <tr><td>Ridge regression</td><td>Linear regressor</td><td>StandardScaler; α = 10</td><td>Price forecast</td></tr>
+    <tr><td>HistGradientBoosting</td><td>Tree ensemble</td><td>max_depth 3; learning rate 0.05; 200 trees; L2 = 1.0; seed 42</td><td>Non-linear learner</td></tr>
+    <tr><td>Platt calibration</td><td>1-feature logistic regression</td><td>coef −0.00076, intercept 0.052</td><td>Live probability</td></tr>
+    <tr><td>Meta-label model</td><td>Gradient boosting</td><td>Same as above; take a trade if p ≥ 0.5</td><td>Trade filter</td></tr>
+    <tr><td>Hedge</td><td>Online expert weighting</td><td>η = 0.01; fixed share α = 0.01; starts from hand weights</td><td>Self-learning weights (live)</td></tr>
+    <tr><td>Online logistic regression</td><td>SGD classifier</td><td>log-loss; L2 = 0.001; constant step 0.001; one step per new hour</td><td>Self-learning on 31 features</td></tr>
+  </table></div>
+  <div class="prose"><p><b>Why so much regularisation?</b> Small C, large α and shallow trees stop the models memorising noise, because the signal is weak.</p></div>
+  <h3>Metrics and why each one</h3>
+  <div class="scroll"><table>
+    <tr><th>Metric</th><th>Plain meaning</th><th>Good value</th></tr>
+    <tr><td>Hit rate</td><td>% of up/down calls that were right</td><td>Above the 51.3 % base rate</td></tr>
+    <tr><td>Pesaran–Timmermann test</td><td>Is the hit rate better than chance, given how often the model says “up” and how often price rose?</td><td>p &lt; 0.05</td></tr>
+    <tr><td>MCC, balanced accuracy</td><td>Accuracy that isn’t fooled by an uneven class mix</td><td>MCC &gt; 0</td></tr>
+    <tr><td>ROC-AUC</td><td>Does a higher score mean a likelier rise?</td><td>&gt; 0.5 (0.5 = random)</td></tr>
+    <tr><td>Brier score / Brier skill</td><td>Error of probability forecasts; skill compares with always guessing the base rate</td><td>Skill &gt; 0</td></tr>
+    <tr><td>Calibration error (ECE)</td><td>Gap between “says 70 %” and “happens 70 %”</td><td>Near 0</td></tr>
+    <tr><td>MAE, RMSE, Theil U2</td><td>Price forecast error; U2 = model error ÷ “price stays the same” error</td><td>U2 &lt; 1</td></tr>
+    <tr><td>Profit factor, $/trade</td><td>Money won ÷ money lost; average result after $20 costs</td><td>PF &gt; 1</td></tr>
+  </table></div>
+  <div class="prose"><p><b>Baselines and sanity checks:</b> always “up”, last-move persistence, a random coin (should score ~50 %), and an oracle that cheats on purpose (must score 100 %, which proves the scoring code is correct). p-values use <b>non-overlapping</b> samples, because overlapping 4-hour windows are not independent.</p></div>
+</section>
+
+<section class="topic" id="selflearning">
+  <div class="topic-head"><h2>Self-learning model (online learning)</h2><label class="check"><input type="checkbox" data-sec="selflearning">Revised</label></div>
+  <div class="prose">
+    <p><b>Idea:</b> each of the 6 sentiment pillars is an “expert” voting on the 4-hour direction (its value ÷ 100, from −1 to +1). The <b>Hedge algorithm</b> (Freund &amp; Schapire, 1997) changes their weights after every outcome.</p>
+  </div>
+  <div class="formula">loss_i = (vote_i − outcome)² / 4          outcome = +1 if price rose, −1 if it fell
+w_i    ← w_i · exp(−η · loss_i)           η = 0.01
+w      ← w / Σw                           (normalise)
+w      ← (1 − α)·w + α/6                  α = 0.01 “fixed share”
+score  = 100 · Σ w_i · vote_i              (same −100…+100 scale as the engine)</div>
+  <div class="prose">
+    <ul>
+      <li><b>Delayed feedback:</b> a 4-hour call can only be scored 4 hours later, so the model always uses outcomes that already exist.</li>
+      <li><b>Test-then-train evaluation (prequential):</b> each hour the model predicts first, is scored, and only then learns.</li>
+      <li><b>Fixed share α:</b> keeps every pillar at a minimum weight, so the model can recover if a pillar becomes useful again when the market changes.</li>
+      <li><b>η chosen on development data</b> from {0.01, 0.05, 0.2, 0.5}. A small η suits noisy data: the model changes its mind slowly.</li>
+      <li><b>Live:</b> it starts from the weights learned over 13,432 historical updates and keeps updating at every hourly refresh. The dashboard shows hand-tuned vs learned weights, plus a weight-history chart.</li>
+      <li><b>Second learner:</b> online logistic regression (SGD) on all 31 features, taking one gradient step per newly labelled hour.</li>
+    </ul>
+  </div>
+  <div class="scroll"><table>
+    <tr><th>Pillar</th><th>Hand-tuned</th><th>Learned</th></tr>
+    <tr><td>Trend (MTF alignment)</td><td>26.3 %</td><td>16.7 %</td></tr>
+    <tr><td>Order flow / VWAP</td><td>21.1 %</td><td>16.8 %</td></tr>
+    <tr><td>Crack margin</td><td>15.8 %</td><td>13.6 %</td></tr>
+    <tr><td>Brent–WTI spread</td><td>15.8 %</td><td>17.1 %</td></tr>
+    <tr><td>US dollar</td><td>10.5 %</td><td>17.9 %</td></tr>
+    <tr><td>S&amp;P 500</td><td>10.5 %</td><td>17.9 %</td></tr>
+  </table></div>
+  <div class="say"><b>What to say</b> “The self-learning model moved the weights towards equal. In plain words, no pillar earned the extra trust the hand-tuning gave it. Accuracy stayed at chance level (50.9 % in the lockbox, the same as the frozen engine), because learning can’t create a signal the data doesn’t contain.”</div>
+  <div class="warn"><b>Why not 5-minute data or hourly retraining of everything?</b> 5-minute moves are even noisier, Yahoo’s crude data is delayed ~10 minutes, and 5-minute history only covers 60 days. Retraining big models every hour adds one row to 13,000, which changes almost nothing and mostly chases noise.</div>
+</section>
+
+<section class="topic" id="tradeoffs">
+  <div class="topic-head"><h2>Model trade-offs</h2><label class="check"><input type="checkbox" data-sec="tradeoffs">Revised</label></div>
+  <div class="scroll"><table>
+    <tr><th>Model</th><th>Strength</th><th>Weakness here</th><th>Decision</th></tr>
+    <tr><td>Logistic regression</td><td>Same form as the rule engine (Σ w·x), so it directly tests learned vs hand-tuned weights; interpretable</td><td>Linear only</td><td><span class="pill good">selected</span></td></tr>
+    <tr><td>Gradient boosting</td><td>Finds non-linear interactions; fast on 13k rows; handles mixed scales and missing values</td><td>Can fit noise, so kept shallow (depth 3)</td><td><span class="pill good">selected</span></td></tr>
+    <tr><td>Hedge</td><td>Learns online, interpretable weights, provable guarantee of doing nearly as well as the best single pillar in hindsight</td><td>Only re-weights existing pillars</td><td><span class="pill good">selected</span></td></tr>
+    <tr><td>Random forest</td><td>Robust tree ensemble</td><td>Same role as boosting, slower</td><td><span class="pill amber">not needed</span></td></tr>
+    <tr><td>LSTM / deep learning</td><td>Learns sequences directly</td><td>13k noisy rows invite overfitting; hard to explain</td><td><span class="pill amber">future work</span></td></tr>
+    <tr><td>ARIMA</td><td>Classic time-series baseline</td><td>Models autocorrelation, which is ≈ 0 here</td><td><span class="pill bad">not useful</span></td></tr>
+  </table></div>
+  <div class="prose"><p><b>Supporting evidence:</b> Gu, Kelly &amp; Xiu (2020) found tree ensembles and neural networks gave the largest gains in return prediction. Boosting covers the tree side at low cost.</p></div>
+</section>
+
+<section class="topic" id="output">
+  <div class="topic-head"><h2>Output (results)</h2><label class="check"><input type="checkbox" data-sec="output">Revised</label></div>
+  <h3>1 · Direction (4h, same out-of-sample window)</h3>
+  <div class="scroll"><table>
+    <tr><th>Model</th><th>Hit rate</th><th>ROC-AUC</th><th>Pesaran–Timmermann p</th></tr>
+    <tr><td>Rule engine</td><td>49.1 %</td><td>0.491</td><td>0.68</td></tr>
+    <tr><td>Logistic regression</td><td>50.7 %</td><td>0.508</td><td>0.23</td></tr>
+    <tr><td>Gradient boosting</td><td>51.3 %</td><td>0.519</td><td>0.12</td></tr>
+    <tr><td>Base rate (always up)</td><td>51.3 %</td><td>0.500</td><td>—</td></tr>
+  </table></div>
+  <div class="prose"><p>ML ranks slightly better than the rules but is <b>not statistically better than chance</b>. Price forecasts: Theil U2 = 1.01–1.05, no better than “price stays the same”. A trap that was caught: at 1h, logistic regression looked significant (p = 0.007) only because it said “up” 72 % of the time; the drift-corrected test gives p = 0.08.</p></div>
+  <h3>2 · Calibration (the clear ML win, deployed)</h3>
+  <div class="prose"><p>Old “bullish %”: Brier skill <b>−0.079</b> (worse than guessing), calibration error 0.12. It showed 27–75 % bullish, but price rose about 50 % of the time in every band. After Platt calibration: Brier skill <b>−0.001</b> and calibration error <b>0.01</b>, in both development and lockbox periods. The dashboard now shows “calibrated P(up, next 4h)”, which stays between 50 % and 52.4 %.</p></div>
+  <h3>3 · Trade setups: claimed vs real</h3>
+  <div class="prose"><p>Over 2,114 simulated trades: <b>45.8 % real vs 71.2 % claimed</b> (p &lt; 0.0001), profit factor 0.84, −$46 per trade after costs. Worst: value-area rotation, 19.7 % real vs 64 % claimed.</p></div>
+  <h3>4 · Improvement experiment (38 variants, tuned on development, tested once on lockbox)</h3>
+  <ul>
+    <li>Confident ML calls only (top 30 %): 54.4 % → 54.7 %, significant in both periods. <b>Promising, not proven</b>.</li>
+    <li>Wider stop (1.5×ATR, 1.5R target) + ML trade filter: −$65 → −$6 per trade (dev), +$7 → +$98 (lockbox). Not yet significant.</li>
+    <li>Win rate ≠ profit: moving the target closer raised the win rate to 66 % without raising profit.</li>
+  </ul>
+  <h3>5 · Self-learning</h3>
+  <div class="prose"><p>Hedge: 50.9 % lockbox hit (= frozen engine). Online logistic regression: 51.5 %, AUC 0.508. Not significant. The value is in the weights it learned.</p></div>
+</section>
+
+<section class="topic" id="deployment">
+  <div class="topic-head"><h2>Deployment &amp; demo</h2><label class="check"><input type="checkbox" data-sec="deployment">Revised</label></div>
+  <div class="flow"><span>Yahoo Finance</span><span class="ml">engine.py + ML models</span><span>Flask API (app.py)</span><span>Browser dashboard (Chart.js)</span></div>
+  <div class="prose">
+    <ul>
+      <li><b>Endpoints:</b> <code>/api/data</code> (latest snapshot, cached 45 s), <code>/api/refresh</code>, <code>/api/metrics</code> (backtest results), <code>/api/health</code>.</li>
+      <li><b>Live ML on the dashboard:</b> calibrated P(up, next 4h); self-learning weights panel; Backtest Reality Check card; claimed vs backtested win rate on the trade setup.</li>
+      <li><b>Offline ML pipeline:</b> <code>evaluation/</code> trains and scores everything and writes <code>reports/</code>.</li>
+      <li><b>Forward test:</b> GitHub Actions runs frozen, fingerprinted models every hour and commits predictions to the <code>forward-test-log</code> branch before outcomes exist. Window: 18 Nov 2026 – 17 Feb 2027. Power: ~100 usable calls vs 764 needed to prove a 54.5 % edge, so it can reject the model but probably not prove it.</li>
+    </ul>
+    <h3>Commands</h3>
+  </div>
+  <div class="formula">pip install -r requirements-eval.txt
+python app.py                                # dashboard at http://localhost:8080
+python -m evaluation.run_evaluation          # main backtest  → reports/EVALUATION_RESULTS.md
+python -m evaluation.improve                 # 38-variant experiment
+python -m evaluation.online_learning         # self-learning models
+python -m pytest tests                       # 8 tests</div>
+</section>
+
+<section class="topic" id="conclusion">
+  <div class="topic-head"><h2>Conclusion</h2><label class="check"><input type="checkbox" data-sec="conclusion">Revised</label></div>
+  <div class="prose">
+    <p><b>Worked:</b> calibration fixed misleading probabilities (deployed); an ML trade filter improved results in both periods; self-learning weights run live and exposed unjustified hand-tuned weights; the evaluation catches look-ahead bias and drift.</p>
+    <p><b>Didn’t:</b> no model predicts hourly direction better than chance; price forecasts didn’t beat “no change”; claimed win rates were 17–44 points too high.</p>
+    <p><b>Limitations:</b> roll gaps in continuous futures; 1h bars hide the order of high and low within an hour; real 15m data covers only 60 days; one 2.4-year market regime.</p>
+    <p><b>Future work:</b> finish the forward test (Feb 2027); daily horizon, where trend effects are documented; LSTM baseline under the same validation.</p>
+  </div>
+</section>
+
+<section class="topic" id="glossary">
+  <div class="topic-head"><h2>Glossary in plain words</h2><label class="check"><input type="checkbox" data-sec="glossary">Revised</label></div>
+  <dl class="gloss">
+    <div><dt>EMA (exponential moving average)</dt><dd>Average price that weights recent bars more. Price above EMA = uptrend.</dd></div>
+    <div><dt>RSI (14)</dt><dd>0–100 momentum gauge; above 70 overbought, below 30 oversold.</dd></div>
+    <div><dt>ATR (average true range)</dt><dd>Average size of a bar’s move, i.e. volatility in dollars.</dd></div>
+    <div><dt>VWAP</dt><dd>Average price weighted by volume, a “fair value” reference.</dd></div>
+    <div><dt>POC / VAH / VAL</dt><dd>Price with the most volume; top and bottom of the zone holding 70 % of volume.</dd></div>
+    <div><dt>Crack spread (3:2:1)</dt><dd>Profit from refining 3 barrels of crude into 2 of gasoline and 1 of heating oil.</dd></div>
+    <div><dt>Brent–WTI spread</dt><dd>Price gap between global (seaborne) and US (landlocked) crude.</dd></div>
+    <div><dt>OVX</dt><dd>Implied volatility of oil, the oil “fear gauge”.</dd></div>
+    <div><dt>Supervised learning</dt><dd>Learning from examples with known answers (features → label).</dd></div>
+    <div><dt>Logistic regression</dt><dd>Linear model that outputs a probability via the sigmoid of Σ w·x.</dd></div>
+    <div><dt>Gradient boosting</dt><dd>Many small decision trees, each fixing the errors of the previous ones.</dd></div>
+    <div><dt>Regularisation (L2, C, α)</dt><dd>Penalty on large weights to stop the model memorising noise.</dd></div>
+    <div><dt>Overfitting</dt><dd>Fitting noise in the training data, so performance drops on new data.</dd></div>
+    <div><dt>Look-ahead bias / leakage</dt><dd>The model accidentally sees future information; accuracy looks fake-good.</dd></div>
+    <div><dt>Walk-forward validation</dt><dd>Train on the past, test on the next block, roll forward.</dd></div>
+    <div><dt>Purge gap</dt><dd>Training rows dropped so their labels don’t overlap the test period.</dd></div>
+    <div><dt>Lockbox</dt><dd>Held-out period scored once, after all choices are fixed.</dd></div>
+    <div><dt>Data snooping</dt><dd>Trying many variants and reporting the best; it finds luck.</dd></div>
+    <div><dt>Base rate</dt><dd>How often the event happens anyway (51.3 % up).</dd></div>
+    <div><dt>ROC-AUC</dt><dd>Probability that a random “up” case gets a higher score than a random “down” case.</dd></div>
+    <div><dt>Brier score</dt><dd>Mean squared error of probability forecasts; lower is better.</dd></div>
+    <div><dt>Calibration / Platt scaling</dt><dd>Mapping a score to how often the event actually happened, using logistic regression.</dd></div>
+    <div><dt>MCC</dt><dd>Correlation between predictions and truth; 0 = random, 1 = perfect.</dd></div>
+    <div><dt>Pesaran–Timmermann test</dt><dd>Significance test for direction forecasts that corrects for base rates.</dd></div>
+    <div><dt>p-value</dt><dd>Chance of a result at least this good if there were no real skill; &lt; 0.05 is the usual bar.</dd></div>
+    <div><dt>Theil U2</dt><dd>Model error ÷ error of “no change”; below 1 beats the random walk.</dd></div>
+    <div><dt>Profit factor</dt><dd>Total winnings ÷ total losses; above 1 is profitable.</dd></div>
+    <div><dt>Meta-labeling</dt><dd>A second model that decides whether to take the first model’s trade.</dd></div>
+    <div><dt>Online learning</dt><dd>Updating a model one new example at a time instead of retraining from scratch.</dd></div>
+    <div><dt>Hedge / multiplicative weights</dt><dd>Experts’ weights are multiplied down by their losses after each round.</dd></div>
+    <div><dt>Prequential (test-then-train)</dt><dd>Predict, score, then learn, at every step.</dd></div>
+    <div><dt>Power analysis</dt><dd>How much data you need to detect an effect of a given size.</dd></div>
+    <div><dt>Pre-registration / SHA-256</dt><dd>Writing the test plan before data arrives; fingerprints prove the models weren’t changed.</dd></div>
+  </dl>
+</section>
+
+<section class="topic" id="viva">
+  <div class="topic-head"><h2>Viva questions with model answers</h2><label class="check"><input type="checkbox" data-sec="viva">Revised</label></div>
+  <div id="qaList"></div>
+</section>
+
+<section class="topic" id="checklist">
+  <div class="topic-head"><h2>Tomorrow’s checklist</h2><label class="check"><input type="checkbox" data-sec="checklist">Revised</label></div>
+  <div class="prose">
+    <ol>
+      <li><b>Fill the placeholders</b> on slides 1 and the last slide: course, name, roll number, guide, department, email.</li>
+      <li><b>Start the dashboard at least 5 hours before presenting</b> (<code>python app.py</code>) and leave it running. The self-learning panel only shows live updates once a 4-hour outcome has passed.</li>
+      <li><b>Have a backup:</b> if the internet or Yahoo fails, present the dashboard screenshots on slides 23–24 and say the live version needs Yahoo access.</li>
+      <li><b>Check the GitHub repo is public</b> before showing its link, or remove it from the last slide.</li>
+      <li><b>Know four numbers cold:</b> 13,436 hourly decisions · 51.3 % base rate · 0.519 best AUC · Brier skill −0.079 → −0.001.</li>
+      <li><b>If asked about AI help</b>, follow your institution’s policy and disclose it, e.g. “developed with AI assistance; I ran, verified and understand every experiment”.</li>
+      <li><b>After the presentation:</b> merge the branch into <code>main</code> so the forward test actually starts.</li>
+    </ol>
+  </div>
+</section>
+</main>
+</div>
+
+<script>
+const QA = [
+  ['Is this really a machine-learning project?', 'Yes. The original dashboard is rule-based, so I used it as the baseline and as a feature generator. The ML part trains and compares logistic regression, gradient boosting and two self-learning models, with walk-forward validation, a lockbox and statistical tests. Two ML models run live on the dashboard (calibration and the self-learning weights) and two more run hourly in the forward test.'],
+  ['Your accuracy is about 50 %. Isn’t that a failure?', 'No. The analysis showed a weak signal (best correlation 0.05) and no autocorrelation, and the oil-forecasting literature finds the no-change forecast very hard to beat. A trustworthy “no edge” result is a real finding. ML still improved the product through calibration, the trade filter and the learned weights.'],
+  ['How do you know there is no look-ahead bias?', 'The backtest calls the same compute_snapshot function as the live server, on data cut off at each bar’s close, and daily data only uses completed sessions. The replay matched the live dashboard. A deliberately cheating oracle scores 100 % and a random coin about 50 %, so the scoring code is correct. Models are trained walk-forward with a purge gap.'],
+  ['Why didn’t you use normal cross-validation?', 'Random K-fold puts future hours into training, which leaks the answer. With time series you must train on the past and test on the future (Bergmeir & Benítez 2012). I also purge training rows whose 4-hour label overlaps the test block.'],
+  ['Why logistic regression and gradient boosting?', 'Logistic regression has the same form as the rule engine (a weighted sum), so comparing them isolates one question: do learned weights beat hand-picked ones? Gradient boosting adds non-linear interactions and is the strongest standard learner for tabular data of this size. Both are heavily regularised because the signal is weak.'],
+  ['Why not an LSTM or deep learning?', 'With about 13,000 noisy rows and almost no autocorrelation, a deep sequence model would most likely memorise noise, and it is hard to explain. It is listed as future work under the same validation rules.'],
+  ['What is the purge gap?', 'Training rows within 4 bars of the test block are removed, because their 4-hour labels overlap the test period. Without it the model would partly see the test answers.'],
+  ['What does the Pesaran–Timmermann test add over accuracy?', 'Accuracy can look good just from drift: oil rose in 51.3 % of windows, so always saying “up” scores 51 %. The PT test asks whether calls and outcomes are related beyond those base rates. It caught a fake result: logistic regression at 1h had p = 0.007 against 50 % but p = 0.08 under PT.'],
+  ['Why are p-values computed on non-overlapping samples?', 'Two 4-hour windows starting an hour apart share 3 hours, so they aren’t independent. Using every 4th bar keeps the test honest.'],
+  ['How does your self-learning model work?', 'Hedge treats each pillar as an expert. After each 4-hour outcome, every weight is multiplied by exp(−η·loss), then normalised, and a 1 % fixed share keeps every pillar alive. It only learns from outcomes that already exist, and it is evaluated test-then-train: predict, score, then learn. η = 0.01 was chosen on development data.'],
+  ['What did the self-learning model learn?', 'It moved the weights towards equal: trend fell from 26 % to 17 %, while the dollar and S&P pillars rose from 11 % to 18 %. No pillar earned the extra trust it was given. Accuracy stayed at chance level, the same as the frozen engine.'],
+  ['Why not update every 5 minutes?', 'Five-minute moves are noisier, costs matter more, Yahoo’s crude data is delayed about 10 minutes, and 5-minute history only covers 60 days. The dashboard can refresh its display every 5 minutes, but the model works on hourly bars.'],
+  ['What is calibration and why does it matter?', 'A probability is calibrated if “70 %” happens about 70 % of the time. The old bullish % was not: price rose about half the time whatever it said, and Brier skill was −0.079. Platt scaling (a one-feature logistic regression) fixed that to −0.001, and it now runs live.'],
+  ['What is the lockbox and why use it?', 'Apr–Nov 2026 was held back. Every choice was made on the development period, then each finalist was scored once on the lockbox. That stops me from unknowingly tuning to the test data.'],
+  ['You tried 38 variants. Isn’t that data snooping?', 'That’s why every variant is listed, choices were made only on development data, and the lockbox was scored once. Even so, a single good result among 38 could be luck, which is why the best candidates are in a pre-registered forward test.'],
+  ['What is the forward test?', 'Models were frozen and fingerprinted with SHA-256, and success criteria were written before the start. Every hour, GitHub Actions records predictions before outcomes exist and commits them, so git history proves nothing was edited. It runs until 17 Feb 2027.'],
+  ['Can the forward test prove the model works?', 'Probably not in 91 days. It will give about 100 usable calls, while proving a 54.5 % edge needs about 764. It can clearly reject the model if it lands near 50 %. I did the power analysis before starting.'],
+  ['What does Theil U2 = 1.01 mean?', 'The ML price forecast’s error is 1 % larger than simply predicting “the price stays the same”. Below 1 would beat the random walk. MAPE looked tiny (0.4 %), but that is misleading on price levels.'],
+  ['What are the main limitations?', 'Roll gaps in continuous futures; 1h bars hide the order of high and low inside an hour (handled by assuming the stop hits first); real 15-minute data only covers 60 days; one 2.4-year market regime.'],
+  ['What would you do next?', 'Finish the forward test, try a daily horizon where trend-following effects are documented, add an LSTM baseline under the same validation, and replace the hard-coded win rates in the engine with the measured ones.'],
+  ['What is the gold/oil feature doing at the top of the online model’s coefficients?', 'It had the largest standardised weight in the online logistic regression, but the model as a whole wasn’t significant, so I don’t interpret it as a real driver. Coefficients of a model with no skill are mostly noise.'],
+  ['Why is the confusion matrix nearly uniform?', 'Because the calls carry almost no information about the outcome: each row (actual up, flat, down) is split roughly equally across the predicted columns. MCC ≈ 0 says the same thing.']
+];
+const list = document.getElementById('qaList');
+list.innerHTML = QA.map(([q, a]) => `<div class="qa"><p class="q">${q}</p><p class="a" tabindex="0">${a}</p></div>`).join('');
+list.addEventListener('click', e => { const a = e.target.closest('.a'); if (a) a.classList.toggle('show'); });
+list.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('a')) { e.preventDefault(); e.target.classList.toggle('show'); } });
+
+const quizBtn = document.getElementById('quizBtn');
+quizBtn.addEventListener('click', () => {
+  const on = !document.body.classList.contains('quiz');
+  document.body.classList.toggle('quiz', on);
+  quizBtn.setAttribute('aria-pressed', on);
+  document.querySelectorAll('.qa .a').forEach(a => a.classList.remove('show'));
+  if (on) document.getElementById('viva').scrollIntoView({ behavior: 'smooth' });
+});
+
+const KEY = 'petrosync-viva-progress';
+let done = {};
+try { done = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { done = {}; }
+function paint() {
+  document.querySelectorAll('nav.index a').forEach(a => a.classList.toggle('done', !!done[a.getAttribute('href').slice(1)]));
+}
+document.querySelectorAll('input[data-sec]').forEach(cb => {
+  cb.checked = !!done[cb.dataset.sec];
+  cb.addEventListener('change', () => {
+    done[cb.dataset.sec] = cb.checked;
+    try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (e) {}
+    paint();
+  });
+});
+paint();
+</script>
