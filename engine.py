@@ -15,6 +15,13 @@ class AdvancedOilEngine:
         self.last_fetch_time = 0
         self.min_cache_seconds = 45 # cache for 45 seconds to keep it fresh yet rate-limit safe
         self.calibration = self._load_calibration()
+        # Volatility forecast (HAR ridge, fitted on 2.4 years by evaluation/volatility.py)
+        try:
+            import json as _json
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reports', 'vol_model.json')) as f:
+                self.vol_model = _json.load(f)
+        except (OSError, ValueError):
+            self.vol_model = None
         # Self-learning pillar weights (Hedge). Starts from the weights learned on 2.4 years of
         # history (reports/online_state_init.json) and keeps updating at every hourly refresh.
         try:
@@ -489,6 +496,11 @@ class AdvancedOilEngine:
             raise RuntimeError("Unable to load live market data.")
 
         data = self.compute_snapshot(data_bundle["macro_1h"], data_bundle["cl_15m"], data_bundle["cl_daily"])
+        if self.vol_model is not None:
+            try:
+                data['volatility_forecast'] = self.forecast_volatility(data_bundle["macro_1h"], data['wti']['price'])
+            except Exception as e:
+                logging.warning(f"Volatility forecast skipped: {e}")
         if self.learner is not None:
             try:
                 close = data_bundle["macro_1h"]['Close']['CL=F'].dropna()
@@ -501,6 +513,40 @@ class AdvancedOilEngine:
         self.cached_data = data
         self.last_fetch_time = now_ts
         return data
+
+    def forecast_volatility(self, macro_1h, price):
+        """
+        Expected size of WTI's move over the next 4 hourly bars (HAR model: log realised
+        volatility over the last 1, 4, 24, 96 bars + log OVX + hour of day).
+        Direction is not predictable, but the size of moves is (volatility clustering).
+        """
+        m = self.vol_model
+        close = macro_1h['Close']['CL=F'].dropna()
+        r = np.log(close).diff().dropna()
+        feats = {}
+        for k in m['lags']:
+            feats[f'log_rv_{k}'] = math.log(math.sqrt(float((r.iloc[-k:] ** 2).mean())) + m['eps'])
+        ovx = float(macro_1h['Close']['^OVX'].dropna().iloc[-1])
+        feats['log_ovx'] = math.log(max(ovx, 5.0))
+        last = close.index[-1]
+        last = (last.tz_convert('America/New_York') if last.tzinfo else last.tz_localize('UTC').tz_convert('America/New_York')) + pd.Timedelta(hours=1)
+        feats['hour_sin'], feats['hour_cos'] = math.sin(2 * math.pi * last.hour / 24), math.cos(2 * math.pi * last.hour / 24)
+        x = np.array([feats[f] for f in m['features']])
+        z = (x - np.array(m['scaler_mean'])) / np.array(m['scaler_scale'])
+        log_rv = float(np.dot(z, m['coef']) + m['intercept'])
+        rv_bar = max(math.exp(log_rv) - m['eps'], 0.0)
+        move = price * rv_bar * math.sqrt(m['horizon_bars'])          # 1-sigma move in $ over 4 bars
+        cuts = m['percentiles_log_rv_forecast']
+        level = sum(log_rv > c for c in cuts)                           # 0..4
+        names = ['Very calm', 'Calm', 'Normal', 'Stormy', 'Very stormy']
+        return {
+            'horizon_hours': m['horizon_bars'], 'expected_move_usd': round(move, 2),
+            'expected_move_pct': round(rv_bar * math.sqrt(m['horizon_bars']) * 100, 2),
+            'range_low': round(price - move, 2), 'range_high': round(price + move, 2),
+            'regime_level': int(level), 'regime': names[level],
+            'past_24h_move_pct': round(math.exp(feats['log_rv_24']) * math.sqrt(m['horizon_bars']) * 100, 2),
+            'lockbox_r2': m.get('lockbox_r2_walkforward'),
+        }
 
     def compute_snapshot(self, macro_1h, cl_15m, cl_daily, include_display=True):
         """

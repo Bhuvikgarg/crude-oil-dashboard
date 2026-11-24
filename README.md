@@ -54,6 +54,7 @@ An advanced institutional quantitative analytics terminal for Crude Oil (`CL` WT
 | [`reports/EVALUATION_RESULTS.md`](reports/EVALUATION_RESULTS.md) | Auto-generated backtest tables (13,436 hourly decisions, Jul 2024 → Nov 2026) |
 | [`reports/predictions_vs_actual.csv`](reports/predictions_vs_actual.csv) | Every hourly call mapped to the realised price |
 | [`reports/IMPROVEMENT_EXPERIMENTS.md`](reports/IMPROVEMENT_EXPERIMENTS.md) | 38 improvement variants, tuned on Jul 2024–Mar 2026, tested once on Apr–Nov 2026 |
+| [`reports/VOLATILITY.md`](reports/VOLATILITY.md) | Volatility forecasting (HAR model): the size of the next move is predictable even though its direction is not |
 | [`reports/ONLINE_LEARNING.md`](reports/ONLINE_LEARNING.md) | Self-learning models (Hedge pillar weights, online logistic regression), evaluated test-then-train |
 | [`docs/study_guide.html`](docs/study_guide.html) | Presentation and viva study guide (open in a browser) |
 | [`docs/FORWARD_TEST.md`](docs/FORWARD_TEST.md) | Live, pre-registered 91-day forward test logged hourly by GitHub Actions to the `forward-test-log` branch |
@@ -70,6 +71,7 @@ this is the expected — and still valuable — result.
 pip install -r requirements-eval.txt
 python -m evaluation.run_evaluation --refresh   # ~4 min, writes reports/
 python -m evaluation.online_learning            # self-learning models (~1 min)
+python -m evaluation.volatility                 # volatility forecasting (~1 min)
 python -m evaluation.improve                    # lockbox experiment: can accuracy be improved? (~3 min)
 python -m pytest tests                          # metric unit tests
 ```

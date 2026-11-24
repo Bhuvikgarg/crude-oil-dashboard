@@ -185,6 +185,9 @@ function updateUI(d) {
     document.getElementById('winProbVal').textContent = `${ts.win_probability}%`;
     renderRealityCheck(ts.setup_type);
 
+    // Volatility forecast
+    renderVolatility(d.volatility_forecast);
+
     // Self-learning pillar weights (Hedge)
     renderLearning(d.online_learning, d.sentiment.score);
 
@@ -556,6 +559,23 @@ function renderChart(candles) {
 }
 
 
+
+// ===================== VOLATILITY FORECAST =====================
+function renderVolatility(v) {
+    const card = document.getElementById('volCard');
+    if (!v) { card.hidden = true; return; }
+    card.hidden = false;
+    document.getElementById('volMove').textContent = `±$${v.expected_move_usd.toFixed(2)}`;
+    document.getElementById('volMovePct').textContent = `±${v.expected_move_pct.toFixed(2)}% · last 24h pace: ±${v.past_24h_move_pct.toFixed(2)}%`;
+    document.getElementById('volRange').textContent = `$${v.range_low.toFixed(2)} – $${v.range_high.toFixed(2)}`;
+    const reg = document.getElementById('volRegime');
+    reg.textContent = v.regime.toUpperCase();
+    reg.classList.remove('text-bull', 'text-bear', 'text-warning', 'text-accent');
+    reg.classList.add(v.regime_level >= 3 ? 'text-bear' : v.regime_level <= 1 ? 'text-accent' : 'text-warning');
+    document.getElementById('volScale').innerHTML = ['Very calm', 'Calm', 'Normal', 'Stormy', 'Very stormy']
+        .map((n, i) => `<span class="${i === v.regime_level ? 'on' : ''}" title="${n}">${n}</span>`).join('');
+    document.getElementById('volMeta').textContent = `walk-forward lockbox R² ${v.lockbox_r2} · regime = forecast percentile vs 2.4 years`;
+}
 
 // ===================== SELF-LEARNING WEIGHTS (HEDGE) =====================
 const LEARN_COLORS = ['#06b6d4', '#a855f7', '#f59e0b', '#10b981', '#f43f5e', '#3b82f6'];

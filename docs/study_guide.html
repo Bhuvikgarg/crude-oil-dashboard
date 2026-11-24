@@ -90,6 +90,7 @@ body.quiz .qa .a.show{filter:none}
   <a href="#analysis">Analysis (EDA)</a>
   <a href="#methodology">Methodology</a>
   <a href="#selflearning">Self-learning model</a>
+  <a href="#volatility">Volatility forecast</a>
   <a href="#tradeoffs">Model trade-offs</a>
   <a href="#output">Output</a>
   <a href="#deployment">Deployment &amp; demo</a>
@@ -112,7 +113,7 @@ body.quiz .qa .a.show{filter:none}
 <section class="topic" id="pitch">
   <div class="topic-head"><h2>60-second pitch</h2><label class="check"><input type="checkbox" data-sec="pitch">Revised</label></div>
   <div class="say"><b>Memorise this</b>
-  I built PetroSync, a live crude-oil dashboard that turns nine markets into trading signals. I then made it a supervised machine-learning problem: will WTI be higher in four hours? I trained logistic regression, gradient boosting and a self-learning Hedge model on 13,436 hourly decisions, using walk-forward validation so no model ever saw the future. The honest result is that nothing predicts hourly direction better than chance, which matches the research on oil. But ML clearly improved the product: calibration fixed misleading probabilities, an ML filter improved trades, and the self-learning model showed which hand-tuned weights were unjustified. It all runs live, and a pre-registered forward test is checking the best candidates on future data.</div>
+  I built PetroSync, a live crude-oil dashboard that turns nine markets into trading signals. I then made it a supervised machine-learning problem: will WTI be higher in four hours? I trained logistic regression, gradient boosting and a self-learning Hedge model on 13,436 hourly decisions, using walk-forward validation so no model ever saw the future. The honest result is that nothing predicts hourly direction better than chance, which matches the research on oil. But ML clearly improved the product: calibration fixed misleading probabilities, an ML filter improved trades, and the self-learning model showed which hand-tuned weights were unjustified. Most usefully, while the direction of oil is unpredictable, the size of its next move is predictable: my volatility model sorts calm from stormy hours correctly 69 % of the time, and it runs live. It all runs live, and a pre-registered forward test is checking the best candidates on future data.</div>
 </section>
 
 <section class="topic" id="intro">
@@ -324,6 +325,38 @@ score  = 100 · Σ w_i · vote_i              (same −100…+100 scale as the e
   <div class="warn"><b>Why not 5-minute data or hourly retraining of everything?</b> 5-minute moves are even noisier, Yahoo’s crude data is delayed ~10 minutes, and 5-minute history only covers 60 days. Retraining big models every hour adds one row to 13,000, which changes almost nothing and mostly chases noise.</div>
 </section>
 
+<section class="topic" id="volatility">
+  <div class="topic-head"><h2>Volatility forecasting (the strongest result)</h2><label class="check"><input type="checkbox" data-sec="volatility">Revised</label></div>
+  <div class="nums">
+    <div class="num"><strong>−0.008</strong><span>autocorrelation of returns (direction)</span></div>
+    <div class="num"><strong>0.22</strong><span>autocorrelation of |returns| (size)</span></div>
+    <div class="num"><strong>68.7 %</strong><span>calm vs stormy correct (lockbox, 4h)</span></div>
+    <div class="num"><strong>0.22</strong><span>R² of log volatility (lockbox, 4h)</span></div>
+  </div>
+  <div class="prose">
+    <p><b>Idea:</b> big moves are followed by big moves and quiet hours by quiet hours (<b>volatility clustering</b>; Engle 1982, Bollerslev 1986). So the <i>size</i> of the next move is predictable even though its <i>direction</i> is not.</p>
+    <p><b>Target:</b> realised volatility over the next 4 (and 24) hourly bars = √(average of squared hourly returns), modelled on a log scale.</p>
+    <p><b>Model: HAR</b> (Corsi 2009, “heterogeneous autoregressive”): ridge regression (α = 10, standardised) on log realised volatility over the last <b>1, 4, 24 and 96</b> bars (hour, half-day, day, week), plus <b>log OVX</b> (the market’s own implied volatility) and <b>hour of day</b> (sine/cosine). Trained walk-forward like everything else.</p>
+  </div>
+  <div class="scroll"><table>
+    <tr><th>Lockbox, Apr–Nov 2026</th><th>R²</th><th>Calm vs stormy</th><th>AUC</th><th>Inside ±1σ</th><th>Inside ±2σ</th></tr>
+    <tr><td>HAR, next 4 h</td><td>0.22</td><td>68.7 %</td><td>0.70</td><td>60.7 %</td><td>87.7 %</td></tr>
+    <tr><td>HAR, next 24 h</td><td>0.27</td><td>66.5 %</td><td>0.58</td><td>68.3 %</td><td>92.4 %</td></tr>
+    <tr><td>Gradient boosting, all features, 4 h</td><td>0.215</td><td>67.8 %</td><td>0.68</td><td>—</td><td>—</td></tr>
+    <tr><td>Naive (last 24 bars), 4 h</td><td>−0.30</td><td>51.0 %</td><td>0.52</td><td>—</td><td>—</td></tr>
+  </table></div>
+  <div class="prose">
+    <ul>
+      <li><b>Simple beats complex:</b> HAR with 7 inputs matched gradient boosting with 38. Volatility mostly depends on recent volatility, so extra features add noise.</li>
+      <li><b>Honest ranges:</b> a normal distribution promises 68 % inside ±1σ; oil’s fat tails give 61 % at 4 h. The dashboard shows the measured 61 %.</li>
+      <li><b>Does volatility help direction?</b> No. Adding it to the direction model gave 51.4 %, AUC 0.506 (lockbox). Direction in “stormy” hours looked better in the lockbox (53.5 %) but not in development (50.9 %), so it is noise.</li>
+      <li><b>Live:</b> the dashboard card shows the expected 4-hour move in dollars, the likely price range and the regime (very calm → very stormy). The live inputs were checked to match the backtest exactly.</li>
+      <li><b>Use:</b> sizing positions and stop-losses, not choosing long or short.</li>
+    </ul>
+  </div>
+  <div class="say"><b>What to say</b> “You can’t predict which way oil goes, but you can predict how much it will move. The direction autocorrelation is −0.008, but the size autocorrelation is 0.22. A simple HAR model sorts calm from stormy 4-hour periods correctly 69 % of the time out of sample, and it runs live on the dashboard.”</div>
+</section>
+
 <section class="topic" id="tradeoffs">
   <div class="topic-head"><h2>Model trade-offs</h2><label class="check"><input type="checkbox" data-sec="tradeoffs">Revised</label></div>
   <div class="scroll"><table>
@@ -361,6 +394,8 @@ score  = 100 · Σ w_i · vote_i              (same −100…+100 scale as the e
   </ul>
   <h3>5 · Self-learning</h3>
   <div class="prose"><p>Hedge: 50.9 % lockbox hit (= frozen engine). Online logistic regression: 51.5 %, AUC 0.508. Not significant. The value is in the weights it learned.</p></div>
+  <h3>6 · Volatility (the clear win)</h3>
+  <div class="prose"><p>HAR forecast of the next 4 hours’ volatility: lockbox R² <b>0.22</b>, calm vs stormy correct <b>68.7 %</b> (AUC 0.70), 61 % of moves inside the ±1σ range. Direction stays unpredictable, but the size of the move is not.</p></div>
 </section>
 
 <section class="topic" id="deployment">
@@ -386,7 +421,7 @@ python -m pytest tests                       # 8 tests</div>
 <section class="topic" id="conclusion">
   <div class="topic-head"><h2>Conclusion</h2><label class="check"><input type="checkbox" data-sec="conclusion">Revised</label></div>
   <div class="prose">
-    <p><b>Worked:</b> calibration fixed misleading probabilities (deployed); an ML trade filter improved results in both periods; self-learning weights run live and exposed unjustified hand-tuned weights; the evaluation catches look-ahead bias and drift.</p>
+    <p><b>Worked:</b> volatility is predictable (68.7 % calm vs stormy, live on the dashboard); calibration fixed misleading probabilities (deployed); an ML trade filter improved results in both periods; self-learning weights run live and exposed unjustified hand-tuned weights; the evaluation catches look-ahead bias and drift.</p>
     <p><b>Didn’t:</b> no model predicts hourly direction better than chance; price forecasts didn’t beat “no change”; claimed win rates were 17–44 points too high.</p>
     <p><b>Limitations:</b> roll gaps in continuous futures; 1h bars hide the order of high and low within an hour; real 15m data covers only 60 days; one 2.4-year market regime.</p>
     <p><b>Future work:</b> finish the forward test (Feb 2027); daily horizon, where trend effects are documented; LSTM baseline under the same validation.</p>
@@ -445,7 +480,7 @@ python -m pytest tests                       # 8 tests</div>
       <li><b>Start the dashboard at least 5 hours before presenting</b> (<code>python app.py</code>) and leave it running. The self-learning panel only shows live updates once a 4-hour outcome has passed.</li>
       <li><b>Have a backup:</b> if the internet or Yahoo fails, present the dashboard screenshots on slides 23–24 and say the live version needs Yahoo access.</li>
       <li><b>Check the GitHub repo is public</b> before showing its link, or remove it from the last slide.</li>
-      <li><b>Know four numbers cold:</b> 13,436 hourly decisions · 51.3 % base rate · 0.519 best AUC · Brier skill −0.079 → −0.001.</li>
+      <li><b>Know five numbers cold:</b> 13,436 hourly decisions · 51.3 % base rate · 0.519 best direction AUC · Brier skill −0.079 → −0.001 · volatility calm vs stormy 68.7 %.</li>
       <li><b>If asked about AI help</b>, follow your institution’s policy and disclose it, e.g. “developed with AI assistance; I ran, verified and understand every experiment”.</li>
       <li><b>After the presentation:</b> merge the branch into <code>main</code> so the forward test actually starts.</li>
     </ol>
@@ -475,6 +510,10 @@ const QA = [
   ['What is the forward test?', 'Models were frozen and fingerprinted with SHA-256, and success criteria were written before the start. Every hour, GitHub Actions records predictions before outcomes exist and commits them, so git history proves nothing was edited. It runs until 17 Feb 2027.'],
   ['Can the forward test prove the model works?', 'Probably not in 91 days. It will give about 100 usable calls, while proving a 54.5 % edge needs about 764. It can clearly reject the model if it lands near 50 %. I did the power analysis before starting.'],
   ['What does Theil U2 = 1.01 mean?', 'The ML price forecast’s error is 1 % larger than simply predicting “the price stays the same”. Below 1 would beat the random walk. MAPE looked tiny (0.4 %), but that is misleading on price levels.'],
+  ['Can your project predict anything?', 'Yes: the size of the next move. Direction is random (autocorrelation −0.008), but big moves cluster (|return| autocorrelation 0.22). My HAR volatility model sorts calm from stormy 4-hour periods correctly 68.7 % of the time out of sample (AUC 0.70, R² 0.22), and it runs live.'],
+  ['What is the HAR model?', 'Heterogeneous autoregressive model (Corsi 2009): a regression of future volatility on past volatility measured over several windows, here 1, 4, 24 and 96 hours, plus the oil volatility index and hour of day. It captures that traders with different horizons all react to volatility.'],
+  ['Why did gradient boosting not beat HAR for volatility?', 'Volatility mostly depends on recent volatility, which HAR already captures with a few inputs. Extra features add noise, so the simpler model did as well out of sample (R² 0.22 vs 0.215).'],
+  ['Does knowing the volatility help predict direction?', 'I tested it: no. Adding volatility to the direction model gave 51.4 % and AUC 0.506 in the lockbox. Volatility tells you how far, not which way.'],
   ['What are the main limitations?', 'Roll gaps in continuous futures; 1h bars hide the order of high and low inside an hour (handled by assuming the stop hits first); real 15-minute data only covers 60 days; one 2.4-year market regime.'],
   ['What would you do next?', 'Finish the forward test, try a daily horizon where trend-following effects are documented, add an LSTM baseline under the same validation, and replace the hard-coded win rates in the engine with the measured ones.'],
   ['What is the gold/oil feature doing at the top of the online model’s coefficients?', 'It had the largest standardised weight in the online logistic regression, but the model as a whole wasn’t significant, so I don’t interpret it as a real driver. Coefficients of a model with no skill are mostly noise.'],

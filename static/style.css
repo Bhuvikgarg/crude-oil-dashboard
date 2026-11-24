@@ -1215,3 +1215,13 @@ select:focus {
 .learning-legend { font-family: var(--font-mono); font-size: 0.62rem; color: var(--text-muted); }
 .mono { font-family: var(--font-mono); }
 #learningMeta { font-size: 0.68rem; font-family: var(--font-mono); color: var(--text-muted); }
+
+/* ===================== VOLATILITY FORECAST ===================== */
+.vol-card { border-color: rgba(59, 130, 246, 0.35); }
+.vol-card[hidden] { display: none !important; }
+#volMeta { font-size: 0.68rem; font-family: var(--font-mono); color: var(--text-muted); }
+.vol-body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 900px) { .vol-body { grid-template-columns: minmax(0, 1fr); } }
+.vol-scale { display: flex; gap: 3px; margin-top: 6px; }
+.vol-scale span { flex: 1; font-size: 0.56rem; text-align: center; padding: 3px 0; border-radius: 3px; background: rgba(255,255,255,0.05); color: var(--text-muted); white-space: nowrap; overflow: hidden; }
+.vol-scale span.on { background: var(--accent-blue); color: #fff; font-weight: 700; }

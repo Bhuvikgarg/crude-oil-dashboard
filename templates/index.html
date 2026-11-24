@@ -441,6 +441,37 @@
             </div>
         </section>
 
+        <!-- ROW 2b2: VOLATILITY FORECAST (evaluation/volatility.py -> reports/vol_model.json) -->
+        <section class="vol-section">
+            <div class="intel-card vol-card" id="volCard" hidden>
+                <div class="card-top-bar reality-top">
+                    <div class="badge-title">
+                        <span class="section-icon">🌊</span>
+                        <h2>VOLATILITY FORECAST · NEXT 4 HOURS (ML · HAR MODEL)</h2>
+                    </div>
+                    <span class="help-hint" id="volMeta">--</span>
+                </div>
+                <div class="vol-body">
+                    <div class="param-box">
+                        <span class="param-title">EXPECTED MOVE (1σ)</span>
+                        <span class="param-value text-accent" id="volMove">--</span>
+                        <span class="param-sub" id="volMovePct">--</span>
+                    </div>
+                    <div class="param-box">
+                        <span class="param-title">LIKELY RANGE</span>
+                        <span class="param-value" id="volRange">--</span>
+                        <span class="param-sub">61 % of past 4-hour moves stayed inside (88 % inside twice this range)</span>
+                    </div>
+                    <div class="param-box vol-regime-box">
+                        <span class="param-title">PREDICTED REGIME</span>
+                        <span class="param-value" id="volRegime">--</span>
+                        <div class="vol-scale" id="volScale"></div>
+                    </div>
+                </div>
+                <p class="reality-note">The <b>size</b> of oil’s moves is predictable (big moves cluster: |return| autocorrelation 0.22), while the <b>direction</b> is not (autocorrelation −0.008). Out of sample this model sorted calm vs stormy 4-hour periods correctly 68.7 % of the time (AUC 0.70). Use it to size positions and stops, not to pick a side.</p>
+            </div>
+        </section>
+
         <!-- ROW 2c: SELF-LEARNING WEIGHTS (online learning, online_learner.py) -->
         <section class="learning-section">
             <div class="intel-card learning-card" id="learningCard" hidden>
