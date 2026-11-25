@@ -363,6 +363,16 @@ overall = 0.25·15m + 0.45·1h + 0.30·daily</span><p>≥ 70 bullish, ≤ 30 bea
     from: ['plan'], check: () => ({ tone: 'bad', html: 'Below 1, so the trade plan as written lost money after costs.' }),
   },
   volstat: { alias: 'vol' },
+  backend: {
+    stage: 'data', title: 'Backend: what the server is doing',
+    what: 'A live view of the Python server behind this page. It shows which function is running right now, how long each one took last time, and what is loaded.',
+    how: () => `<ul>
+      <li>The Flask server (<code>app.py</code>) runs a background thread that refreshes everything <b>every hour</b>. A page request or the ↻ button can also start a refresh.</li>
+      <li>A refresh runs four functions in order: <code>fetch_market_basket()</code> → <code>compute_snapshot()</code> → <code>forecast_volatility()</code> → <code>LiveHedge.observe()</code>.</li>
+      <li>Requests in between get the cached result (45 seconds), so Yahoo is not asked again for every page view.</li>
+      <li>The engine records which function it is in; this card asks <code>/api/status</code> every 3 seconds (every 0.4 s while a refresh runs). Asking never starts a refresh.</li></ul>`,
+    to: ['data', 'evaluate'],
+  },
 };
 
 // Pillar entries
@@ -617,7 +627,19 @@ function renderLearn() {
     + 'What time gives is <b>proof</b>: about 764 independent 4-hour calls are needed before a real edge can be told apart from luck.';
 }
 
+const BE_TIPS = {
+  fetch: 'One network call for 5 days of hourly bars of 9 markets, plus 15-minute and daily WTI. Almost all of the refresh time is waiting for Yahoo.',
+  snapshot: 'Pure Python maths: EMAs, RSI, VWAP, ATR, volume profile, the 3 timeframes, the 7 pillars and score, the Platt probability and the trade plan with its measured win rate.',
+  volatility: 'The HAR model: rebuilds past volatility over 1, 4, 24 and 96 hours plus OVX and hour of day, then applies the saved ridge coefficients. Takes about a millisecond.',
+  learning: 'Scores calls made 4 hours ago against the real price, updates each pillar weight by e^(−0.01·loss), saves the state to state/online_state.json, and queues this hour\'s call.',
+  serve: 'Flask returns the snapshot as JSON. Repeat requests within 45 seconds get the cached copy.',
+};
 const TIPS = {
+  be_fetch: () => `<h5>fetch_market_basket()</h5>${BE_TIPS.fetch}`,
+  be_snapshot: () => `<h5>compute_snapshot()</h5>${BE_TIPS.snapshot}`,
+  be_volatility: () => `<h5>forecast_volatility()</h5>${BE_TIPS.volatility}`,
+  be_learning: () => `<h5>LiveHedge.observe()</h5>${BE_TIPS.learning}`,
+  be_serve: () => `<h5>/api/data</h5>${BE_TIPS.serve}`,
   cycle: () => `<h5>How it learns, every hour</h5><ol>
     <li><b>Predict:</b> weighted average of the 6 pillar votes.</li>
     <li><b>Wait:</b> the answer is known 4 hours later.</li>
@@ -674,6 +696,64 @@ fixed weights:   ${lv.n ? `${lv.engine_hits}/${lv.n}` : '–'}</span>Backtest on
   document.addEventListener('click', e => { const el = e.target.closest('[data-tip]'); if (el && matchMedia('(hover: none)').matches) { el === current ? hide() : show(el); } });
   addEventListener('scroll', hide, { passive: true });
 })();
+
+/* ------------------------------------------------------------------ */
+/* Backend card (/api/status)                                           */
+/* ------------------------------------------------------------------ */
+const ago = s => s == null ? '' : s < 60 ? `${s} s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : `${(s / 3600).toFixed(1)} h ago`;
+const inT = s => s == null ? '' : s < 60 ? `${s} s` : `${Math.round(s / 60)} min`;
+let pollTimer = null, fastUntil = 0;
+
+function renderBackend(S) {
+  const dot = $('beDot'), stages = S.stages || [];
+  dot.className = 'be-dot ' + S.state;
+  const cur = stages.find(s => s.key === S.stage);
+  if (S.state === 'running' && cur) {
+    $('beState').innerHTML = `Running <code>${esc(cur.fn)}</code>`;
+    $('beSub').textContent = `${cur.label} · ${S.stage_elapsed_s?.toFixed(1)} s on this step · started by ${S.trigger}`;
+  } else if (S.state === 'error') {
+    $('beState').textContent = 'Last refresh failed';
+    $('beSub').textContent = `${S.error || 'unknown error'} · the page keeps showing the last good data`;
+  } else if (S.last) {
+    $('beState').textContent = 'Idle · waiting for the next run';
+    $('beSub').textContent = `Last refresh ${ago(S.last.ago_s)} (${S.last.trigger}), took ${(S.last.total_ms / 1000).toFixed(2)} s`
+      + (S.next_hourly_in_s != null ? ` · next automatic run in ${inT(S.next_hourly_in_s)}` : '')
+      + ` · ${S.cache_hits} request${S.cache_hits === 1 ? '' : 's'} answered from cache`;
+  } else {
+    $('beState').textContent = 'Starting up';
+    $('beSub').textContent = 'No refresh has finished yet.';
+  }
+  const order = stages.map(s => s.key), ci = order.indexOf(S.stage);
+  const tm = (S.last && S.last.timings) || {};
+  const rows = stages.map((s, i) => {
+    const running = S.state === 'running' && s.key === S.stage;
+    const done = S.state === 'running' ? i < ci : !!S.last;
+    const t = tm[`${s.key}_ms`];
+    return `<li class="${running ? 'run' : done ? 'ok' : ''}" data-tip="be_${s.key}" tabindex="0">
+      <span class="ic">${running ? '●' : done ? '✓' : '○'}</span><code>${esc(s.fn)}</code><span class="lb">${esc(s.label)}</span>
+      <span class="tm">${running ? `${S.stage_elapsed_s?.toFixed(1)} s…` : t != null ? (t >= 1000 ? `${(t / 1000).toFixed(2)} s` : `${t.toFixed(1)} ms`) : ''}</span></li>`;
+  });
+  rows.push(`<li class="${S.state === 'running' ? '' : 'ok'}" data-tip="be_serve" tabindex="0"><span class="ic">${S.state === 'running' ? '○' : '✓'}</span><code>/api/data</code><span class="lb">Serve JSON to this page, cached 45 s</span><span class="tm">${S.cache_age_s != null ? `cache ${inT(Math.round(S.cache_age_s))} old` : ''}</span></li>`);
+  $('beSteps').innerHTML = rows.join('');
+  $('beLog').innerHTML = (S.events || []).slice(0, 5).map(e => `<li><span>${esc(e.t)}</span>${esc(e.msg)}</li>`).join('') || '<li>Nothing yet</li>';
+  const L = S.learner || {};
+  $('beModels').innerHTML = Object.entries(S.models_loaded || {}).map(([k, v]) => `<li class="${v ? '' : 'off'}"><b>${v ? '✓' : '✕'}</b>${esc(k)}</li>`).join('')
+    + `<li class="muted">Server up ${inT(S.uptime_s)} · ${S.runs} refresh${S.runs === 1 ? '' : 'es'}${L.last_update ? ` · learner updated ${esc(L.last_update.slice(11, 16))} UTC` : ''}</li>`;
+}
+
+async function pollStatus() {
+  clearTimeout(pollTimer);
+  let running = false;
+  if (!document.hidden) {
+    try {
+      const r = await fetch('/api/status'); const j = await r.json();
+      if (j.success) { renderBackend(j.data); running = j.data.state === 'running'; }
+    } catch (_) { $('beDot').className = 'be-dot error'; $('beState').textContent = 'Server not reachable'; $('beSub').textContent = 'Is python app.py still running?'; }
+  }
+  pollTimer = setTimeout(pollStatus, running || Date.now() < fastUntil ? 400 : 3000);
+}
+function pollSoon() { fastUntil = Date.now() + 6000; pollStatus(); }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pollStatus(); });
 
 /* ------------------------------------------------------------------ */
 /* Info drawer                                                          */
@@ -800,7 +880,9 @@ async function loadMetrics() {
 }
 
 renderPipeline();
-$('refreshBtn').addEventListener('click', () => load(true));
+$('refreshBtn').addEventListener('click', () => { pollSoon(); load(true); });
+$('status').addEventListener('click', () => $('backendCard').scrollIntoView({ behavior: 'smooth', block: 'center' }));
 loadMetrics();
 load();
 setInterval(load, 5 * 60 * 1000);
+pollStatus();

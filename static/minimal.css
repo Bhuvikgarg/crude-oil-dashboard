@@ -327,3 +327,40 @@ h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.01em; displ
 .claim-row.old b { text-decoration: line-through; font-weight: 500; }
 
 a.ghost { color: inherit; text-decoration: none; }
+
+/* ---------- backend card ---------- */
+.backend .head-note { color: var(--ink-2); text-decoration: none; }
+.backend .head-note:hover { color: var(--accent); }
+.be-now { display: flex; gap: 12px; align-items: flex-start; }
+.be-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ink-3); margin-top: 6px; flex: none; }
+.be-dot.idle { background: var(--bull); box-shadow: 0 0 0 4px var(--bull-soft); }
+.be-dot.running { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); animation: pulse .9s ease-in-out infinite; }
+.be-dot.error { background: var(--bear); box-shadow: 0 0 0 4px var(--bear-soft); }
+.be-state { font-size: 16px; font-weight: 600; }
+.be-state code, .be-steps code { font-family: var(--mono); font-size: .9em; }
+.be-sub { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+.be-steps { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 6px; }
+.be-steps li {
+  display: grid; grid-template-columns: 22px minmax(170px, 230px) 1fr auto; gap: 10px; align-items: center;
+  padding: 8px 12px; border-radius: 10px; background: var(--bg); font-size: 13px; cursor: help;
+}
+.be-steps li .ic { font-size: 12px; color: var(--ink-3); text-align: center; }
+.be-steps li .lb { color: var(--ink-2); }
+.be-steps li .tm { font-family: var(--mono); font-size: 12px; color: var(--ink-3); text-align: right; }
+.be-steps li.run { background: var(--accent-soft); }
+.be-steps li.run .ic { color: var(--accent); animation: pulse .9s ease-in-out infinite; }
+.be-steps li.run code { color: var(--accent); }
+.be-steps li.ok .ic { color: var(--bull); }
+.be-foot { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-top: 16px; }
+.be-log, .be-models { list-style: none; margin: 6px 0 0; padding: 0; font-size: 12.5px; color: var(--ink-2); }
+.be-log li { padding: 3px 0; border-bottom: 1px dashed var(--line); display: flex; gap: 10px; }
+.be-log li span { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); flex: none; }
+.be-models li { padding: 3px 0; }
+.be-models li b { color: var(--bull); margin-right: 6px; }
+.be-models li.off b { color: var(--bear); }
+.status { cursor: pointer; }
+@media (max-width: 600px) {
+  .be-steps li { grid-template-columns: 18px 1fr auto; }
+  .be-steps li .lb { display: none; }
+  .be-foot { grid-template-columns: 1fr; }
+}

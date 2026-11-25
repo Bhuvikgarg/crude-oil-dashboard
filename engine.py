@@ -15,6 +15,7 @@ class AdvancedOilEngine:
         self.last_fetch_time = 0
         self.min_cache_seconds = 45 # cache for 45 seconds to keep it fresh yet rate-limit safe
         self.calibration = self._load_calibration()
+        self.status = BackendStatus()
         # Volatility forecast (HAR ridge, fitted on 2.4 years by evaluation/volatility.py)
         try:
             import json as _json
@@ -512,26 +513,41 @@ class AdvancedOilEngine:
         mins = (total_seconds % 3600) // 60
         return f"{hours}h {mins}m"
 
-    def refresh(self, force=False):
+    def refresh(self, force=False, trigger='page'):
         """Execute full quantitative cycle"""
         now_ts = time.time()
         if not force and self.cached_data and (now_ts - self.last_fetch_time < self.min_cache_seconds):
             self.cached_data.setdefault('pipeline', {})['cache_age_s'] = round(now_ts - self.last_fetch_time, 1)
+            self.status.hit()
             return self.cached_data
+        self.status.begin(trigger)
+        try:
+            return self._run_cycle(now_ts)
+        except Exception as e:
+            self.status.end({}, ok=False, error=str(e)[:160])
+            raise
+
+    def _run_cycle(self, now_ts):
 
         # Per-stage timings, shown on the /ml pipeline page
         t = {}
         clock = time.perf_counter()
+
+        order = [k for k, _, _ in BackendStatus.STAGES]
 
         def lap(name):
             nonlocal clock
             now = time.perf_counter()
             t[name] = round((now - clock) * 1000, 1)
             clock = now
+            key = name.replace('_ms', '')
+            nxt = order[order.index(key) + 1] if key in order and order.index(key) + 1 < len(order) else None
+            self.status.advance(key, t[name], nxt)
 
         data_bundle = self.fetch_market_basket()
         lap('fetch_ms')
         if not data_bundle:
+            self.status.end(t, ok=False, error='Yahoo Finance returned no data')
             if self.cached_data:
                 return self.cached_data
             raise RuntimeError("Unable to load live market data.")
@@ -566,6 +582,7 @@ class AdvancedOilEngine:
         }
         self.cached_data = data
         self.last_fetch_time = now_ts
+        self.status.end(t)
         return data
 
     def forecast_volatility(self, macro_1h, price):
@@ -851,4 +868,74 @@ class AdvancedOilEngine:
         return data
 
 # Singleton instance
+
+class BackendStatus:
+    """What the engine is doing right now, for the dashboard's Backend card (/api/status).
+    Updated from whichever thread runs refresh(); read by request threads."""
+
+    STAGES = [
+        ('fetch', 'fetch_market_basket()', 'Downloading 9 markets from Yahoo Finance'),
+        ('snapshot', 'compute_snapshot()', 'Indicators, 7 pillars, Platt calibration, trade plan'),
+        ('volatility', 'forecast_volatility()', 'HAR volatility model'),
+        ('learning', 'LiveHedge.observe()', 'Self-learning weight update'),
+    ]
+
+    def __init__(self):
+        import threading
+        from collections import deque
+        self.lock = threading.Lock()
+        self.state, self.stage, self.trigger, self.error = 'idle', None, None, None
+        self.run_started = self.stage_started = None
+        self.runs, self.cache_hits = 0, 0
+        self.last = None                      # {'trigger', 'finished', 'total_ms', 'timings', 'ok'}
+        self.events = deque(maxlen=10)
+        self.boot = time.time()
+        self.next_hourly = None
+
+    def _log(self, msg):
+        self.events.appendleft({'t': datetime.now(timezone.utc).strftime('%H:%M:%S'), 'msg': msg})
+
+    def begin(self, trigger):
+        with self.lock:
+            self.state, self.trigger, self.error = 'running', trigger, None
+            self.run_started = self.stage_started = time.time()
+            self.stage = 'fetch'
+            self._log(f'Refresh started ({trigger})')
+
+    def advance(self, done_key, done_ms, next_key):
+        with self.lock:
+            fn = dict((k, f) for k, f, _ in self.STAGES).get(done_key, done_key)
+            self._log(f'{fn} finished in {done_ms:,.1f} ms')
+            self.stage, self.stage_started = next_key, time.time()
+
+    def end(self, timings, ok=True, error=None):
+        with self.lock:
+            total = round((time.time() - (self.run_started or time.time())) * 1000, 1)
+            self.state, self.stage, self.error = ('idle' if ok else 'error'), None, error
+            self.runs += 1
+            self.last = {'trigger': self.trigger, 'finished_ts': time.time(),
+                         'finished': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC'),
+                         'total_ms': total, 'timings': dict(timings), 'ok': ok}
+            self._log(f'Refresh finished in {total / 1000:.2f} s' if ok else f'Refresh failed: {error}')
+
+    def hit(self):
+        with self.lock:
+            self.cache_hits += 1
+
+    def snapshot(self):
+        now = time.time()
+        with self.lock:
+            return {
+                'state': self.state, 'stage': self.stage, 'trigger': self.trigger, 'error': self.error,
+                'stage_elapsed_s': round(now - self.stage_started, 2) if self.state == 'running' and self.stage_started else None,
+                'run_elapsed_s': round(now - self.run_started, 2) if self.state == 'running' and self.run_started else None,
+                'stages': [{'key': k, 'fn': f, 'label': l} for k, f, l in self.STAGES],
+                'last': ({**self.last, 'ago_s': round(now - self.last['finished_ts'])} if self.last else None),
+                'runs': self.runs, 'cache_hits': self.cache_hits,
+                'uptime_s': round(now - self.boot),
+                'next_hourly_in_s': round(self.next_hourly - now) if self.next_hourly else None,
+                'events': list(self.events),
+            }
+
+
 engine = AdvancedOilEngine()
