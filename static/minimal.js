@@ -117,17 +117,17 @@ const INFO = {
     what: 'The engine picks one of five setups and gives exact entry, stop and target prices. This is the part a trader would act on, so it is also the part tested hardest.',
     how: () => `<p>Rules are checked in this order, and the first match wins:</p>
       <ul>
-      <li>15-min RSI ≤ 25 and price below the value area → <b>exhaustion bounce (long)</b>, claims 68%</li>
-      <li>15-min RSI ≥ 75 and price above the value area → <b>blow-off fade (short)</b>, claims 67%</li>
-      <li>Trend score ≤ 35 → <b>bearish trend continuation</b>, claims 74%</li>
-      <li>Trend score ≥ 65 → <b>bullish trend continuation</b>, claims 73%</li>
-      <li>Otherwise → <b>value area range rotation</b>, claims 64%</li></ul>
+      <li>15-min RSI ≤ 25 and price below the value area → <b>exhaustion bounce (long)</b>: measured 37.8% (old claim 68%)</li>
+      <li>15-min RSI ≥ 75 and price above the value area → <b>blow-off fade (short)</b>: measured 39.7% (old claim 67%)</li>
+      <li>Trend score ≤ 35 → <b>bearish trend continuation</b>: measured 49.4% (old claim 74%)</li>
+      <li>Trend score ≥ 65 → <b>bullish trend continuation</b>: measured 56.0% (old claim 73%)</li>
+      <li>Otherwise → <b>value area range rotation</b>: measured 19.7% (old claim 64%)</li></ul>
       <p>Stops and targets are placed with ATR, VWAP and the volume profile.</p>`,
     live: () => `Trend score now ${D.mtf_confluence.overall_score}, 1h RSI ${D.wti.rsi} → <b>${esc(D.trade_setup.action)}</b>.`,
     from: ['indicators', 'score', 'vol'], to: ['evaluate', 'claimed', 'backtestHit'],
     check: () => {
       const T = M && M.trades;
-      return { tone: 'bad', html: T ? `In ${T.filled_trades.toLocaleString()} simulated trades Target 1 was hit <b>${pct(T.target1_hit_rate)}</b> of the time against ${pct(T.claimed_win_prob_avg, 0)} claimed. Profit factor <b>${T.profit_factor.toFixed(2)}</b> (needs to be above 1.0), average <b>${sgn(T.expectancy_usd_per_trade, 0)} $</b> per contract after costs. The claimed win rates are hard-coded and overstated.` : 'Backtest not loaded.' };
+      return { tone: 'bad', html: T ? `In ${T.filled_trades.toLocaleString()} simulated trades Target 1 was hit <b>${pct(T.target1_hit_rate)}</b> of the time against ${pct(T.claimed_win_prob_avg, 0)} claimed. Profit factor <b>${T.profit_factor.toFixed(2)}</b> (needs to be above 1.0), average <b>${sgn(T.expectancy_usd_per_trade, 0)} $</b> per contract after costs. The old win rates were typed into the code and overstated; the dashboard now shows the measured ones.` : 'Backtest not loaded.' };
     },
   },
   evaluate: {
@@ -227,23 +227,27 @@ normalise, then mix in α = 1% of the average weight</span>
   rr: {
     stage: 'plan', title: 'Reward : risk',
     what: 'How many dollars the plan aims to make for every dollar it risks.',
-    how: () => '<span class="formula">R:R = (Target 1 − entry) / (entry − stop)</span><p>To break even with R:R = 1.8 you need to win about 36% of trades (1 / (1 + 1.8)), before costs.</p>',
+    how: () => '<span class="formula">R:R = (Target 1 − entry) / (entry − stop)</span><p>Break-even win rate = 1 / (1 + R:R), before costs. At 1 : 0.6 you must win 63% of trades just to break even; at 1 : 1.5, 40%.</p><p>Reward and risk are measured from the same entry price the backtest fills at. An earlier version measured them from opposite ends of the entry zone, which made R:R look about twice as good as it was.</p>',
     live: () => esc(D.trade_setup.risk_reward), from: ['stop', 'targets'], to: ['evaluate'],
   },
   claimed: {
-    stage: 'plan', title: 'Claimed win rate',
-    what: 'The win probability the original playbook states for this setup.',
-    how: () => '<p>It is a <b>fixed number written in the code</b> (64–74% depending on the setup). It was never measured. That is exactly why the backtest checks it.</p>',
-    live: () => `${D.trade_setup.win_probability}% for “${esc(D.trade_setup.setup_type.toLowerCase())}”.`,
+    stage: 'plan', title: 'Old typed-in claim (replaced)',
+    what: 'The win rate the original playbook stated for this setup. It was a fixed number typed into the code (64–74%) and never measured.',
+    how: () => '<p>It is kept on screen, crossed out, so the difference is visible. The backtest still tests the claim, so the comparison stays honest. Everywhere else the dashboard now uses the <b>measured</b> win rate.</p>',
+    live: () => `Typed-in claim ${D.trade_setup.claimed_win_probability ?? D.trade_setup.win_probability}% → measured ${D.trade_setup.win_probability}%.`,
     from: ['plan'], to: ['backtestHit'],
   },
   backtestHit: {
-    stage: 'evaluate', title: 'Backtest win rate',
-    what: 'How often this exact setup actually reached Target 1 when the engine was replayed on 2.4 years of history.',
-    how: () => '<p>Each historical signal was simulated as a real trade: it fills only if price reaches the entry, then it is a win if Target 1 comes before the stop. Costs are included and trades do not overlap.</p>',
-    live: () => { const g = setupStats(); return g ? `${g.n} trades: Target 1 hit <b>${pct(g.target1_hit_rate)}</b> vs ${pct(g.claimed_win_prob, 0)} claimed; average ${sgn(g.expectancy_usd, 0)} $ per contract.` : 'This setup did not fill in the backtest.'; },
+    stage: 'evaluate', title: 'Measured win rate',
+    what: 'How often this exact setup actually reached Target 1 before its stop, measured on 2.4 years of history. It replaces the typed-in claim.',
+    how: () => `<p>Every historical signal was simulated as a real trade: it fills only if price reaches the entry, then it is a win if Target 1 comes before the stop. 2 ticks of costs, one trade at a time.</p>
+      <span class="formula">win rate = Target 1 hits / filled trades
+95% range: Wilson score interval</span>
+      <p>The grey band is the 95% range: with a few hundred trades the true rate could be a few points either side. It is measured separately on the development period and the lockbox to check that it is stable.</p>
+      <p>Made with <code>python -m evaluation.measure_playbook</code>, which writes <code>reports/playbook_measured.json</code>.</p>`,
+    live: () => { const m = D.trade_setup.measured; return m ? `${m.n} trades: <b>${D.trade_setup.win_probability}%</b> (95% range ${pct(m.ci95[0])}–${pct(m.ci95[1])}); development ${pct(m.dev)}, lockbox ${pct(m.lockbox)}; profit factor ${m.profit_factor}; average ${sgn(m.expectancy_usd, 0)} $ per contract.` : 'No measured history for this setup.'; },
     from: ['claimed', 'plan'], to: ['evaluate'],
-    check: () => ({ tone: 'bad', html: 'Every one of the five setups fell short of its claim, and four of the five lost money on average after costs. This is the clearest example of why claims must be tested.' }),
+    check: () => ({ tone: 'mid', html: 'All five setups fall well short of their old claims (by 17 to 44 points). Win rate alone is not the whole story: the blow-off fade wins only 40% but makes +$90 per trade, because its wins are bigger than its losses.' }),
   },
 
   /* ---------- context ---------- */
@@ -515,8 +519,9 @@ function render() {
   $('pT2').textContent = usd(t.target2);
   $('pRR').textContent = t.risk_reward;
   $('planWhy').textContent = t.rationale;
-  $('claimBar').style.width = `${t.win_probability}%`;
-  $('claimVal').textContent = `${t.win_probability}%`;
+  const claimed = t.claimed_win_probability ?? t.win_probability;
+  $('claimBar').style.width = `${claimed}%`;
+  $('claimVal').textContent = `${claimed}%`;
   renderReality();
 
   // context
@@ -531,15 +536,20 @@ function render() {
 }
 
 function renderReality() {
-  const g = setupStats();
-  const bar = $('realBar');
-  if (!M) { $('realVal').textContent = '…'; $('planNote').textContent = 'Loading backtest…'; return; }
-  if (!g) { bar.style.width = '0'; $('realVal').textContent = 'n/a'; $('planNote').textContent = 'This setup never filled in the backtest.'; return; }
-  const gap = (g.target1_hit_rate - g.claimed_win_prob) * 100;
-  bar.style.width = `${g.target1_hit_rate * 100}%`;
-  bar.className = 'bar-fill ' + (gap >= -3 && g.expectancy_usd > 0 ? 'good' : g.expectancy_usd > 0 ? 'mid' : '');
-  $('realVal').textContent = pct(g.target1_hit_rate);
-  $('planNote').textContent = `${g.n} past trades: ${Math.abs(gap).toFixed(0)} points ${gap < 0 ? 'below' : 'above'} the claim, average ${sgn(g.expectancy_usd, 0)} $ per contract after costs.`;
+  const t = D && D.trade_setup, m = t && t.measured, bar = $('realBar');
+  if (!m) { bar.style.width = '0'; $('realCi').style.width = '0'; $('realVal').textContent = 'n/a'; $('planNote').textContent = 'No measured history for this setup yet.'; return; }
+  const p = t.win_probability;
+  bar.style.width = `${p}%`;
+  bar.className = 'bar-fill ' + (m.expectancy_usd > 0 ? 'good' : 'mid');
+  $('realCi').style.left = `${m.ci95[0] * 100}%`;
+  $('realCi').style.width = `${(m.ci95[1] - m.ci95[0]) * 100}%`;
+  $('realVal').textContent = `${p.toFixed(1)}%`;
+  const be = (() => { const r = parseFloat(String(t.risk_reward).split(':')[1]); return r ? 100 / (1 + r) : null; })();
+  $('planNote').innerHTML = `Measured on <b>${m.n}</b> past trades: likely between ${pct(m.ci95[0], 0)} and ${pct(m.ci95[1], 0)} (95%). `
+    + `Development ${pct(m.dev, 0)}, lockbox ${pct(m.lockbox, 0)}, so it is stable. `
+    + (m.avg_win_usd != null ? `Wins average +$${Math.round(m.avg_win_usd)}, losses −$${Math.abs(Math.round(m.avg_loss_usd))}, so the average trade made ` : 'Average ')
+    + `<b class="${m.expectancy_usd > 0 ? 'bull' : 'bear'}">${sgn(m.expectancy_usd, 0)} $</b> per contract after costs.`
+    + (be ? ` This plan's reward : risk (${esc(t.risk_reward)}) needs about ${be.toFixed(0)}% wins to break even.` : '');
 }
 
 function renderEval() {

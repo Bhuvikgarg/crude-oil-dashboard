@@ -45,6 +45,11 @@ An advanced institutional quantitative analytics terminal for Crude Oil (`CL` WT
 - Shows overall evidence: sentiment hit rate, Brier skill of "bullish %", playbook profit factor and $/trade, best ML AUC, and ML price-forecast Theil U.
 - Reads `reports/evaluation_results.json` through `/api/metrics`. If no evaluation has been run, the card says how to generate one.
 
+### 7. Measured win rates (replaces the typed-in claims)
+- The playbook's win rates (64–74 %) were numbers typed into `engine.py`. The dashboard now shows each setup's **measured** Target-1 rate from the walk-forward replay, with a 95 % range, the development vs lockbox rate, and the average win, loss and $/trade.
+- Produced by `python -m evaluation.measure_playbook` → `reports/playbook_measured.json`. The old claim stays visible (crossed out) and is still what the backtest tests.
+- Reward : risk is now measured from the same entry price the backtest fills at. It used to take the reward and the risk from opposite ends of the entry zone, which made it look about twice as good as it was.
+
 ## Documentation & Accuracy Evaluation
 
 | Document | Contents |
@@ -73,6 +78,7 @@ python -m evaluation.run_evaluation --refresh   # ~4 min, writes reports/
 python -m evaluation.online_learning            # self-learning models (~1 min)
 python -m evaluation.volatility                 # volatility forecasting (~1 min)
 python -m evaluation.improve                    # lockbox experiment: can accuracy be improved? (~3 min)
+python -m evaluation.measure_playbook           # measured win rate per setup (seconds)
 python -m pytest tests                          # metric unit tests
 ```
 

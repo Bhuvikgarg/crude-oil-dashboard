@@ -182,7 +182,7 @@ function updateUI(d) {
 
     // 7. QUANTITATIVE TRADE SETUP CARD
     const ts = d.trade_setup;
-    document.getElementById('winProbVal').textContent = `${ts.win_probability}%`;
+    document.getElementById('winProbVal').textContent = `${ts.claimed_win_probability ?? ts.win_probability}%`;
     renderRealityCheck(ts.setup_type);
 
     // Volatility forecast

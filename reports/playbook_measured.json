@@ -1,0 +1,257 @@
+{
+ "what": "Target 1 hit before the stop, 1 CL contract, after 2 ticks round-turn cost, non-overlapping trades",
+ "source": "reports/trades.csv (walk-forward replay of engine.py)",
+ "sample": [
+  "2024-07-09 06:00:00+00:00",
+  "2026-11-18 04:00:00+00:00"
+ ],
+ "lockbox_start": "2026-04-01",
+ "generated_utc": "2026-11-25 07:14 UTC",
+ "overall": {
+  "n": 2114,
+  "target1_hits": 968,
+  "win_rate": 0.4579,
+  "ci95": [
+   0.4368,
+   0.4792
+  ],
+  "expectancy_usd": -46.1,
+  "profit_factor": 0.839,
+  "avg_r": -0.125,
+  "avg_win_usd": 520.0,
+  "avg_loss_usd": -531.0,
+  "median_planned_rr": 0.74
+ },
+ "setups": {
+  "BEARISH TREND CONTINUATION (SHORT PULLBACK)": {
+   "n": 733,
+   "target1_hits": 362,
+   "win_rate": 0.4939,
+   "ci95": [
+    0.4578,
+    0.53
+   ],
+   "expectancy_usd": -90.6,
+   "profit_factor": 0.714,
+   "avg_r": -0.153,
+   "avg_win_usd": 453.0,
+   "avg_loss_usd": -627.0,
+   "median_planned_rr": 0.57,
+   "claimed": 0.74,
+   "dev": {
+    "n": 538,
+    "target1_hits": 270,
+    "win_rate": 0.5019,
+    "ci95": [
+     0.4597,
+     0.5439
+    ],
+    "expectancy_usd": -105.2,
+    "profit_factor": 0.616,
+    "avg_r": -0.185,
+    "avg_win_usd": 336.0,
+    "avg_loss_usd": -551.0,
+    "median_planned_rr": 0.51
+   },
+   "lockbox": {
+    "n": 195,
+    "target1_hits": 92,
+    "win_rate": 0.4718,
+    "ci95": [
+     0.403,
+     0.5417
+    ],
+    "expectancy_usd": -50.3,
+    "profit_factor": 0.884,
+    "avg_r": -0.066,
+    "avg_win_usd": 796.0,
+    "avg_loss_usd": -829.0,
+    "median_planned_rr": 0.92
+   }
+  },
+  "BULLISH TREND CONTINUATION (LONG PULLBACK)": {
+   "n": 704,
+   "target1_hits": 394,
+   "win_rate": 0.5597,
+   "ci95": [
+    0.5228,
+    0.5959
+   ],
+   "expectancy_usd": -27.1,
+   "profit_factor": 0.909,
+   "avg_r": -0.047,
+   "avg_win_usd": 485.0,
+   "avg_loss_usd": -681.0,
+   "median_planned_rr": 0.56,
+   "claimed": 0.73,
+   "dev": {
+    "n": 521,
+    "target1_hits": 292,
+    "win_rate": 0.5605,
+    "ci95": [
+     0.5176,
+     0.6025
+    ],
+    "expectancy_usd": -63.1,
+    "profit_factor": 0.768,
+    "avg_r": -0.091,
+    "avg_win_usd": 374.0,
+    "avg_loss_usd": -621.0,
+    "median_planned_rr": 0.47
+   },
+   "lockbox": {
+    "n": 183,
+    "target1_hits": 102,
+    "win_rate": 0.5574,
+    "ci95": [
+     0.485,
+     0.6274
+    ],
+    "expectancy_usd": 75.5,
+    "profit_factor": 1.202,
+    "avg_r": 0.077,
+    "avg_win_usd": 805.0,
+    "avg_loss_usd": -851.0,
+    "median_planned_rr": 0.93
+   }
+  },
+  "COUNTER-TREND EXHAUSTION BOUNCE (LONG)": {
+   "n": 204,
+   "target1_hits": 77,
+   "win_rate": 0.3775,
+   "ci95": [
+    0.3138,
+    0.4457
+   ],
+   "expectancy_usd": -30.4,
+   "profit_factor": 0.897,
+   "avg_r": -0.112,
+   "avg_win_usd": 664.0,
+   "avg_loss_usd": -485.0,
+   "median_planned_rr": 1.2,
+   "claimed": 0.68,
+   "dev": {
+    "n": 148,
+    "target1_hits": 54,
+    "win_rate": 0.3649,
+    "ci95": [
+     0.2916,
+     0.4449
+    ],
+    "expectancy_usd": -52.8,
+    "profit_factor": 0.767,
+    "avg_r": -0.149,
+    "avg_win_usd": 458.0,
+    "avg_loss_usd": -365.0,
+    "median_planned_rr": 1.18
+   },
+   "lockbox": {
+    "n": 56,
+    "target1_hits": 23,
+    "win_rate": 0.4107,
+    "ci95": [
+     0.2917,
+     0.5412
+    ],
+    "expectancy_usd": 28.8,
+    "profit_factor": 1.061,
+    "avg_r": -0.012,
+    "avg_win_usd": 1148.0,
+    "avg_loss_usd": -840.0,
+    "median_planned_rr": 1.33
+   }
+  },
+  "EXHAUSTION BLOW-OFF FADE (SHORT)": {
+   "n": 209,
+   "target1_hits": 83,
+   "win_rate": 0.3971,
+   "ci95": [
+    0.3332,
+    0.4647
+   ],
+   "expectancy_usd": 90.3,
+   "profit_factor": 1.348,
+   "avg_r": -0.033,
+   "avg_win_usd": 880.0,
+   "avg_loss_usd": -432.0,
+   "median_planned_rr": 1.2,
+   "claimed": 0.67,
+   "dev": {
+    "n": 155,
+    "target1_hits": 59,
+    "win_rate": 0.3806,
+    "ci95": [
+     0.308,
+     0.4591
+    ],
+    "expectancy_usd": 58.6,
+    "profit_factor": 1.29,
+    "avg_r": -0.116,
+    "avg_win_usd": 684.0,
+    "avg_loss_usd": -327.0,
+    "median_planned_rr": 1.17
+   },
+   "lockbox": {
+    "n": 54,
+    "target1_hits": 24,
+    "win_rate": 0.4444,
+    "ci95": [
+     0.32,
+     0.5762
+    ],
+    "expectancy_usd": 181.3,
+    "profit_factor": 1.427,
+    "avg_r": 0.205,
+    "avg_win_usd": 1364.0,
+    "avg_loss_usd": -765.0,
+    "median_planned_rr": 1.23
+   }
+  },
+  "VALUE AREA RANGE ROTATION (FADE EDGES)": {
+   "n": 264,
+   "target1_hits": 52,
+   "win_rate": 0.197,
+   "ci95": [
+    0.1535,
+    0.2491
+   ],
+   "expectancy_usd": -93.2,
+   "profit_factor": 0.495,
+   "avg_r": -0.333,
+   "avg_win_usd": 463.0,
+   "avg_loss_usd": -230.0,
+   "median_planned_rr": 2.05,
+   "claimed": 0.64,
+   "dev": {
+    "n": 189,
+    "target1_hits": 38,
+    "win_rate": 0.2011,
+    "ci95": [
+     0.1501,
+     0.2639
+    ],
+    "expectancy_usd": -68.3,
+    "profit_factor": 0.53,
+    "avg_r": -0.362,
+    "avg_win_usd": 383.0,
+    "avg_loss_usd": -182.0,
+    "median_planned_rr": 2.02
+   },
+   "lockbox": {
+    "n": 75,
+    "target1_hits": 14,
+    "win_rate": 0.1867,
+    "ci95": [
+     0.1146,
+     0.2893
+    ],
+    "expectancy_usd": -156.0,
+    "profit_factor": 0.449,
+    "avg_r": -0.261,
+    "avg_win_usd": 681.0,
+    "avg_loss_usd": -348.0,
+    "median_planned_rr": 2.08
+   }
+  }
+ }
+}

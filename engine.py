@@ -22,6 +22,14 @@ class AdvancedOilEngine:
                 self.vol_model = _json.load(f)
         except (OSError, ValueError):
             self.vol_model = None
+        # Measured win rate of each playbook setup (walk-forward replay, evaluation/measure_playbook.py).
+        # Replaces the win rates that were typed into generate_trade_setup.
+        try:
+            import json as _json
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reports', 'playbook_measured.json')) as f:
+                self.playbook = _json.load(f)
+        except (OSError, ValueError):
+            self.playbook = None
         # Self-learning pillar weights (Hedge). Starts from the weights learned on 2.4 years of
         # history (reports/online_state_init.json) and keeps updating at every hourly refresh.
         try:
@@ -354,6 +362,24 @@ class AdvancedOilEngine:
         else:
             vol_warning = "Standard Volatility Regime: Normal order flow and tight execution."
 
+        # Reward : risk from ONE entry price, the one the backtest fills at (limit buy at the top of the
+        # zone, limit sell at the bottom). The old figures measured the reward from one end of the
+        # entry zone and the risk from the other, which overstated it; the range setup was hard-coded.
+        fill = entry_min if bias == "SHORT" else entry_max
+        risk_px, reward_px = abs(fill - stop_loss), abs(target1 - fill)
+        stop_ticks, tp1_ticks = round(risk_px * 100), round(reward_px * 100)
+        rr_ratio = round(reward_px / risk_px, 2) if risk_px > 0 else 0.0
+
+        # The number above is the original playbook's claim, never measured. Keep it for comparison
+        # (and for the backtest, which tests the claim), but show the measured rate when we have it.
+        claimed = win_prob
+        measured = (self.playbook or {}).get('setups', {}).get(setup_type)
+        if measured:
+            win_prob = round(measured['win_rate'] * 100, 1)
+            measured = {k: measured.get(k) for k in ('n', 'ci95', 'expectancy_usd', 'profit_factor', 'avg_r', 'avg_win_usd', 'avg_loss_usd', 'median_planned_rr')} | {
+                'dev': measured['dev']['win_rate'], 'lockbox': measured['lockbox']['win_rate'],
+                'sample': self.playbook.get('sample')}
+
         return {
             "setup_type": setup_type,
             "bias": bias,
@@ -365,9 +391,12 @@ class AdvancedOilEngine:
             "stop_ticks": stop_ticks,
             "target1": target1,
             "target2": target2,
-            "tp1_ticks": tp1_ticks if 'tp1_ticks' in locals() else 80,
+            "tp1_ticks": tp1_ticks,
             "risk_reward": f"1 : {rr_ratio:.1f}",
             "win_probability": win_prob,
+            "win_probability_source": "measured" if measured else "claimed",
+            "claimed_win_probability": claimed,
+            "measured": measured,
             "rationale": rationale,
             "tt_tip": tt_tip,
             "vol_warning": vol_warning

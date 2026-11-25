@@ -89,7 +89,7 @@ def replay(hist, lookback_1h=300, warmup=120, step=1, max_bars=None, force_15m_p
             'setup_type': ts['setup_type'], 'setup_bias': ts['bias'],
             'entry_min': ts['entry_min'], 'entry_max': ts['entry_max'],
             'stop': ts['stop_loss'], 'target1': ts['target1'], 'target2': ts['target2'],
-            'claimed_win_prob': ts['win_probability'],
+            'claimed_win_prob': ts.get('claimed_win_probability', ts['win_probability']),  # the playbook's original claim
         }
         for k, v in s['breakdown'].items():
             rec[f'pillar_{k}'] = v

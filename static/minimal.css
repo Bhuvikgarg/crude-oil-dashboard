@@ -317,3 +317,10 @@ h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.01em; displ
 
 @media (max-width: 900px) { .cycle { grid-template-columns: 1fr 1fr; } .cycle li:nth-child(2)::after { display: none; } }
 @media (max-width: 600px) { .lgrid { grid-template-columns: 1fr; } .tip { max-width: calc(100vw - 32px); } }
+
+/* measured win rate with 95% range */
+.bar.ci { position: relative; overflow: visible; }
+.bar-ci { position: absolute; top: -3px; bottom: -3px; border-radius: 4px; background: var(--line-2); opacity: .7; }
+.bar.ci .bar-fill { position: relative; }
+.claim-row.old { opacity: .6; }
+.claim-row.old b { text-decoration: line-through; font-weight: 500; }
