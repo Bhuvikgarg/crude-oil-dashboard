@@ -706,6 +706,8 @@ function openInfo(key) {
   }
   if (e.check) { const c = (() => { try { return e.check(); } catch (_) { return null; } })(); if (c) h += `<h4>Does it work?</h4><div class="check ${c.tone}">${c.html}</div>`; }
   if (e.why) h += `<h4>Why it matters for the whole</h4><p>${e.why}</p>`;
+  const mlNode = { data: 'fetch', indicators: 'feat', pillars: 'pillars', score: 'pillars', calibrate: 'platt', learn: 'hedge', vol: 'har', plan: 'plan', evaluate: 'metrics' }[e.stage];
+  if (mlNode) h += `<h4>Backend</h4><p><a href="/ml#${mlNode}">See this part light up in the ML pipeline →</a></p>`;
   $('dBody').innerHTML = h;
 
   const prev = STAGES[si - 1], next = STAGES[si + 1];

@@ -516,20 +516,34 @@ class AdvancedOilEngine:
         """Execute full quantitative cycle"""
         now_ts = time.time()
         if not force and self.cached_data and (now_ts - self.last_fetch_time < self.min_cache_seconds):
+            self.cached_data.setdefault('pipeline', {})['cache_age_s'] = round(now_ts - self.last_fetch_time, 1)
             return self.cached_data
 
+        # Per-stage timings, shown on the /ml pipeline page
+        t = {}
+        clock = time.perf_counter()
+
+        def lap(name):
+            nonlocal clock
+            now = time.perf_counter()
+            t[name] = round((now - clock) * 1000, 1)
+            clock = now
+
         data_bundle = self.fetch_market_basket()
+        lap('fetch_ms')
         if not data_bundle:
             if self.cached_data:
                 return self.cached_data
             raise RuntimeError("Unable to load live market data.")
 
         data = self.compute_snapshot(data_bundle["macro_1h"], data_bundle["cl_15m"], data_bundle["cl_daily"])
+        lap('snapshot_ms')
         if self.vol_model is not None:
             try:
                 data['volatility_forecast'] = self.forecast_volatility(data_bundle["macro_1h"], data['wti']['price'])
             except Exception as e:
                 logging.warning(f"Volatility forecast skipped: {e}")
+        lap('volatility_ms')
         if self.learner is not None:
             try:
                 close = data_bundle["macro_1h"]['Close']['CL=F'].dropna()
@@ -539,6 +553,17 @@ class AdvancedOilEngine:
                 data['online_learning'] = self.learner.summary(data['sentiment']['breakdown'])
             except Exception as e:
                 logging.warning(f"Online learner step skipped: {e}")
+        lap('learning_ms')
+        m1 = data_bundle["macro_1h"]
+        data['pipeline'] = {
+            'timings_ms': t,
+            'computed_utc': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC'),
+            'bars': {'hourly': int(len(m1)), 'tickers': int(m1['Close'].shape[1]) if hasattr(m1['Close'], 'shape') and m1['Close'].ndim == 2 else 1,
+                     'm15': int(len(data_bundle["cl_15m"])), 'daily': int(len(data_bundle["cl_daily"]))},
+            'cache_age_s': 0.0,
+            'models_loaded': {'calibration': self.calibration is not None, 'volatility': self.vol_model is not None,
+                              'learner': self.learner is not None, 'playbook': self.playbook is not None},
+        }
         self.cached_data = data
         self.last_fetch_time = now_ts
         return data

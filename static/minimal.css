@@ -261,6 +261,7 @@ h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.01em; displ
   .levels { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 600px) {
+  #mlLink { display: none !important; }
   .price { font-size: 42px; }
   .kv, .tf { grid-template-columns: 1fr; }
   .levels { grid-template-columns: 1fr 1fr; }
@@ -324,3 +325,5 @@ h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.01em; displ
 .bar.ci .bar-fill { position: relative; }
 .claim-row.old { opacity: .6; }
 .claim-row.old b { text-decoration: line-through; font-weight: 500; }
+
+a.ghost { color: inherit; text-decoration: none; }

@@ -33,6 +33,10 @@ def index():
 def classic():
     return render_template('index.html')
 
+@app.route('/ml')
+def ml_pipeline():
+    return render_template('ml.html')
+
 @app.route('/api/data', methods=['GET'])
 def get_data():
     try:

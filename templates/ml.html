@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Pipeline</title>
+<meta name="description" content="How PetroSync works end to end: hover any box to light up its path and see the backend code behind it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='minimal.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='ml.css') }}">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <span class="logo" aria-hidden="true"></span>
+    <span class="name">PetroSync</span>
+    <span class="status" id="status"><span class="dot"></span><span id="statusText">Connecting…</span></span>
+  </div>
+  <div class="actions">
+    <a class="ghost" href="/">Dashboard</a>
+    <button class="ghost icon" id="themeBtn" title="Switch light / dark" aria-label="Switch theme">◐</button>
+  </div>
+</header>
+
+<main class="ml-main">
+  <section class="ml-intro">
+    <div>
+      <h1>How the machine learning works</h1>
+      <p>Hover any box to light up where its data comes from and where it goes. The panel shows the code that runs it and its live values.</p>
+    </div>
+    <div class="ml-actions">
+      <button class="play" id="playLive"><span>▶</span> Run a live request</button>
+      <button class="ghost" id="playTrain">▶ Replay the training run</button>
+    </div>
+  </section>
+
+  <div class="ml-layout">
+    <section class="flow-card">
+      <div class="legend-row">
+        <span><i class="lg data"></i>Data</span>
+        <span><i class="lg rule"></i>Rule logic</span>
+        <span><i class="lg ml"></i>ML model</span>
+        <span><i class="lg serve"></i>Serving</span>
+        <span><i class="lg ui"></i>Screen</span>
+        <span class="muted" id="hint">Hover or tap a box</span>
+      </div>
+      <div class="flow-scroll">
+        <svg id="flow" viewBox="0 0 1180 760" role="img" aria-label="PetroSync pipeline from Yahoo Finance to the dashboard, with the offline training loop underneath"></svg>
+      </div>
+    </section>
+
+    <aside class="panel" id="panel" aria-live="polite">
+      <div class="p-empty" id="pEmpty">
+        <h3>Pick a box</h3>
+        <p>Every hour the server runs the top half: download, features, models, decision, serve. The bottom half ran offline to train and test the models; its output files are loaded when the server starts.</p>
+        <ul class="p-keys">
+          <li><b>3 ML models run live:</b> Platt calibration, Hedge self-learning and HAR volatility.</li>
+          <li><b>Rule logic</b> (the 7 pillars, the trade plan) is hand-written, and the ML side tests it.</li>
+          <li>Press <b>Run a live request</b> to watch a real refresh go through, timed by the server.</li>
+        </ul>
+      </div>
+      <div class="p-body" id="pBody" hidden></div>
+      <ol class="p-log" id="pLog" hidden></ol>
+    </aside>
+  </div>
+</main>
+
+<script src="{{ url_for('static', filename='ml.js') }}"></script>
+</body>
+</html>
