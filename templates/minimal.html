@@ -94,9 +94,50 @@
       <span>Pillar</span><span>Vote now</span><span class="num">Hand weight</span><span class="num">Learned <button class="i" data-info="hedge" aria-label="About the learned weights">i</button></span>
     </div>
     <div id="pillarRows"></div>
-    <div class="learned-foot" data-stage="learn">
-      <span>Self-learning score: <b id="learnedScore">--</b> <span id="learnedCall" class="tag">--</span></span>
-      <span class="muted" id="learnedMeta">--</span>
+  </section>
+
+  <!-- 3b. Self-learning model -->
+  <section class="block learn" data-stage="learn" id="learnCard">
+    <div class="block-head">
+      <h2>Self-learning model <button class="i" data-info="hedge" aria-label="About the self-learning model">i</button></h2>
+      <span class="tag pulse" data-tip="cycle" tabindex="0"><span class="pdot"></span>learns every hour · hover anything here</span>
+    </div>
+
+    <ol class="cycle" aria-label="How it learns">
+      <li data-tip="c1" tabindex="0"><span class="cn">1</span>Predict<small>weighted vote</small></li>
+      <li data-tip="c2" tabindex="0"><span class="cn">2</span>Wait 4 h<small>for the answer</small></li>
+      <li data-tip="c3" tabindex="0"><span class="cn">3</span>Score<small>each pillar's error</small></li>
+      <li data-tip="c4" tabindex="0"><span class="cn">4</span>Re-weight<small>trust the better ones</small></li>
+    </ol>
+
+    <div class="lgrid">
+      <div class="lstat" data-tip="lscore" tabindex="0">
+        <span class="k">Learned score</span>
+        <span class="v"><span id="lScore">--</span> <span class="tag" id="lCall">--</span></span>
+        <span class="s">fixed weights say <b id="lFixed">--</b></span>
+      </div>
+      <div class="lstat" data-tip="lupdates" tabindex="0">
+        <span class="k">Updates</span>
+        <span class="v" id="lUpdates">--</span>
+        <span class="s" id="lUpdatesSub">--</span>
+      </div>
+      <div class="lstat" data-tip="lboard" tabindex="0">
+        <span class="k">Live scoreboard</span>
+        <span class="v" id="lBoard">--</span>
+        <span class="s" id="lBoardSub">--</span>
+      </div>
+    </div>
+
+    <div class="wchart" data-tip="lweights" tabindex="0">
+      <div class="label">How the weights moved · last 60 updates</div>
+      <svg id="wSvg" viewBox="0 0 600 140" preserveAspectRatio="none" role="img" aria-label="Pillar weights over the last 60 updates"></svg>
+      <div class="wlegend" id="wLegend"></div>
+    </div>
+
+    <div class="improve" data-tip="limprove" tabindex="0">
+      <div class="improve-head"><b>When will it start improving?</b><span id="lEta">--</span></div>
+      <div class="bar"><div class="bar-fill good" id="lProg"></div></div>
+      <p id="lImproveText">--</p>
     </div>
   </section>
 
@@ -160,6 +201,8 @@
   <div class="d-body" id="dBody"></div>
   <div class="d-nav" id="dNav"></div>
 </aside>
+
+<div class="tip" id="tip" role="tooltip" hidden></div>
 
 <script src="{{ url_for('static', filename='minimal.js') }}"></script>
 </body>

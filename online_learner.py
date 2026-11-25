@@ -37,6 +37,8 @@ PILLAR_NAMES = {
 }
 HAND_WEIGHTS = np.array([25, 20, 15, 15, 10, 10], dtype=float)   # engine.py weights (OVX pillar has no breakdown value)
 HORIZON = 4
+NEEDED_NONOVERLAP = 764      # calls needed to tell a 54.5% hit rate from 50% (80% power), see forward_test/PREREGISTRATION.md
+BARS_PER_DAY = 16.4          # average hourly WTI bars per calendar day (1,495 bars in 91 days)
 
 
 def experts_from(pillars):
@@ -79,6 +81,8 @@ class LiveHedge:
         self.history = s.get('history', [])
         self.last_update = s.get('last_update')
         self.trained_until = s.get('trained_until')
+        # live scoreboard: calls resolved since this server started learning (test-then-train)
+        self.live = s.get('live', {'n': 0, 'learned_hits': 0, 'engine_hits': 0, 'since': None, 'last': None})
 
     @classmethod
     def load(cls, root):
@@ -94,10 +98,10 @@ class LiveHedge:
             json.dump({'eta': self.h.eta, 'alpha': self.h.alpha, 'weights': self.h.w.tolist(), 'updates': self.h.updates,
                        'backtest_updates': self.backtest_updates, 'pending': self.pending[-200:],
                        'history': self.history[-400:], 'last_update': self.last_update,
-                       'trained_until': self.trained_until}, f)
+                       'trained_until': self.trained_until, 'live': self.live}, f)
         os.replace(tmp, self.state_path)
 
-    def observe(self, close_series, pillars, now=None):
+    def observe(self, close_series, pillars, now=None, engine_score=None):
         """
         close_series: WTI hourly closes indexed by bar CLOSE time (UTC, tz-aware pandas index).
         pillars: the latest engine breakdown dict.
@@ -115,6 +119,14 @@ class LiveHedge:
                 if len(matches) and matches[0] + HORIZON < len(idx) and idx[matches[0] + HORIZON].to_pydatetime() <= now:
                     fut = float(close_series.iloc[matches[0] + HORIZON])
                     y = 1.0 if fut > p['price'] else -1.0
+                    if 'ls' in p:                       # score live calls BEFORE learning from them
+                        lv = self.live
+                        lv['n'] += 1
+                        lv['learned_hits'] += int((p['ls'] > 0) == (y > 0))
+                        if p.get('es') is not None:
+                            lv['engine_hits'] += int((p['es'] > 0) == (y > 0))
+                        lv['since'] = lv['since'] or t
+                        lv['last'] = t
                     self.h.update(np.array(p['x']), y)
                     self.last_update = now.strftime('%Y-%m-%d %H:%M UTC')
                     self.trained_until = t
@@ -128,7 +140,9 @@ class LiveHedge:
             latest = idx[-1].strftime('%Y-%m-%d %H:%M')
             if all(p['bar_close'] != latest for p in self.pending) and (self.trained_until is None or latest > self.trained_until):
                 self.pending.append({'bar_close': latest, 'price': float(close_series.iloc[-1]),
-                                     'x': [round(v, 4) for v in experts_from(pillars)]})
+                                     'x': [round(v, 4) for v in experts_from(pillars)],
+                                     'ls': round(self.h.score(experts_from(pillars)), 2),
+                                     'es': None if engine_score is None else round(float(engine_score), 2)})
                 changed = True
             if changed:
                 self._save()
@@ -148,4 +162,20 @@ class LiveHedge:
             'updates_total': self.h.updates, 'updates_live': self.h.updates - self.backtest_updates,
             'pending': len(self.pending), 'last_update': self.last_update, 'trained_until': self.trained_until,
             'history': self.history[-60:],
+            'live': self.live_report(),
+        }
+
+    def live_report(self):
+        lv = self.live
+        n = lv['n']
+        nonoverlap = n / HORIZON
+        remaining = max(0.0, NEEDED_NONOVERLAP - nonoverlap)
+        return {
+            'n': n, 'learned_hits': lv['learned_hits'], 'engine_hits': lv['engine_hits'],
+            'learned_rate': round(lv['learned_hits'] / n, 4) if n else None,
+            'engine_rate': round(lv['engine_hits'] / n, 4) if n else None,
+            'since': lv['since'], 'last': lv['last'],
+            'nonoverlap': round(nonoverlap, 1), 'needed_nonoverlap': NEEDED_NONOVERLAP,
+            'progress': round(min(1.0, nonoverlap / NEEDED_NONOVERLAP), 4),
+            'days_remaining_if_always_on': round(remaining * HORIZON / BARS_PER_DAY),
         }

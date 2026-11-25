@@ -506,7 +506,7 @@ class AdvancedOilEngine:
                 close = data_bundle["macro_1h"]['Close']['CL=F'].dropna()
                 idx = close.index.tz_convert('UTC') if close.index.tz is not None else close.index.tz_localize('UTC')
                 close.index = idx + pd.Timedelta(hours=1)          # key each bar by its CLOSE time
-                self.learner.observe(close, data['sentiment']['breakdown'])
+                self.learner.observe(close, data['sentiment']['breakdown'], engine_score=data['sentiment']['score'])
                 data['online_learning'] = self.learner.summary(data['sentiment']['breakdown'])
             except Exception as e:
                 logging.warning(f"Online learner step skipped: {e}")

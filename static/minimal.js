@@ -502,13 +502,7 @@ function render() {
       <span class="num">${p.w}%</span>
       <span class="num">${lw}</span></div>`;
   }).join('');
-  const L = D.online_learning;
-  if (L) {
-    $('learnedScore').textContent = sgn(L.learned_score);
-    $('learnedCall').textContent = L.learned_call;
-    $('learnedCall').className = 'tag ' + (L.learned_call === 'BULL' ? 'bull' : L.learned_call === 'BEAR' ? 'bear' : '');
-    $('learnedMeta').textContent = `${L.updates_total.toLocaleString()} updates · last ${L.last_update}`;
-  }
+  renderLearn();
 
   // trade plan
   $('planAction').textContent = t.action;
@@ -564,6 +558,112 @@ function renderEval() {
       <span class="k">${name}<button class="i" data-info="${k}" aria-label="About ${name}">i</button></span>
       <span class="v">${v}</span><span class="s">${sub}</span></div>`).join('');
 }
+
+/* ------------------------------------------------------------------ */
+/* Self-learning card + hover tips                                      */
+/* ------------------------------------------------------------------ */
+const WCOLORS = ['#2563eb', '#db2777', '#ea580c', '#16a34a', '#7c3aed', '#0891b2'];
+const LEARN_PILLARS = PILLARS.filter(p => p.key !== 'ovx_drag');
+
+function renderLearn() {
+  const L = D.online_learning, card = $('learnCard');
+  if (!L) { card.hidden = true; return; }
+  card.hidden = false;
+  $('lScore').textContent = sgn(L.learned_score);
+  $('lCall').textContent = L.learned_call;
+  $('lCall').className = 'tag ' + (L.learned_call === 'BULL' ? 'bull' : L.learned_call === 'BEAR' ? 'bear' : '');
+  $('lFixed').textContent = sgn(D.sentiment.score);
+  $('lUpdates').textContent = L.updates_total.toLocaleString();
+  $('lUpdatesSub').textContent = `${L.updates_live} live on this server · ${L.pending} waiting for their answer`;
+
+  const lv = L.live || { n: 0 };
+  if (lv.n) {
+    $('lBoard').innerHTML = `${(lv.learned_rate * 100).toFixed(0)}% <span class="muted" style="font-size:14px;font-weight:500">vs ${(lv.engine_rate * 100).toFixed(0)}%</span>`;
+    $('lBoardSub').textContent = `learned vs fixed · ${lv.n} live call${lv.n === 1 ? '' : 's'} so far`;
+  } else {
+    $('lBoard').textContent = 'Starting';
+    $('lBoardSub').textContent = 'first live calls are resolved 4 h after start';
+  }
+
+  // weight history
+  const H = (L.history || []).filter(h => h.w && h.w.length === 6);
+  const svg = $('wSvg');
+  if (H.length > 1) {
+    const all = H.flatMap(h => h.w), lo = Math.min(...all), hi = Math.max(...all), pad = (hi - lo) * 0.15 || 0.01;
+    const x = i => i / (H.length - 1) * 600, y = v => 140 - (v - lo + pad) / (hi - lo + 2 * pad) * 140;
+    document.querySelector('.wchart .label').textContent = `How the weights moved · last 60 updates · axis ${((lo - pad) * 100).toFixed(1)}% to ${((hi + pad) * 100).toFixed(1)}% (zoomed in)`;
+    svg.innerHTML = WCOLORS.map((c, k) =>
+      `<path d="${H.map((h, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(h.w[k]).toFixed(1)}`).join('')}" fill="none" stroke="${c}" stroke-width="2" vector-effect="non-scaling-stroke"/>`).join('');
+    const last = H[H.length - 1].w;
+    $('wLegend').innerHTML = LEARN_PILLARS.map((p, k) => `<span><i style="background:${WCOLORS[k]}"></i>${p.name} ${(last[k] * 100).toFixed(1)}%</span>`).join('') +
+      `<span class="muted">${esc(H[0].t.slice(0, 10))} → ${esc(H[H.length - 1].t.slice(0, 10))}</span>`;
+  }
+
+  // when will it improve
+  const prog = lv.progress || 0;
+  $('lProg').style.width = `${Math.max(prog * 100, 0.8)}%`;
+  $('lEta').textContent = `${lv.nonoverlap ?? 0} of ${lv.needed_nonoverlap ?? 764} independent calls · about ${lv.days_remaining_if_always_on ?? 186} days left if always on`;
+  $('lImproveText').innerHTML = 'It will not get smarter just by waiting: after 13,432 updates its weights have settled, and in the backtest it matched the fixed weights (50.9% vs 50.9%). '
+    + 'What time gives is <b>proof</b>: about 764 independent 4-hour calls are needed before a real edge can be told apart from luck.';
+}
+
+const TIPS = {
+  cycle: () => `<h5>How it learns, every hour</h5><ol>
+    <li><b>Predict:</b> weighted average of the 6 pillar votes.</li>
+    <li><b>Wait:</b> the answer is known 4 hours later.</li>
+    <li><b>Score:</b> how wrong was each pillar?</li>
+    <li><b>Re-weight:</b> wrong pillars lose a little trust.</li></ol>
+    <span class="tnote">It always predicts before it sees the answer (test-then-train), so it can never cheat.</span>`,
+  c1: () => { const L = D.online_learning; return `<h5>1 · Predict</h5>Each pillar votes from −1 (down) to +1 (up). The model multiplies each vote by its current weight and adds them up.
+    <span class="tf">${L.pillars.map(p => `${(p.vote / 100).toFixed(2).padStart(5)} × ${(p.learned_weight * 100).toFixed(1)}%`).join('\n')}
+= ${sgn(L.learned_score)}  →  ${L.learned_call}</span>Above 0 means it expects the price to rise.`; },
+  c2: () => `<h5>2 · Wait 4 hours</h5>The call is saved with today's price. Only when 4 more hourly bars have closed does the model know if it was right.
+    <span class="tnote">Waiting right now: ${D.online_learning.pending} call(s).</span>`,
+  c3: () => `<h5>3 · Score each pillar</h5>Outcome = +1 if the price rose, −1 if it fell.
+    <span class="tf">loss = (vote − outcome)² / 4</span>Example: a pillar voted +0.7 and the price fell → (0.7 + 1)² / 4 = <b>0.72</b> (bad). A vote of 0 always costs 0.25.`,
+  c4: () => `<h5>4 · Re-weight</h5><span class="tf">w ← w × e^(−0.01 × loss)
+then rescale to 100%
+then mix in 1% equal weight</span>Loss 0.72 → weight × 0.9928, a 0.7% cut. Small steps on purpose, so one bad hour can't wreck it. The 1% mix (“fixed share”) keeps every pillar alive in case it becomes useful again.`,
+  lscore: () => `<h5>Same votes, different weights</h5>Fixed weights (typed by hand, never change): <b>${sgn(D.sentiment.score)}</b><br>Learned weights (updated every hour): <b>${sgn(D.online_learning.learned_score)}</b>
+    <span class="tnote">The trade plan still uses the fixed score. The learned one runs beside it as a challenger, so the two can be compared fairly.</span>`,
+  lupdates: () => { const L = D.online_learning; return `<h5>One update = one hourly call whose answer is known</h5><b>13,432</b> came from replaying 2.4 years of history (Jul 2024 → Nov 2026), predicting first and learning after, hour by hour.<br><b>${L.updates_live}</b> more happened live on this server.
+    <span class="tnote">Last update: ${esc(L.last_update || 'not yet on this server')}</span>`; },
+  lboard: () => { const lv = D.online_learning.live || {}; return `<h5>Live scoreboard</h5>Hit rate on calls made <b>after</b> this server started, each predicted before its answer existed.
+    <span class="tf">learned weights: ${lv.n ? `${lv.learned_hits}/${lv.n}` : '–'}
+fixed weights:   ${lv.n ? `${lv.engine_hits}/${lv.n}` : '–'}</span>Backtest on the lockbox (Apr–Nov 2026): 50.9% vs 50.9%.
+    <span class="tnote">With only ${lv.n || 'a few'} calls this is mostly luck: with 20 calls, anything from 30% to 70% is normal for a coin flip.</span>`; },
+  lweights: () => `<h5>Proof that it learned</h5>Each line is one pillar's weight. They started from the hand weights (25 · 20 · 15 · 15 · 10 · 10) and drifted:
+    <ul><li>US dollar and stocks <b>up</b></li><li>Trend and VWAP <b>down</b></li></ul>Why: no pillar beats 50%, and the dollar and stock pillars usually vote near 0, so their mistakes cost less. It learned to be <b>less confident</b>.
+    <span class="tnote">Nearly flat lines = the weights have settled.</span>`,
+  limprove: () => { const lv = D.online_learning.live || {}; return `<h5>Honest answer: maybe never, and that is a result</h5>
+    <ul><li><b>Accuracy:</b> it improves only if some pillar starts predicting better than 50%. Then its weight will grow automatically.</li>
+    <li><b>Proof:</b> needs ~764 independent calls (one per 4 hours) to tell 54.5% from a coin flip with 80% confidence. Running 24/7 that is about <b>6 months</b>; now ${lv.nonoverlap ?? 0} done.</li>
+    <li>It only counts while the dashboard server is running. On a laptop that's opened now and then, it takes much longer.</li></ul>
+    <span class="tnote">More data cannot make a coin flip predictable. It can only tell us, with confidence, whether it is one.</span>`; },
+};
+
+(function tips() {
+  const tip = $('tip');
+  let current = null;
+  const show = el => {
+    const fn = TIPS[el.dataset.tip];
+    if (!fn || !D) return;
+    try { tip.innerHTML = fn(); } catch (_) { return; }
+    tip.hidden = false;
+    current = el;
+    const r = el.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
+    let left = Math.min(Math.max(16, r.left + r.width / 2 - tw / 2), innerWidth - tw - 16);
+    let top = r.bottom + 10;
+    if (top + th > innerHeight - 12) top = Math.max(12, r.top - th - 10);
+    tip.style.left = `${left}px`; tip.style.top = `${top}px`;
+  };
+  const hide = () => { tip.hidden = true; current = null; };
+  document.addEventListener('mouseover', e => { const el = e.target.closest('[data-tip]'); if (el && el !== current) show(el); if (!el && current) hide(); });
+  document.addEventListener('focusin', e => { const el = e.target.closest('[data-tip]'); if (el) show(el); });
+  document.addEventListener('focusout', hide);
+  document.addEventListener('click', e => { const el = e.target.closest('[data-tip]'); if (el && matchMedia('(hover: none)').matches) { el === current ? hide() : show(el); } });
+  addEventListener('scroll', hide, { passive: true });
+})();
 
 /* ------------------------------------------------------------------ */
 /* Info drawer                                                          */

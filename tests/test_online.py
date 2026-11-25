@@ -39,3 +39,20 @@ def test_live_learner_only_learns_after_outcome_exists(tmp_path):
     lh.observe(pd.Series([70, 70.5, 71, 71.5, 72, 72.5, 73.0], index=idx2), pillars, now=later)
     assert lh.h.updates == 1                            # 4 bars later the outcome exists -> one update
     assert lh.h.w[0] == lh.h.w.max()                    # the pillar that called "up" gained weight
+
+
+def test_live_scoreboard_counts_calls_before_learning(tmp_path):
+    init = tmp_path / 'init.json'
+    json.dump({'eta': 0.5, 'alpha': 0.0, 'weights': [1] * 6, 'updates': 0, 'history': []}, open(init, 'w'))
+    lh = LiveHedge(str(tmp_path / 'state.json'), str(init))
+    pillars = {k: 0.0 for k in PILLARS}
+    pillars['mtf_alignment'] = 100.0                   # learned score > 0 -> calls "up"
+    idx = pd.date_range('2026-01-05 10:00', periods=3, freq='h', tz='UTC')
+    lh.observe(pd.Series([70.0, 70.5, 71.0], index=idx), pillars,
+               now=datetime(2026, 1, 5, 13, 0, tzinfo=timezone.utc), engine_score=-20.0)   # engine calls "down"
+    idx2 = pd.date_range('2026-01-05 10:00', periods=7, freq='h', tz='UTC')
+    lh.observe(pd.Series([70, 70.5, 71, 71.5, 72, 72.5, 73.0], index=idx2), pillars,
+               now=datetime(2026, 1, 5, 17, 0, tzinfo=timezone.utc))
+    r = lh.live_report()
+    assert r['n'] == 1 and r['learned_hits'] == 1 and r['engine_hits'] == 0   # price rose: learned right, engine wrong
+    assert 0 < r['progress'] < 1
